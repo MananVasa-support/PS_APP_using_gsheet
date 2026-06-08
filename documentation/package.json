@@ -1,0 +1,13 @@
+{
+  "name": "productivity-shastra-docs",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Doc build tooling — converts the Markdown docs to official PDFs.",
+  "scripts": {
+    "build": "node build-docs.mjs"
+  },
+  "dependencies": {
+    "marked": "^18.0.5"
+  }
+}

@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #ffffff;
+  color: #000000;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dc2626;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #000000;
+}
+
+.powerplanner-input,
+.powerplanner-select,
+.powerplanner-table textarea,
+.powerplanner-table input,
+.powerplanner-table select {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.powerplanner-table thead th {
+  letter-spacing: 0.04em;
+}
+
+.powerplanner-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.powerplanner-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: #dc2626;
+  pointer-events: none;
+}
+
+.powerplanner-header {
+  position: relative;
+  overflow: hidden;
+}
+
+.powerplanner-header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: #dc2626;
+  pointer-events: none;
+}

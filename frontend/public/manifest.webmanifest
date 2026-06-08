@@ -1,0 +1,19 @@
+{
+  "name": "Productivity Shastra — Time Auditor",
+  "short_name": "Time Auditor",
+  "description": "Track, analyze and optimize how you spend every day.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070910",
+  "theme_color": "#070910",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

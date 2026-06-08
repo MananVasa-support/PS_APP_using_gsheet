@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ */
+/*  Theme tokens — the "ink" palette + foreground colors are CSS vars  */
+/*  so the whole UI can switch between dark and light themes.          */
+/* ------------------------------------------------------------------ */
+@layer base {
+  :root,
+  html.dark {
+    color-scheme: dark;
+    --ink-950: 7 9 16;
+    --ink-900: 11 14 22;
+    --ink-850: 16 19 29;
+    --ink-800: 21 25 38;
+    --ink-750: 26 31 46;
+    --ink-700: 32 38 55;
+    --ink-600: 43 50 68;
+    --ink-500: 60 68 88;
+    --ink-400: 90 100 121;
+    --fg-strong: 255 255 255; /* headings / values */
+    --fg: 226 232 240; /* body text */
+    --fg-muted: 148 163 184; /* secondary text */
+  }
+
+  html.light {
+    color-scheme: light;
+    --ink-950: 244 245 248; /* page background */
+    --ink-900: 255 255 255; /* sidebar / navbar */
+    --ink-850: 255 255 255; /* cards */
+    --ink-800: 241 243 247; /* inputs / hover */
+    --ink-750: 236 239 244;
+    --ink-700: 224 228 235; /* borders */
+    --ink-600: 203 209 219;
+    --ink-500: 148 163 184;
+    --ink-400: 100 116 139; /* muted text */
+    --fg-strong: 15 23 42;   /* slate-900 — headings */
+    --fg: 15 23 42;          /* slate-900 — body text (bumped from slate-700 for stronger contrast) */
+    --fg-muted: 51 65 85;    /* slate-700 — muted text (bumped from slate-500 so labels & secondary copy stay readable on white) */
+  }
+
+  * {
+    @apply border-ink-700;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink-950 font-sans antialiased;
+    color: rgb(var(--fg));
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-600 rounded-full border-2 border-solid border-transparent bg-clip-content;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-500;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reusable component classes                                         */
+/* ------------------------------------------------------------------ */
+@layer components {
+  .card {
+    @apply bg-ink-850 border border-ink-700 rounded-2xl shadow-card;
+  }
+
+  .input-base {
+    @apply w-full rounded-xl bg-ink-800 border border-ink-700 px-4 py-2.5 text-sm text-slate-100
+      placeholder:text-ink-400 outline-none transition
+      focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+      transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40
+      disabled:opacity-50 disabled:cursor-not-allowed select-none;
+  }
+
+  /* Subtle frosted panel */
+  .glass {
+    @apply bg-ink-850/70 backdrop-blur-xl border border-white/5;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Utilities                                                          */
+/* ------------------------------------------------------------------ */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Dark-theme muted-text remap                                        */
+/*  The raw --ink-400/500/600 tokens resolve to deep navy in dark      */
+/*  mode, which is barely legible on the ink-850 card surface. Pin     */
+/*  the text-ink-* utilities to slate values so labels, secondary      */
+/*  copy and section headings stay readable across every page.        */
+/* ------------------------------------------------------------------ */
+html.dark .text-ink-400 {
+  color: rgb(148 163 184); /* slate-400 */
+}
+html.dark .text-ink-500 {
+  color: rgb(148 163 184); /* slate-400 — small headings/labels */
+}
+html.dark .text-ink-600 {
+  color: rgb(100 116 139); /* slate-500 — least-prominent text */
+}
+
+/* ------------------------------------------------------------------ */
+/*  Light-theme text remap                                             */
+/*  Components use text-white / text-slate-* / text-ink-* for          */
+/*  light-on-dark text; in light mode we flip those to dark, while     */
+/*  protecting text that sits on inherently dark/branded surfaces.     */
+/* ------------------------------------------------------------------ */
+html.light .text-white {
+  color: rgb(var(--fg-strong));
+}
+html.light .text-slate-100 {
+  color: rgb(var(--fg-strong));
+}
+html.light .text-slate-200,
+html.light .text-slate-300 {
+  color: rgb(var(--fg));
+}
+/* Muted/secondary text — Tailwind defaults are still readable on white
+   but we strengthen them so labels and footer text stay legible. */
+html.light .text-slate-400,
+html.light .text-slate-500 {
+  color: rgb(var(--fg-muted));
+}
+html.light .text-slate-600 {
+  color: rgb(var(--fg));
+}
+/* "ink" muted text — in light mode the raw ink tokens resolve to pale
+   slate, which is washed out on a white card. Remap to the bolder
+   muted-foreground so labels, secondary copy and inactive sidebar items
+   stay readable on white. */
+html.light .text-ink-400,
+html.light .text-ink-500,
+html.light .text-ink-600 {
+  color: rgb(var(--fg-muted));
+}
+/* text-ink-950 is used as forced-dark text on bright/colored badges
+   (e.g. Analytics medal ranks); in light mode the raw token is nearly
+   white, so we pin it to the dark foreground. */
+html.light .text-ink-950 {
+  color: rgb(var(--fg-strong));
+}
+
+/* Keep text white on branded / inherently-dark surfaces. */
+html.light .bg-brand-gradient,
+html.light .bg-brand-gradient *,
+html.light .bg-brand-500,
+html.light .bg-brand-600,
+html.light .bg-brand-700,
+html.light .bg-auth-radial .text-white {
+  color: #fff !important;
+}
+
+/* The auth split-screen left panel uses bg-auth-radial, which is a
+   hard-coded dark gradient regardless of theme. Restore the original
+   Tailwind slate scale for text inside it so the panel stays readable
+   in light mode (otherwise the generic remap above would darken these
+   to invisibility on the dark gradient). */
+html.light .bg-auth-radial .text-slate-100 {
+  color: #f1f5f9;
+}
+html.light .bg-auth-radial .text-slate-200 {
+  color: #e2e8f0;
+}
+html.light .bg-auth-radial .text-slate-300 {
+  color: #cbd5e1;
+}
+html.light .bg-auth-radial .text-slate-400 {
+  color: #94a3b8;
+}
+html.light .bg-auth-radial .text-slate-500 {
+  color: #64748b;
+}
+html.light .bg-auth-radial .text-slate-600 {
+  color: #475569;
+}
+html.light .bg-auth-radial .text-ink-400 {
+  color: #94a3b8;
+}
+html.light .bg-auth-radial .text-ink-500 {
+  color: #64748b;
+}
+
+/* Autofill — match the current theme's input surface. */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e2e8f0;
+  -webkit-box-shadow: 0 0 0px 1000px #151926 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+html.light input:-webkit-autofill,
+html.light input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  -webkit-box-shadow: 0 0 0px 1000px #f1f3f7 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}

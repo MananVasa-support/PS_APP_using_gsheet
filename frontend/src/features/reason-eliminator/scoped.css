@@ -1,0 +1,21 @@
+/*
+ * Reasons Eliminator — scoped component styles.
+ * The original index.css global `body`/base reset is intentionally NOT imported
+ * (it set a light body background that would fight the dark shell). Each screen
+ * renders inside a themed wrapper (see src/pages/ReasonEliminatorPage.jsx).
+ * Only the component-level utilities the app depends on live here.
+ *
+ * Note: no `@layer components` wrapper — this file is compiled on its own, so
+ * the layer's `@tailwind components` directive (in the shell index.css) isn't in
+ * scope. Plain rules with `@apply` work fine.
+ */
+.surface-card {
+  @apply border border-brand-gray-300 rounded-2xl transition-shadow duration-200 ease-out;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d1d6 transparent;
+}

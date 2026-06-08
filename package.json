@@ -1,0 +1,12 @@
+{
+  "name": "productivity-shastra",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Productivity Shastra monorepo — frontend app, future backend, and documentation.",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "install:frontend": "npm --prefix frontend install"
+  }
+}

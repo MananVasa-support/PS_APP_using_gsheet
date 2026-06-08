@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+documentation/.build/
+
+# Env / secrets (keep .env.example committed)
+.env
+.env.*
+!.env.example
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude local (machine-specific) settings
+.claude/settings.local.json
+**/.claude/settings.local.json
