@@ -108,6 +108,7 @@ Full table list + the runnable SQL: [`../backend/supabase/schema.sql`](../backen
 | Email sign-in | email + password sign up/login | Auth → Providers → **Email provider ON** | ✅ on |
 | Email confirm | (n/a — testing) | Auth → **"Confirm email" OFF** for now; **re-enable before launch** | ⚠️ off (re-enable later) |
 | Schema | tables/RLS | Run `backend/supabase/schema.sql` in SQL Editor | ✅ done 2026-06-09 |
+| Duplicate accounts | one account per email & phone | Email unique = built-in; phone unique index + `signup_availability` RPC (in schema.sql) | ✅ done 2026-06-09 |
 
 Add a row here whenever a new validation rule or auth/setting is introduced on
 either side, so the two never drift.
