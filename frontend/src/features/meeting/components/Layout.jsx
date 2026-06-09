@@ -125,7 +125,10 @@ export default function Layout({ children }) {
           <div className="text-right hidden sm:block">
             <p className="text-xs text-muted select-none">System Status</p>
             <p className="text-sm font-semibold select-none">
-              <span className="text-emerald-600 font-medium">SYSTEM READY</span>
+              <span className="inline-flex items-center gap-1.5 text-mkink font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-red" />
+                SYSTEM READY
+              </span>
             </p>
           </div>
         </header>

@@ -108,7 +108,8 @@
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
       transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40
-      disabled:opacity-50 disabled:cursor-not-allowed select-none;
+      disabled:opacity-50 disabled:cursor-not-allowed select-none
+      active:scale-[0.97];
   }
 
   /* Subtle frosted panel */
@@ -199,6 +200,15 @@ html.light .text-ink-950 {
    otherwise darken it to near-black (invisible on those filled buttons). */
 html.light .tool-scope .text-white {
   color: #fff;
+}
+
+/* Unified tactile press for every button across the merged tools — their
+   buttons are inline-styled (not the shared <Button>), so this gives a click
+   the same subtle "push" feel as the rest of the app. Kept snappy and with no
+   transition declaration so it never overrides a button's own Tailwind
+   transition utilities. */
+.tool-scope button:not(:disabled):active {
+  transform: scale(0.97);
 }
 
 /* Keep text white on branded / inherently-dark surfaces. */
