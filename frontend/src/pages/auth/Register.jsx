@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiUser, FiMail, FiPhone, FiLock, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
-import { register as registerRequest } from '@/services/authService';
+import { register as registerRequest, checkSignupAvailability } from '@/services/authService';
 import { titleCaseName } from '@/utils/format';
 import { MANDATORY_MSG } from '@/utils/validation';
 
@@ -128,6 +128,26 @@ export default function Register() {
     setLoading(true);
     try {
       const fullPhone = `${form.countryCode}${form.cellNumber}`;
+
+      // Stop duplicates up-front with a clear message (email is also enforced by
+      // Supabase; phone is enforced by a unique index in the DB).
+      const { emailTaken, phoneTaken } = await checkSignupAvailability(form.email, fullPhone);
+      if (emailTaken || phoneTaken) {
+        setFieldErrors({
+          ...(emailTaken ? { email: 'An account already exists with this email.' } : {}),
+          ...(phoneTaken ? { cellNumber: 'An account already exists with this phone number.' } : {}),
+        });
+        setError(
+          emailTaken && phoneTaken
+            ? 'An account already exists with this Email/Phone No.'
+            : emailTaken
+            ? 'An account already exists with this Email.'
+            : 'An account already exists with this Phone No.'
+        );
+        setLoading(false);
+        return;
+      }
+
       const res = await registerRequest({
         name: `${form.firstName} ${form.lastName}`.trim(),
         email: form.email,

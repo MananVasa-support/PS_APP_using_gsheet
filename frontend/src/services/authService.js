@@ -65,6 +65,22 @@ export async function login({ email, password, role }) {
   return { token: data.session?.access_token || null, user: profile };
 }
 
+/**
+ * Pre-signup check: is this email or phone already registered? Uses a
+ * SECURITY DEFINER RPC (`signup_availability`) so the not-logged-in signup form
+ * can ask without being able to read any actual profile data. Returns booleans.
+ */
+export async function checkSignupAvailability(email, phone) {
+  if (!isConfigured) return { emailTaken: false, phoneTaken: false };
+  const { data, error } = await supabase.rpc('signup_availability', {
+    p_email: (email || '').trim(),
+    p_phone: (phone || '').trim(),
+  });
+  if (error) throw unwrapError(error);
+  const row = Array.isArray(data) ? data[0] : data;
+  return { emailTaken: !!row?.email_taken, phoneTaken: !!row?.phone_taken };
+}
+
 export async function register({ name, email, phone, password }) {
   if (!isConfigured) {
     return {
@@ -81,7 +97,13 @@ export async function register({ name, email, phone, password }) {
       data: { name, phone, role: 'client' },
     },
   });
-  if (error) throw unwrapError(error);
+  if (error) {
+    const mapped = unwrapError(error);
+    if (/already\s*(registered|exists)|user already/i.test(mapped.message || '')) {
+      mapped.message = 'An account already exists with this email.';
+    }
+    throw mapped;
+  }
 
   const profile = data.user ? await fetchProfileById(data.user.id) : null;
 

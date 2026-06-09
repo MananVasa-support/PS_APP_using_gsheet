@@ -25,24 +25,46 @@ create table if not exists public.profiles (
   id          uuid primary key references auth.users (id) on delete cascade,
   email       text,
   name        text,
+  phone       text,
   role        text not null default 'client'  check (role in ('admin','consultant','client')),
   status      text not null default 'Active'  check (status in ('Active','Pending')),
   created_at  timestamptz not null default now()
 );
 
--- Auto-create a profile row whenever a new auth user signs up.
+-- One account per phone number (blank/null phones are not constrained).
+create unique index if not exists profiles_phone_unique
+  on public.profiles (phone) where phone is not null and phone <> '';
+
+-- Auto-create a profile row whenever a new auth user signs up (copies the phone
+-- the user entered on the form, passed via signup metadata).
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, name)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data ->> 'name', new.email))
+  insert into public.profiles (id, email, name, phone)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'name', new.email),
+    nullif(new.raw_user_meta_data ->> 'phone', '')
+  )
   on conflict (id) do nothing;
   return new;
 end;
 $$;
+
+-- Lets the (logged-out) signup form ask "is this email/phone already taken?"
+-- without being able to read any actual profile data — returns only booleans.
+create or replace function public.signup_availability(p_email text, p_phone text)
+returns table (email_taken boolean, phone_taken boolean)
+language sql security definer set search_path = public as $$
+  select
+    exists (select 1 from public.profiles where lower(email) = lower(p_email)),
+    exists (select 1 from public.profiles where phone = p_phone and p_phone is not null and p_phone <> '');
+$$;
+grant execute on function public.signup_availability(text, text) to anon, authenticated;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
