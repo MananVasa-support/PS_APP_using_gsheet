@@ -55,32 +55,26 @@ export default function Layout({ children }) {
       {/* Sidebar */}
       <motion.aside
         initial={false}
-        animate={{ width: collapsed ? 80 : 256 }}
+        animate={{ width: collapsed ? 112 : 256 }}
         transition={{ duration: 0.25, ease: 'easeInOut' }}
         className="bg-surface border-r border-line flex flex-col justify-between shrink-0 select-none overflow-hidden"
       >
         <div>
-          {/* Logo + collapse toggle (always inside the sidebar bounds) */}
-          {collapsed ? (
-            <div className="h-20 flex flex-col items-center justify-center gap-2 border-b border-line">
-              <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center text-white shadow-red text-xl">
+          {/* Logo + collapse toggle — always one row, arrow to the right of the
+              logo (only the name hides when collapsed). */}
+          <div className="h-20 px-3 flex items-center justify-between gap-2 border-b border-line">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center text-white shadow-red shrink-0 text-xl">
                 <FiUsers />
               </div>
-              {toggleButton}
-            </div>
-          ) : (
-            <div className="h-20 px-5 flex items-center justify-between gap-2 border-b border-line">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center text-white shadow-red shrink-0 text-xl">
-                  <FiUsers />
-                </div>
+              {!collapsed && (
                 <div className="leading-tight min-w-0">
                   <p className="font-extrabold text-sm text-mkink truncate">Meeting Maximizer</p>
                 </div>
-              </div>
-              {toggleButton}
+              )}
             </div>
-          )}
+            {toggleButton}
+          </div>
 
           {/* Navigation Links */}
           <nav className="p-3 space-y-1">

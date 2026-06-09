@@ -18,10 +18,12 @@ export default function Sidebar() {
     <aside
       className={
         'shrink-0 border-r border-gray-200 bg-white p-4 transition-all duration-200 ' +
-        (collapsed ? 'w-20' : 'w-64')
+        (collapsed ? 'w-28' : 'w-64')
       }
     >
       {/* Title + collapse */}
+      {/* Header is always one row — arrow stays to the right of the logo in
+          both states (only the name label is hidden when collapsed). */}
       <div className="mb-8 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xl text-white">
@@ -38,7 +40,7 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          aria-label="Toggle sidebar"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-black"
         >
           {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}

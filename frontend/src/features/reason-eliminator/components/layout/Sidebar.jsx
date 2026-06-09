@@ -188,7 +188,7 @@ export default function Sidebar() {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: collapsed ? 76 : 252 }}
+      animate={{ width: collapsed ? 112 : 252 }}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
       className="sticky top-0 h-screen shrink-0 z-30 flex flex-col bg-white border-r border-brand-gray-200"
     >
@@ -214,10 +214,7 @@ export default function Sidebar() {
           onClick={() => setCollapsed((c) => !c)}
           title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           aria-label={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          className={clsx(
-            'inline-flex items-center justify-center w-8 h-8 rounded-lg text-brand-gray-600 transition-colors hover:bg-brand-gray-100 hover:text-brand-black',
-            collapsed ? 'mx-auto' : 'ml-auto'
-          )}
+          className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-lg text-brand-gray-600 transition-colors hover:bg-brand-gray-100 hover:text-brand-black"
         >
           {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
         </button>
