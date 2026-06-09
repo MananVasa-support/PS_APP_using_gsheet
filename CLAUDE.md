@@ -29,6 +29,14 @@ backend planned but not started.
 - **Auth:** frontend-only mock (Supabase removed; `lib/supabase.js` →
   `isConfigured=false`). No backend needed to run. Do **not** add backend/auth
   unless asked — the user explicitly deferred it.
+- **Backend decided (not yet built):** **Supabase** (Postgres + auth + spreadsheet
+  Table Editor) for the DB, **Cloudflare Pages** for hosting — both free at our
+  scale (≤~1000 users). Prep is committed but inert: runnable schema at
+  `backend/supabase/schema.sql` (one table per tool, rows tagged `user_id`, RLS for
+  client/consultant/admin), checklist at `documentation/06-Backend-Setup.md`,
+  Supabase env vars stubbed in `frontend/.env.example`. **Next action is the
+  user's:** create the Supabase project and hand over Project URL + anon key, then
+  wire login → schema → tools one at a time (Meeting first, Power Planner last).
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
 
