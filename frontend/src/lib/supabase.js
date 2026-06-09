@@ -1,18 +1,34 @@
-// Supabase has been removed from this project. This file is a no-op stub kept
-// at the same path so existing service files (which all gate on `isConfigured`)
-// continue to compile and fall through to their mock-data branches.
+// Supabase client. When the two env vars are present (see frontend/.env), this
+// exports a real client and `isConfigured=true`, flipping the whole app from the
+// offline/localStorage demo path onto the real database + auth. When they're
+// absent, it falls back to a throwing stub so offline/demo mode still compiles
+// (every service gates on `isConfigured` and uses localStorage in that case).
 
-export const isConfigured = false;
+import { createClient } from '@supabase/supabase-js';
 
-const handler = {
-  get() {
-    throw new Error(
-      '[supabase] removed — this code path should be unreachable while isConfigured=false'
+const url = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const isConfigured = Boolean(url && anonKey);
+
+export const supabase = isConfigured
+  ? createClient(url, anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : new Proxy(
+      {},
+      {
+        get() {
+          throw new Error(
+            '[supabase] not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env'
+          );
+        },
+      }
     );
-  },
-};
-
-export const supabase = new Proxy({}, handler);
 
 export function unwrapError(err) {
   if (!err) return null;
