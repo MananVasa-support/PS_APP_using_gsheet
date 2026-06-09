@@ -102,7 +102,7 @@ const PlannerSidebar = ({
                 "flex items-center rounded-xl text-sm font-semibold transition-colors",
                 collapsed ? "justify-center px-0 py-3" : "gap-3 px-3 py-2.5",
                 item.active
-                  ? "bg-red-600 text-white"
+                  ? "bg-black text-white shadow-sm"
                   : "text-black hover:bg-black hover:text-white"
               )}
             >

@@ -58,8 +58,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ' +
               (isActive
-                ? 'bg-red-500 text-white shadow-[0_4px_12px_rgba(239,68,68,0.3)]'
-                : 'text-gray-700 hover:bg-red-100 hover:text-red-500')
+                ? 'bg-black text-white shadow-sm'
+                : 'text-gray-700 hover:bg-gray-100 hover:text-black')
             }
           >
             <Icon className="shrink-0 text-lg" />
