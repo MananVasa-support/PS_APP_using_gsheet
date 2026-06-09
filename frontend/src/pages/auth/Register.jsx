@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiUser, FiMail, FiPhone, FiLock, FiArrowLeft } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiLock, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
 import { register as registerRequest } from '@/services/authService';
 import { titleCaseName } from '@/utils/format';
@@ -11,6 +11,46 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^\d{7,15}$/;
 // Min 8 chars, with at least one uppercase, lowercase, number and special char.
 const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+// Live password rules — keep these in sync with PASSWORD_RE above AND with the
+// Supabase Auth password policy (min length 8, lower+upper+digit+symbol).
+const PASSWORD_RULES = [
+  { label: 'Min 8 characters', test: (v) => v.length >= 8 },
+  { label: '1 uppercase letter', test: (v) => /[A-Z]/.test(v) },
+  { label: '1 lowercase letter', test: (v) => /[a-z]/.test(v) },
+  { label: '1 number', test: (v) => /\d/.test(v) },
+  { label: '1 special character', test: (v) => /[^A-Za-z0-9]/.test(v) },
+];
+
+// Red until met, then green (literal hex — the app palette remaps Tailwind
+// green→red, so we can't use text-green-* here).
+function PasswordRules({ value = '' }) {
+  return (
+    <ul className="-mt-1 flex flex-wrap gap-x-4 gap-y-1.5">
+      {PASSWORD_RULES.map((rule) => {
+        const ok = rule.test(value);
+        return (
+          <li
+            key={rule.label}
+            className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors duration-300"
+            style={{ color: ok ? '#22c55e' : '#f87171' }}
+          >
+            <span
+              className="grid h-4 w-4 place-items-center rounded-full transition-all duration-300"
+              style={{
+                backgroundColor: ok ? '#22c55e' : 'rgba(248,113,113,0.15)',
+                color: ok ? '#ffffff' : '#f87171',
+              }}
+            >
+              {ok ? <FiCheck className="h-2.5 w-2.5" /> : <span className="h-1 w-1 rounded-full bg-current" />}
+            </span>
+            {rule.label}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 // Common country dial codes — extend as needed without touching backend.
 const COUNTRY_CODES = [
@@ -164,9 +204,14 @@ export default function Register() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Password" name="password" type="password" icon={FiLock} value={form.password} onChange={update} placeholder="••••••••" error={fieldErrors.password} hint="Min 8 Characters · 1 upper case · 1 lower case · 1 number · 1 special Character" required />
+          <Input label="Password" name="password" type="password" icon={FiLock} value={form.password} onChange={update} placeholder="••••••••" error={fieldErrors.password} required />
           <Input label="Confirm Password" name="confirm" type="password" icon={FiLock} value={form.confirm} onChange={update} placeholder="••••••••" error={fieldErrors.confirm} required />
         </div>
+
+        {/* Live password checklist — each rule starts red and turns green as the
+            typed password satisfies it (greens use literal hex because the app
+            palette remaps Tailwind green→red). */}
+        <PasswordRules value={form.password} />
 
         <Button type="submit" size="lg" loading={loading} className="w-full">
           Create account &amp; continue
