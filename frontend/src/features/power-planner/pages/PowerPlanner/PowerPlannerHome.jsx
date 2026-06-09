@@ -6,6 +6,7 @@ import {
   OtherThingsTable,
   PlannerHeader,
   PlannerLayout,
+  PlannerSidebar,
   PlannerStart,
   PlannerTabs,
   ReviewWorkspace,
@@ -491,23 +492,32 @@ const PowerPlannerHome = () => {
   const rangeLabelDays = formatWeekRangeDays(selectedWeek, selectedWeekEnd);
 
   return (
-    <PlannerLayout>
-      <PlannerHeader
-        heading={summary.heading}
-        description="Professional Execution and Accountability System for Weekly Outcomes and Scheduled Actions."
-        periodLabel={summary.periodLabel}
-        actionLabel="History"
-        onActionClick={() => guardedNav(() => setFocusTab("history"))}
-        onPeriodClick={() => guardedNav(() => setFocusTab("topGoals"))}
-        onReviewClick={() => guardedNav(() => setFocusTab("review"))}
-        reviewActive={isReview}
-        periodActive={isPlannerTab}
-        historyActive={isHistory}
-        onTotalityClick={() => {
+    <div className="flex min-h-full">
+      {/* Left nav column — Plan / Review / History / Totality, relocated here
+          from the old top row in PlannerHeader (showNav=false below). Same
+          handlers, same tab logic; this is purely the layout moving to a side
+          column to match the other tools. Remove this wrapper + PlannerSidebar
+          and set showNav back to default to restore the original top row. */}
+      <PlannerSidebar
+        onPlan={() => guardedNav(() => setFocusTab("topGoals"))}
+        onReview={() => guardedNav(() => setFocusTab("review"))}
+        onHistory={() => guardedNav(() => setFocusTab("history"))}
+        onTotality={() => {
           // Placeholder: a Totality form/link will be wired up here later.
         }}
-        onHeadingClick={() => guardedNav(() => setShowLanding(true))}
+        planActive={isPlannerTab}
+        reviewActive={isReview}
+        historyActive={isHistory}
       />
+      <div className="min-w-0 flex-1">
+        <PlannerLayout>
+          <PlannerHeader
+            heading={summary.heading}
+            description="Professional Execution and Accountability System for Weekly Outcomes and Scheduled Actions."
+            periodLabel={summary.periodLabel}
+            showNav={false}
+            onHeadingClick={() => guardedNav(() => setShowLanding(true))}
+          />
 
       {!isHistory ? (
         <div className="space-y-1">
@@ -753,7 +763,9 @@ const PowerPlannerHome = () => {
           onCancel={() => setRepeatScope(null)}
         />
       ) : null}
-    </PlannerLayout>
+        </PlannerLayout>
+      </div>
+    </div>
   );
 };
 

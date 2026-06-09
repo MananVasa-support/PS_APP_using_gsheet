@@ -6,6 +6,7 @@ export { default as PlannerChartPlaceholder } from "./PlannerChartPlaceholder";
 export { default as PlannerHeader } from "./PlannerHeader";
 export { default as HistoryWorkspace } from "./HistoryWorkspace";
 export { default as PlannerLayout } from "./PlannerLayout";
+export { default as PlannerSidebar } from "./PlannerSidebar";
 export { default as PlannerTabs } from "./PlannerTabs";
 export { default as PreviousWeekInsights } from "./PreviousWeekInsights";
 export { default as ReviewWorkspace } from "./ReviewWorkspace";
