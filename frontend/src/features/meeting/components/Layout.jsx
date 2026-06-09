@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  FiClipboard, FiFolder, FiBarChart2, FiSettings,
+  FiClipboard, FiFolder, FiBarChart2,
   FiChevronLeft, FiChevronRight,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
@@ -74,9 +74,12 @@ export default function Layout({ children }) {
                 <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center font-extrabold text-white shadow-red shrink-0 text-xl">
                   M
                 </div>
-                <span className="font-extrabold text-base tracking-wide text-mkink whitespace-nowrap truncate">
-                  SUCCESS <span className="text-brand-red">MAXIMIZER</span>
-                </span>
+                <div className="leading-tight min-w-0">
+                  <p className="font-extrabold text-sm text-mkink truncate">Meeting Maximizer</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-red truncate">
+                    Productivity Shastra
+                  </p>
+                </div>
               </div>
               {toggleButton}
             </div>
@@ -110,30 +113,6 @@ export default function Layout({ children }) {
           </nav>
         </div>
 
-        {/* User Info / Settings Footer */}
-        <div
-          className={clsx(
-            'p-4 border-t border-line flex items-center',
-            collapsed ? 'justify-center' : 'justify-between'
-          )}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-brand-red-tint border border-brand-red/20 flex items-center justify-center font-bold text-brand-red text-md shrink-0">
-              AD
-            </div>
-            {!collapsed && (
-              <div className="flex flex-col min-w-0">
-                <span className="font-semibold text-sm leading-tight text-mkink truncate">Admin User</span>
-                <span className="text-xs text-muted">Facilitator</span>
-              </div>
-            )}
-          </div>
-          {!collapsed && (
-            <button className="p-2 text-muted hover:text-brand-red hover:bg-surface-alt rounded-lg transition-colors shrink-0">
-              <FiSettings className="text-lg" />
-            </button>
-          )}
-        </div>
       </motion.aside>
 
       {/* Main Container */}

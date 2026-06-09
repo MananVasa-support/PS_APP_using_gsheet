@@ -311,7 +311,7 @@ function CreateConsultantModal({ open, onClose, onCreated }) {
     <Modal open={open} onClose={onClose} title="Add a consultant" subtitle="Creates an approved consultant account" icon={FiBriefcase} size="md">
       <form onSubmit={submit} className="space-y-4">
         <Input label="Full name" name="name" value={form.name} onChange={upd} placeholder="Priya Nair" required />
-        <Input label="Email" name="email" type="email" value={form.email} onChange={upd} placeholder="ENTER YOUR EMAIL" autoComplete="off" required />
+        <Input label="Email" name="email" type="email" value={form.email} onChange={upd} placeholder="Enter your Email" autoComplete="off" required />
         <Input label="Temporary password" name="password" type="password" value={form.password} onChange={upd} placeholder="Min 6 characters" hint="Share this with the consultant to log in." required />
         <div className="grid grid-cols-2 gap-4">
           <Input label="Title" name="title" value={form.title} onChange={upd} placeholder="Consultant" />

@@ -22,12 +22,22 @@ export default function Sidebar() {
       }
     >
       {/* Title + collapse */}
-      <div className="mb-8 flex items-center justify-between">
-        {!collapsed && (
-          <span className="truncate pl-1 text-base font-extrabold tracking-tight text-black">
-            Time Finder
-          </span>
-        )}
+      <div className="mb-8 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xl font-extrabold text-white">
+            T
+          </div>
+          {!collapsed && (
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-sm font-extrabold tracking-tight text-black">
+                Time Finder
+              </p>
+              <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-red-600">
+                Productivity Shastra
+              </p>
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}

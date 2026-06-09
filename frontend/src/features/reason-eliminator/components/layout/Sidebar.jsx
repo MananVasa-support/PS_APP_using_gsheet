@@ -20,9 +20,6 @@ import reasonEliminatorService from '@/features/reason-eliminator/features/reaso
 import gripTestService from '@/features/reason-eliminator/features/reason-eliminator/services/gripTestService.js';
 import gripHistoryService from '@/features/reason-eliminator/features/reason-eliminator/services/gripHistoryService.js';
 
-const LOGO =
-  'https://res.cloudinary.com/drwoydou3/image/upload/v1777300803/ChatGPT_Image_Apr_23_2026_11_54_33_PM_km0ken.png';
-
 // Sidebar is navigation chrome only. The two actions below reuse the EXISTING
 // flow handlers (start a session, global reset) exactly as the Home screen did —
 // no logic, state, routing, or storage behavior is changed.
@@ -196,11 +193,9 @@ export default function Sidebar() {
     >
       {/* Header: logo + title + collapse/expand toggle */}
       <div className="flex items-center gap-2 h-16 px-3 border-b border-brand-gray-100">
-        <img
-          src={LOGO}
-          alt="Reasons Eliminator logo"
-          className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-card"
-        />
+        <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center font-extrabold text-white text-xl shrink-0 shadow-card">
+          R
+        </div>
         {!collapsed ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -209,10 +204,10 @@ export default function Sidebar() {
             className="leading-tight flex-1 min-w-0"
           >
             <p className="text-sm font-bold text-brand-black tracking-tight truncate">
-              Reasons
+              Reasons Eliminator
             </p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-red">
-              Eliminator
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-red truncate">
+              Productivity Shastra
             </p>
           </motion.div>
         ) : null}
