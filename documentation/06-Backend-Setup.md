@@ -97,6 +97,21 @@ Full table list + the runnable SQL: [`../backend/supabase/schema.sql`](../backen
 - SQL Editor exists for ad-hoc queries but is **optional** — the dev writes any
   query you ever need.
 
+## Manual Supabase settings (MUST match the frontend) — living checklist
+
+> Rule: the frontend's validation and Supabase's settings must always be
+> identical. This list is kept current; do each in the Supabase dashboard.
+
+| Area | Frontend rule | Supabase setting to match | Status |
+|---|---|---|---|
+| Password | `PASSWORD_RE`: min 8 + upper + lower + digit + special | Auth → Passwords: **Min length 8**, requirements **"lowercase, uppercase, digits, and symbols"** | ✅ done 2026-06-09 |
+| Email sign-in | email + password sign up/login | Auth → Providers → **Email provider ON** | ✅ on |
+| Email confirm | (n/a — testing) | Auth → **"Confirm email" OFF** for now; **re-enable before launch** | ⚠️ off (re-enable later) |
+| Schema | tables/RLS | Run `backend/supabase/schema.sql` in SQL Editor | ✅ done 2026-06-09 |
+
+Add a row here whenever a new validation rule or auth/setting is introduced on
+either side, so the two never drift.
+
 ## First thing to do tomorrow
 
 **Step 1 only.** Create the project, copy the two keys, hand them over. Everything
