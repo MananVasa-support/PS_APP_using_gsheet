@@ -123,7 +123,7 @@ export default function Register() {
           <Input label="Last Name" name="lastName" value={form.lastName} onChange={update} placeholder="Patel" error={fieldErrors.lastName} required />
         </div>
 
-        <Input label="Email" name="email" type="email" icon={FiMail} value={form.email} onChange={update} placeholder="ENTER YOUR EMAIL" error={fieldErrors.email} autoComplete="off" required />
+        <Input label="Email" name="email" type="email" icon={FiMail} value={form.email} onChange={update} placeholder="Enter your Email" error={fieldErrors.email} autoComplete="off" required />
 
         {/* Cell Number with country-code selector */}
         <div>

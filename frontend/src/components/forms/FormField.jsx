@@ -175,7 +175,7 @@ export default function FormField({ q, value, onChange, error }) {
               else if (q.validate === 'phone') v = v.replace(/\D/g, '').slice(0, 10);
               onChange(v);
             }}
-            placeholder={q.type === 'email' ? 'ENTER YOUR EMAIL' : q.validate === 'phone' ? '10-digit number' : ''}
+            placeholder={q.type === 'email' ? 'Enter your Email' : q.validate === 'phone' ? '10-digit number' : ''}
           />
           {errEl}
         </div>

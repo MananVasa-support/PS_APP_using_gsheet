@@ -51,7 +51,7 @@ export default function ForgotPassword() {
               name="email"
               type="email"
               icon={FiMail}
-              placeholder="ENTER YOUR EMAIL"
+              placeholder="Enter your Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="off"
