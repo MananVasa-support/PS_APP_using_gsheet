@@ -29,14 +29,17 @@ backend planned but not started.
 - **Auth:** frontend-only mock (Supabase removed; `lib/supabase.js` →
   `isConfigured=false`). No backend needed to run. Do **not** add backend/auth
   unless asked — the user explicitly deferred it.
-- **Backend decided (not yet built):** **Supabase** (Postgres + auth + spreadsheet
-  Table Editor) for the DB, **Cloudflare Pages** for hosting — both free at our
-  scale (≤~1000 users). Prep is committed but inert: runnable schema at
-  `backend/supabase/schema.sql` (one table per tool, rows tagged `user_id`, RLS for
-  client/consultant/admin), checklist at `documentation/06-Backend-Setup.md`,
-  Supabase env vars stubbed in `frontend/.env.example`. **Next action is the
-  user's:** create the Supabase project and hand over Project URL + anon key, then
-  wire login → schema → tools one at a time (Meeting first, Power Planner last).
+- **Backend = Supabase (AUTH NOW LIVE), hosting = Cloudflare Pages** — free at our
+  scale. Project ref `cotcaijxuyxbhodxpxrs`; keys in `frontend/.env` (git-ignored;
+  `isConfigured` TRUE → real auth, demo path off). `@supabase/supabase-js`
+  installed; real `lib/supabase.js` restored; `backend/supabase/schema.sql` run in
+  Supabase (tables + RLS + signup trigger). Password policy + duplicate email/phone
+  blocking synced both sides. "Confirm email" OFF for testing (re-enable before
+  launch). **Pending:** user to test signup/login + verify in Supabase. **Next:**
+  wire tool DATA to Supabase one tool at a time (Meeting first, Power Planner last;
+  tools still use localStorage until migrated), then dashboards/admin views, then
+  deploy. Keep frontend↔Supabase rules in sync and give an end-of-session
+  Supabase-settings checklist (see `documentation/06-Backend-Setup.md`).
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
 
