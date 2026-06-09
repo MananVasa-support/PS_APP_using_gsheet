@@ -58,7 +58,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ' +
               (isActive
-                ? 'bg-black text-white shadow-sm'
+                ? "relative bg-[#18181b] text-white shadow-sm before:absolute before:left-0 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r before:bg-red-600 before:content-['']"
                 : 'text-gray-700 hover:bg-gray-100 hover:text-black')
             }
           >

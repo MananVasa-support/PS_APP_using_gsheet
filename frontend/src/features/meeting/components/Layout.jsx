@@ -91,7 +91,7 @@ export default function Layout({ children }) {
                       'flex items-center rounded-xl font-semibold transition-all duration-200 border border-transparent select-none',
                       collapsed ? 'justify-center px-0 py-3' : 'gap-3 px-4 py-3',
                       isActive
-                        ? 'bg-black text-white border-black shadow-sm'
+                        ? "relative bg-[#18181b] text-white border-[#18181b] shadow-sm before:absolute before:left-0 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r before:bg-red-600 before:content-['']"
                         : 'text-muted hover:bg-surface-alt hover:text-mkink hover:border-line'
                     )
                   }

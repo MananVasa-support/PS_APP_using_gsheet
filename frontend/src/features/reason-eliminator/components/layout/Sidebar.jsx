@@ -156,7 +156,7 @@ export default function Sidebar() {
           'flex items-center gap-3 h-11 rounded-xl text-sm font-medium transition-colors',
           collapsed ? 'justify-center px-0' : 'px-3',
           active
-            ? 'bg-brand-black text-white shadow-sm'
+            ? "relative bg-[#18181b] text-white shadow-sm before:absolute before:left-0 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r before:bg-red-600 before:content-['']"
             : item.danger
             ? 'text-brand-red hover:bg-brand-red-soft'
             : 'text-brand-gray-900 hover:bg-brand-gray-100 hover:text-brand-black'
