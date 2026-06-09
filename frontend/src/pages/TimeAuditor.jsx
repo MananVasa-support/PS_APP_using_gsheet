@@ -843,7 +843,7 @@ function StageCollect({ slots, onUpdate, onNext, onPrev, onEnd, onBack }) {
             id="activity"
             value={cur.activity}
             onChange={(e) => onUpdate(cur.id, { activity: e.target.value })}
-            placeholder="e.g. Client meeting with Naresh at the Bandra office â€” went over the Q3 pipeline, he flagged concerns about the new pricing tierâ€¦"
+            placeholder="e.g. Client meeting with Naresh at the Bandra office - went over the Q3 pipeline, he flagged concerns about the new pricing tier..."
             rows={5}
             required
             className="input-base resize-y min-h-[120px]"
