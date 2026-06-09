@@ -32,9 +32,6 @@ const PlannerSidebar = ({
         </div>
         <div className="min-w-0 leading-tight">
           <p className="truncate text-sm font-extrabold text-black">Power Planner</p>
-          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-red-600">
-            Productivity Shastra
-          </p>
         </div>
       </div>
 

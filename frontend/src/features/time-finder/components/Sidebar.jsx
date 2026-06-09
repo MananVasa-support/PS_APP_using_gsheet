@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiPlayCircle, FiClock, FiBarChart2, FiChevronLeft } from 'react-icons/fi';
+import { FiPlayCircle, FiClock, FiBarChart2, FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
 
 // Absolute paths prefixed with the tool's mount (/time-finder). Bare paths
 // like "/" or "/dashboard" would escape the tool and land on the shell
@@ -32,9 +32,6 @@ export default function Sidebar() {
               <p className="truncate text-sm font-extrabold tracking-tight text-black">
                 Time Finder
               </p>
-              <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-red-600">
-                Productivity Shastra
-              </p>
             </div>
           )}
         </div>
@@ -42,9 +39,9 @@ export default function Sidebar() {
           type="button"
           onClick={() => setCollapsed((c) => !c)}
           aria-label="Toggle sidebar"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-400 transition-colors hover:bg-gray-50"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-black"
         >
-          <FiChevronLeft className={collapsed ? 'rotate-180' : ''} />
+          {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
         </button>
       </div>
 

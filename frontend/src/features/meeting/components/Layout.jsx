@@ -76,9 +76,6 @@ export default function Layout({ children }) {
                 </div>
                 <div className="leading-tight min-w-0">
                   <p className="font-extrabold text-sm text-mkink truncate">Meeting Maximizer</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-red truncate">
-                    Productivity Shastra
-                  </p>
                 </div>
               </div>
               {toggleButton}

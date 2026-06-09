@@ -207,9 +207,6 @@ export default function Sidebar() {
             <p className="text-sm font-bold text-brand-black tracking-tight truncate">
               Reasons Eliminator
             </p>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-red truncate">
-              Productivity Shastra
-            </p>
           </motion.div>
         ) : null}
         <button
