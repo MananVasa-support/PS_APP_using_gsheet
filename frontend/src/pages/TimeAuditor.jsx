@@ -10,7 +10,6 @@ import {
 import { Button, Badge, Modal, BackButton } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { MANDATORY_MSG, isEmptyValue } from '@/utils/validation';
-import Logo from '@/components/ui/Logo.jsx';
 import Sidebar from '@/components/layout/Sidebar.jsx';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { cn } from '@/utils/cn';
@@ -718,8 +717,10 @@ function TopBar({ onHome, stage, onOpenMobileSidebar }) {
             <FiMenu className="h-5 w-5" />
           </button>
         )}
-        <Logo height={32} />
-        <div className="ml-2 hidden text-sm font-semibold text-fg-muted sm:block">Time Auditor</div>
+        {/* No Logo here — the shared ToolLayout navbar above already shows the
+            Productivity Shastra brand. This slim bar just labels the tool and
+            holds the Auditor-home action (avoids a duplicate stacked navbar). */}
+        <div className="text-sm font-semibold text-fg-muted">Time Auditor</div>
         <div className="ml-auto flex items-center gap-2">
           {stage !== 'home' && stage !== 'summary' && (
             <Button variant="ghost" size="sm" icon={FiHome} onClick={onHome}>
@@ -743,9 +744,7 @@ function StageHome({ onStart, onPrevious, onBack }) {
       transition={{ duration: 0.3 }}
       className="grid gap-5"
     >
-      <Button onClick={onBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2 justify-self-start">
-        Back
-      </Button>
+      <BackButton onClick={onBack} className="justify-self-start" />
       <BigActionCard icon={FiPlay} title="Start New Assessment" desc="Begin a fresh time audit." onClick={onStart} />
       <BigActionCard icon={FiArchive} title="Previous Assessments" desc="View saved audits." onClick={onPrevious} />
     </motion.div>
@@ -830,7 +829,7 @@ function StageCollect({ slots, onUpdate, onNext, onPrev, onEnd, onBack }) {
       transition={{ duration: 0.3 }}
       className="space-y-4"
     >
-      <Button onClick={onBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">Back</Button>
+      <BackButton onClick={onBack} />
       <div className="rounded-2xl border border-ink-700 bg-ink-850 p-5">
         <p className="text-xs uppercase tracking-wider text-ink-500">Activity {slots.length}</p>
         <p className="mt-1 font-display text-2xl font-bold text-fg-strong">{slotLabel(cur)}</p>
@@ -978,7 +977,7 @@ function StageProductive({ slot, index, total, onUpdate, onNext, onPrev, onEnd, 
       transition={{ duration: 0.3 }}
       className="space-y-5"
     >
-      <Button onClick={onBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">Back</Button>
+      <BackButton onClick={onBack} />
       <h2 className="font-display text-2xl font-bold text-fg-strong">PRODUCTIVE SLOTS</h2>
       <ProgressBar label={`Productive slot ${index + 1} of ${total}`} value={index + 1} max={total} />
 
@@ -1113,9 +1112,7 @@ function StageTop3({ step, value, category, onChange, onCategoryChange, onNext, 
       transition={{ duration: 0.3 }}
       className="space-y-5"
     >
-      <Button onClick={onBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2 justify-self-start">
-        Back
-      </Button>
+      <BackButton onClick={onBack} className="justify-self-start" />
       <h2 className="font-display text-2xl font-bold text-fg-strong">Top Things You are Paid For</h2>
       <ProgressBar label={`Top #${step + 1}`} value={step + 1} max={3} />
 

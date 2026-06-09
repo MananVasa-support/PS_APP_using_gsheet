@@ -11,6 +11,7 @@ import {
   FiArchive,
   FiBarChart2,
   FiTrash2,
+  FiSlash,
   FiChevronsLeft,
   FiChevronsRight,
 } from 'react-icons/fi';
@@ -193,8 +194,8 @@ export default function Sidebar() {
     >
       {/* Header: logo + title + collapse/expand toggle */}
       <div className="flex items-center gap-2 h-16 px-3 border-b border-brand-gray-100">
-        <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center font-extrabold text-white text-xl shrink-0 shadow-card">
-          R
+        <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center text-white text-xl shrink-0 shadow-card">
+          <FiSlash />
         </div>
         {!collapsed ? (
           <motion.div

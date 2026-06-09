@@ -140,11 +140,11 @@ export default function Dashboard() {
         <h1 className="font-display text-2xl font-bold text-fg-strong">
           {isClientView ? `${displayName}'s Dashboard` : `Welcome Back, ${displayName}`} 👋
         </h1>
-        <p className="mt-1 text-sm text-ink-400">
-          {isClientView
-            ? 'Tools are disabled in this read-only preview — no live data is wired up for this client yet.'
-            : 'Choose a Tool to get started.'}
-        </p>
+        {isClientView && (
+          <p className="mt-1 text-sm text-ink-400">
+            Tools are disabled in this read-only preview — no live data is wired up for this client yet.
+          </p>
+        )}
       </div>
 
       <section className="space-y-3">

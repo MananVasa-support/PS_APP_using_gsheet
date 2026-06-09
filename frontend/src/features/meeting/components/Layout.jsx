@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  FiClipboard, FiFolder, FiBarChart2,
-  FiChevronLeft, FiChevronRight,
+  FiClipboard, FiFolder, FiBarChart2, FiUsers,
+  FiChevronsLeft, FiChevronsRight,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
@@ -44,9 +44,9 @@ export default function Layout({ children }) {
       onClick={() => setCollapsed((c) => !c)}
       aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       title={collapsed ? 'Expand' : 'Collapse'}
-      className="w-7 h-7 rounded-lg border border-line text-muted hover:text-brand-red hover:border-brand-red/40 hover:bg-surface-alt flex items-center justify-center transition-colors shrink-0"
+      className="w-8 h-8 rounded-lg text-muted hover:text-mkink hover:bg-surface-alt flex items-center justify-center transition-colors shrink-0"
     >
-      {collapsed ? <FiChevronRight className="text-sm" /> : <FiChevronLeft className="text-sm" />}
+      {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
     </button>
   );
 
@@ -63,16 +63,16 @@ export default function Layout({ children }) {
           {/* Logo + collapse toggle (always inside the sidebar bounds) */}
           {collapsed ? (
             <div className="h-20 flex flex-col items-center justify-center gap-2 border-b border-line">
-              <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center font-extrabold text-white shadow-red text-xl">
-                M
+              <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center text-white shadow-red text-xl">
+                <FiUsers />
               </div>
               {toggleButton}
             </div>
           ) : (
             <div className="h-20 px-5 flex items-center justify-between gap-2 border-b border-line">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center font-extrabold text-white shadow-red shrink-0 text-xl">
-                  M
+                <div className="w-9 h-9 rounded-lg bg-brand-red flex items-center justify-center text-white shadow-red shrink-0 text-xl">
+                  <FiUsers />
                 </div>
                 <div className="leading-tight min-w-0">
                   <p className="font-extrabold text-sm text-mkink truncate">Meeting Maximizer</p>

@@ -24,8 +24,8 @@ export default function Sidebar() {
       {/* Title + collapse */}
       <div className="mb-8 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xl font-extrabold text-white">
-            T
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-xl text-white">
+            <FiClock />
           </div>
           {!collapsed && (
             <div className="min-w-0 leading-tight">
