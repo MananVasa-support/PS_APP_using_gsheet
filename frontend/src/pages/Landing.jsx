@@ -16,7 +16,7 @@ export default function Landing() {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-auth-radial">
+    <div className="always-dark relative min-h-screen overflow-hidden bg-auth-radial">
       <div className="absolute inset-0 bg-grid-faint opacity-30 [background-size:40px_40px]" />
       <div className="absolute -right-32 top-1/4 h-96 w-96 rounded-full bg-brand-600/20 blur-3xl" />
 
@@ -36,7 +36,7 @@ export default function Landing() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mt-6 font-display text-4xl font-extrabold leading-tight text-white sm:text-6xl"
+          className="mt-6 font-display text-4xl font-extrabold leading-tight text-fg-strong sm:text-6xl"
         >
           Master Your Productivity
           <br />
@@ -46,7 +46,7 @@ export default function Landing() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mt-5 max-w-xl text-slate-300"
+          className="mt-5 max-w-xl text-fg-muted"
         >
           Productivity Shastra is your enterprise-grade habit transformation platform — audit your time,
           eliminate distractions, and level up every single day.
@@ -81,8 +81,8 @@ export default function Landing() {
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
                 <f.icon className="h-5 w-5" />
               </span>
-              <p className="mt-4 font-semibold text-white">{f.title}</p>
-              <p className="mt-1 text-sm text-slate-300">{f.desc}</p>
+              <p className="mt-4 font-semibold text-fg-strong">{f.title}</p>
+              <p className="mt-1 text-sm text-fg-muted">{f.desc}</p>
             </motion.div>
           ))}
         </div>

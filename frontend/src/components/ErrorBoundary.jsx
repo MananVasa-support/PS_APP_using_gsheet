@@ -38,7 +38,7 @@ export default class ErrorBoundary extends Component {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-unproductive/15 text-unproductive">
             <FiAlertTriangle className="h-7 w-7" />
           </span>
-          <h1 className="mt-5 font-display text-2xl font-bold text-white">Something went wrong</h1>
+          <h1 className="mt-5 font-display text-2xl font-bold text-fg-strong">Something went wrong</h1>
           <p className="mt-2 text-sm text-ink-400">
             We hit an unexpected error while loading this page. Try reloading, or head back to your dashboard.
           </p>
@@ -49,7 +49,7 @@ export default class ErrorBoundary extends Component {
             >
               <FiRefreshCw className="h-4 w-4" /> Reload
             </button>
-            <a href="/dashboard" className="btn border border-ink-600 text-slate-100 hover:border-brand-500 hover:text-white">
+            <a href="/dashboard" className="btn border border-ink-600 text-fg-strong hover:border-brand-500 hover:text-fg-strong">
               <FiHome className="h-4 w-4" /> Dashboard
             </a>
           </div>

@@ -32,18 +32,18 @@ export const focusTrend = [
 
 // Time distribution by category (donut)
 export const timeDistribution = [
-  { name: 'Productive', value: 650, color: '#22c55e' },
+  { name: 'Productive', value: 650, color: '#e51d2b' },
   { name: 'Non-Productive', value: 133, color: '#ef4444' },
-  { name: 'Personal', value: 105, color: '#8b5cf6' },
-  { name: 'Uncertain', value: 60, color: '#f59e0b' },
+  { name: 'Personal', value: 105, color: '#71717a' },
+  { name: 'Uncertain', value: 60, color: '#a1a1aa' },
 ];
 
 // Activity by department (admin)
 export const usersByDepartment = [
   { name: 'Engineering', value: 420, color: '#f93b48' },
-  { name: 'Design', value: 180, color: '#8b5cf6' },
-  { name: 'Marketing', value: 240, color: '#22c55e' },
-  { name: 'Sales', value: 310, color: '#f59e0b' },
+  { name: 'Design', value: 180, color: '#71717a' },
+  { name: 'Marketing', value: 240, color: '#e51d2b' },
+  { name: 'Sales', value: 310, color: '#a1a1aa' },
   { name: 'Support', value: 98, color: '#38bdf8' },
 ];
 
@@ -140,10 +140,10 @@ export const round1 = {
     { label: 'Total Tracked', value: '10h 50m', tone: 'brand' },
   ],
   productivityOverview: [
-    { label: 'Productive', pct: 72, color: '#22c55e' },
+    { label: 'Productive', pct: 72, color: '#e51d2b' },
     { label: 'Non-Productive', pct: 18, color: '#ef4444' },
-    { label: 'Personal', pct: 6, color: '#8b5cf6' },
-    { label: 'Uncertain', pct: 4, color: '#f59e0b' },
+    { label: 'Personal', pct: 6, color: '#71717a' },
+    { label: 'Uncertain', pct: 4, color: '#a1a1aa' },
   ],
   dailyScore: 78,
   bestPeriod: { range: '9:00 AM – 12:00 PM', note: 'Peak focus — 96% productive.' },

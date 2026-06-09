@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FiActivity, FiCalendar, FiClock, FiSlash, FiArrowRight, FiArrowLeft,
+  FiActivity, FiCalendar, FiClock, FiSlash, FiArrowRight,
   FiTarget, FiTrendingUp, FiGrid, FiUsers, FiChevronRight, FiLock,
 } from 'react-icons/fi';
 import { Avatar, Button, Card, Spinner } from '@/components/ui';
@@ -38,7 +38,7 @@ function ModuleCard({ item, index, readOnly, onBlocked }) {
       <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-gradient text-white shadow-glow transition-transform group-hover:scale-110">
         <item.icon className="h-5 w-5" />
       </span>
-      <p className="relative flex-1 text-base font-semibold text-white">
+      <p className="relative flex-1 text-base font-semibold text-fg-strong">
         {item.title}
         <sup className="ml-0.5 text-[0.65em] font-medium text-ink-400">©</sup>
       </p>
@@ -78,7 +78,7 @@ function ModuleCard({ item, index, readOnly, onBlocked }) {
 }
 
 export default function Dashboard() {
-  const { user, isAdmin, isConsultant, logout } = useAuth();
+  const { user, isAdmin, isConsultant } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [searchParams] = useSearchParams();
@@ -114,32 +114,14 @@ export default function Dashboard() {
     ? (viewedClient?.name?.split(' ')[0] || 'client')
     : (user?.name?.split(' ')[0] || 'there');
 
-  // Back from the Dashboard signs the user out and returns them to /login.
-  // For consultants viewing a specific client, "Back" returns to their clients picker.
-  async function handleBack() {
-    if (isClientView) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-    try {
-      await logout();
-    } finally {
-      navigate('/login', { replace: true });
-    }
-  }
-
   return (
     <div className="space-y-6">
-      <Button onClick={handleBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
-
       {isClientView && viewedClient && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-3">
           <div className="flex items-center gap-3">
             <Avatar name={viewedClient.name} size={36} />
             <div>
-              <p className="flex items-center gap-2 text-sm font-semibold text-white">
+              <p className="flex items-center gap-2 text-sm font-semibold text-fg-strong">
                 Viewing {viewedClient.name}'s dashboard
                 <span className="inline-flex items-center gap-1 rounded-full border border-ink-600 bg-ink-900/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-ink-300">
                   <FiLock className="h-3 w-3" /> Read-only
@@ -155,7 +137,7 @@ export default function Dashboard() {
       )}
 
       <div>
-        <h1 className="font-display text-2xl font-bold text-white">
+        <h1 className="font-display text-2xl font-bold text-fg-strong">
           {isClientView ? `${displayName}'s Dashboard` : `Welcome Back, ${displayName}`} 👋
         </h1>
         <p className="mt-1 text-sm text-ink-400">
@@ -192,7 +174,6 @@ export default function Dashboard() {
  */
 function StaffClientsPicker({ isAdmin }) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
   const [clients, setClients] = useState(null);
 
   useEffect(() => {
@@ -202,22 +183,10 @@ function StaffClientsPicker({ isAdmin }) {
     fetch.then((d) => setClients(d.clients || []));
   }, [isAdmin]);
 
-  async function handleBack() {
-    try {
-      await logout();
-    } finally {
-      navigate('/login', { replace: true });
-    }
-  }
-
   return (
     <div className="space-y-6">
-      <Button onClick={handleBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
-
       <div>
-        <h1 className="font-display text-2xl font-bold text-white">
+        <h1 className="font-display text-2xl font-bold text-fg-strong">
           {isAdmin ? 'All clients' : 'Your clients'}
         </h1>
         <p className="mt-1 text-sm text-ink-400">
@@ -242,7 +211,7 @@ function StaffClientsPicker({ isAdmin }) {
                 >
                   <Avatar name={c.name} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-200">{c.name}</p>
+                    <p className="truncate text-sm font-semibold text-fg">{c.name}</p>
                     <p className="truncate font-mono text-xs text-ink-500">{c.clientId || '—'}</p>
                   </div>
                   <FiChevronRight className="h-4 w-4 shrink-0 text-ink-500 transition-colors group-hover:text-brand-400" />

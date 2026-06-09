@@ -32,7 +32,7 @@ export default function ForgotPassword() {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-productive/15 text-productive">
             <FiCheckCircle className="h-7 w-7" />
           </span>
-          <h2 className="mt-5 font-display text-2xl font-bold text-white">Check your inbox</h2>
+          <h2 className="mt-5 font-display text-2xl font-bold text-fg-strong">Check your inbox</h2>
           <p className="mt-2 text-sm text-ink-400">{message}</p>
           <Button as={Link} to="/login" variant="outline" size="lg" className="mt-8 w-full">
             Back to login
@@ -40,7 +40,7 @@ export default function ForgotPassword() {
         </div>
       ) : (
         <>
-          <h2 className="font-display text-3xl font-bold text-white">Forgot Password?</h2>
+          <h2 className="font-display text-3xl font-bold text-fg-strong">Forgot Password?</h2>
           <p className="mt-2 text-sm text-ink-400">
             Enter your email and we&apos;ll send you a link to reset your password.
           </p>
@@ -64,7 +64,7 @@ export default function ForgotPassword() {
 
           <Link
             to="/login"
-            className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-ink-400 hover:text-white"
+            className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-ink-400 hover:text-fg-strong"
           >
             <FiArrowLeft className="h-4 w-4" /> Back to login
           </Link>

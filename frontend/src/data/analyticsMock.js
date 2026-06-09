@@ -75,10 +75,10 @@ export function buildAnalytics(days = 7, seed = null) {
   const weekly = Array.from({ length: weeks }).map((_, i) => ({ label: `W${i + 1}`, value: rand(50, 92) }));
 
   const categoryBreakdown = [
-    { name: 'Focus Modules', value: rand(320, 540) * scale, color: '#22c55e' },
-    { name: 'Forms & Onboarding', value: rand(90, 180) * scale, color: '#8b5cf6' },
+    { name: 'Focus Modules', value: rand(320, 540) * scale, color: '#e51d2b' },
+    { name: 'Forms & Onboarding', value: rand(90, 180) * scale, color: '#71717a' },
     { name: 'Personal Space', value: rand(60, 140) * scale, color: '#06b6d4' },
-    { name: 'Idle', value: rand(40, 110) * scale, color: '#f59e0b' },
+    { name: 'Idle', value: rand(40, 110) * scale, color: '#a1a1aa' },
   ];
   const totalTracked = categoryBreakdown.reduce((s, c) => s + c.value, 0);
   const totalProductive = categoryBreakdown[0].value;

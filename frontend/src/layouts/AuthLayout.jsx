@@ -21,7 +21,7 @@ export default function AuthLayout() {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="always-dark grid min-h-screen lg:grid-cols-2">
       {/* Brand / story panel */}
       <div className="relative hidden overflow-hidden bg-auth-radial p-10 lg:flex lg:flex-col">
         <div className="absolute inset-0 bg-grid-faint [background-size:40px_40px] opacity-40" />
@@ -36,7 +36,7 @@ export default function AuthLayout() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="font-display text-4xl font-extrabold leading-tight text-white"
+            className="font-display text-4xl font-extrabold leading-tight text-fg-strong"
           >
             Master Your Productivity <br />
             <span className="text-gradient">Transform Your Habits</span>
@@ -45,7 +45,7 @@ export default function AuthLayout() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-4 text-slate-400"
+            className="mt-4 text-fg-muted"
           >
             Productivity Shastra helps you plan smarter, stay focused, and achieve more every single day.
           </motion.p>
@@ -61,7 +61,7 @@ export default function AuthLayout() {
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-brand-400 ring-1 ring-white/10">
                   <f.icon className="h-5 w-5" />
                 </span>
-                <p className="mt-3 text-sm font-semibold text-white">{f.title}</p>
+                <p className="mt-3 text-sm font-semibold text-fg-strong">{f.title}</p>
                 <p className="mt-1 text-xs text-slate-500">{f.desc}</p>
               </motion.div>
             ))}

@@ -17,7 +17,7 @@ export default function ScaleInput({ value, onChange }) {
                 'h-10 w-10 rounded-lg border text-sm font-semibold transition',
                 active
                   ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                  : 'border-ink-700 bg-ink-800 text-ink-300 hover:border-brand-500/50 hover:text-white'
+                  : 'border-ink-700 bg-ink-800 text-ink-300 hover:border-brand-500/50 hover:text-fg-strong'
               )}
             >
               {n}

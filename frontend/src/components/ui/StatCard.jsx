@@ -41,7 +41,7 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = 'bran
           </span>
         )}
       </div>
-      <p className="mt-4 text-2xl font-bold text-white">{value}</p>
+      <p className="mt-4 text-2xl font-bold text-fg-strong">{value}</p>
       <p className="mt-0.5 text-sm text-ink-400">{label}</p>
     </motion.div>
   );

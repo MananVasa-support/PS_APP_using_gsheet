@@ -5,7 +5,7 @@ import {
   FiFeather, FiSun, FiCheckSquare, FiRepeat, FiClock,
   FiActivity, FiEdit3, FiMessageCircle,
 } from 'react-icons/fi';
-import { Button, PageHeader } from '@/components/ui';
+import { BackButton, Button, PageHeader } from '@/components/ui';
 
 export const PERSONAL_SPACE_MODULES = [
   { id: 'takeaway-crystaliser',    title: 'Takeaway Crystaliser',    icon: FiFeather,        desc: 'Crystalise the key takeaways from your week.' },
@@ -21,9 +21,7 @@ export const PERSONAL_SPACE_MODULES = [
 export default function PersonalSpace() {
   return (
     <div className="space-y-6">
-      <Button as={Link} to="/dashboard" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
+      <BackButton to="/dashboard" />
 
       <PageHeader title="Personal Space" subtitle="Your private toolkit for reflection and growth." />
 
@@ -44,7 +42,7 @@ export default function PersonalSpace() {
                 <m.icon className="h-5 w-5" />
               </span>
               <div className="relative flex flex-1 flex-col">
-                <p className="text-base font-semibold text-white">{m.title}</p>
+                <p className="text-base font-semibold text-fg-strong">{m.title}</p>
                 <p className="mt-1 text-sm text-ink-400">{m.desc}</p>
               </div>
               <span className="relative inline-flex items-center gap-1.5 text-sm font-medium text-brand-400">

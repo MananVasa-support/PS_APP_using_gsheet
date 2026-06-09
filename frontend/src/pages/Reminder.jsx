@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiBell, FiPlus, FiTrash2, FiCheckCircle, FiClock } from 'react-icons/fi';
-import { Button, Card, Input, PageHeader, Badge } from '@/components/ui';
+import { BackButton, Button, Card, Input, PageHeader, Badge } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { MANDATORY_MSG, FIELD_REQUIRED_MSG, isEmptyValue } from '@/utils/validation';
 
@@ -77,9 +77,7 @@ export default function Reminder() {
 
   return (
     <div className="space-y-6">
-      <Button as={Link} to="/dashboard" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
+      <BackButton to="/dashboard" />
 
       <PageHeader title="Reminder" subtitle="Quick notes for things you want to remember." />
 
@@ -142,12 +140,12 @@ export default function Reminder() {
                   <button
                     onClick={() => toggleDone(r.id)}
                     aria-label={r.done ? 'Mark not done' : 'Mark done'}
-                    className={`grid h-9 w-9 place-items-center rounded-lg transition-colors ${r.done ? 'bg-brand-500/20 text-brand-400' : 'bg-ink-800 text-ink-400 hover:text-slate-200'}`}
+                    className={`grid h-9 w-9 place-items-center rounded-lg transition-colors ${r.done ? 'bg-brand-500/20 text-brand-400' : 'bg-ink-800 text-ink-400 hover:text-fg'}`}
                   >
                     <FiCheckCircle className="h-4 w-4" />
                   </button>
                   <div className="min-w-0 flex-1">
-                    <p className={`truncate text-sm font-medium ${r.done ? 'text-ink-500 line-through' : 'text-slate-200'}`}>
+                    <p className={`truncate text-sm font-medium ${r.done ? 'text-ink-500 line-through' : 'text-fg'}`}>
                       {r.title}
                     </p>
                     {(r.date || r.time) && (

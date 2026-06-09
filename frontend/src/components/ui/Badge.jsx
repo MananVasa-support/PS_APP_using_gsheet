@@ -1,7 +1,7 @@
 import { cn } from '@/utils/cn';
 
 const tones = {
-  default: 'bg-ink-700 text-slate-300',
+  default: 'bg-ink-700 text-fg-muted',
   brand: 'bg-brand-500/15 text-brand-400 ring-1 ring-brand-500/30',
   success: 'bg-productive/15 text-productive ring-1 ring-productive/30',
   danger: 'bg-unproductive/15 text-unproductive ring-1 ring-unproductive/30',

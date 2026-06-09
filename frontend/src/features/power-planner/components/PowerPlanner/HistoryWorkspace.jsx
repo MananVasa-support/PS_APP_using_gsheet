@@ -37,7 +37,7 @@ const PALETTE = {
   black: "#18181b",
   white: "#ffffff",
   gray: "#9ca3af",
-  amber: "#f59e0b",
+  amber: "#a1a1aa",
 };
 const TFCR = ["Time", "Focus", "Clarity", "Reality"];
 

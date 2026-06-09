@@ -2,7 +2,7 @@ import { Card, Avatar, PageHeader, BackButton } from '@/components/ui';
 import { rankings } from '@/data/rankingsMock';
 import { formatNumber } from '@/utils/format';
 
-const medal = ['#f59e0b', '#94a3b8', '#b45309']; // gold / silver / bronze
+const medal = ['#a1a1aa', '#94a3b8', '#52525b']; // gold / silver / bronze
 
 export default function Top4Rankings() {
   const top4 = rankings.slice(0, 4);
@@ -26,12 +26,12 @@ export default function Top4Rankings() {
             </span>
             <Avatar name={u.name} size={40} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-white">
+              <p className="truncate font-medium text-fg-strong">
                 {u.name} {u.isMe && <span className="text-brand-400">(You)</span>}
               </p>
               <p className="truncate text-xs text-ink-500">{u.dept} · {u.productivity}% productive · {u.streak}-day streak</p>
             </div>
-            <span className="shrink-0 text-lg font-extrabold text-white">{formatNumber(u.points)}</span>
+            <span className="shrink-0 text-lg font-extrabold text-fg-strong">{formatNumber(u.points)}</span>
           </div>
         ))}
       </Card>

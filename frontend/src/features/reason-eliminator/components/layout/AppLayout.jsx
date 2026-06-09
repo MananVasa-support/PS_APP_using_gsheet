@@ -1,4 +1,5 @@
 import Sidebar from './Sidebar.jsx';
+import HubLink from '@/components/ui/HubLink.jsx';
 
 export default function AppLayout({ children }) {
   return (
@@ -8,7 +9,10 @@ export default function AppLayout({ children }) {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 w-full">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
+            <HubLink />
+          </div>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-8 pt-3 md:pb-12">
             {children}
           </div>
         </main>

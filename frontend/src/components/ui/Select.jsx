@@ -13,7 +13,7 @@ const Select = forwardRef(function Select(
   return (
     <div className={className}>
       {label && (
-        <label htmlFor={selectId} className="mb-1.5 block text-sm font-medium text-slate-300">
+        <label htmlFor={selectId} className="mb-1.5 block text-sm font-medium text-fg-muted">
           {label}
         </label>
       )}

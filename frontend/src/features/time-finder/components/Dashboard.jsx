@@ -19,7 +19,7 @@ import {
 
 const RED = '#ef4444';
 // Distinct, non-overlapping hues so slices/bars are easy to tell apart.
-const CHART_COLORS = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#10b981', '#8b5cf6'];
+const CHART_COLORS = ['#ef4444', '#f97316', '#eab308', '#52525b', '#e51d2b', '#71717a'];
 const OTHERS_COLOR = '#9ca3af';
 // Minutes → compact, readable label (hours once it passes 2h).
 const fmtChartTime = (min) => (min > 120 ? `${(min / 60).toFixed(1)}h` : `${Math.round(min)}m`);

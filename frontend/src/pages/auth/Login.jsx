@@ -78,7 +78,7 @@ export default function Login({ role = 'client' }) {
       <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-xs font-semibold text-brand-300">
         <RoleIcon className="h-3.5 w-3.5" /> {meta.label} Portal
       </div>
-      <h2 className="font-display text-3xl font-bold text-white">{meta.label} Login</h2>
+      <h2 className="font-display text-3xl font-bold text-fg-strong">{meta.label} Login</h2>
       <p className="mt-2 text-sm text-ink-400">{meta.blurb}</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4" autoComplete="off">

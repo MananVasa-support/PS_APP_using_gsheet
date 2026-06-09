@@ -712,14 +712,14 @@ function TopBar({ onHome, stage, onOpenMobileSidebar }) {
         {onOpenMobileSidebar && (
           <button
             onClick={onOpenMobileSidebar}
-            className="rounded-lg p-2 text-ink-400 hover:bg-ink-800 hover:text-white lg:hidden"
+            className="rounded-lg p-2 text-ink-400 hover:bg-ink-800 hover:text-fg-strong lg:hidden"
             aria-label="Open menu"
           >
             <FiMenu className="h-5 w-5" />
           </button>
         )}
         <Logo height={32} />
-        <div className="ml-2 hidden text-sm font-semibold text-slate-300 sm:block">Time Auditor</div>
+        <div className="ml-2 hidden text-sm font-semibold text-fg-muted sm:block">Time Auditor</div>
         <div className="ml-auto flex items-center gap-2">
           {stage !== 'home' && stage !== 'summary' && (
             <Button variant="ghost" size="sm" icon={FiHome} onClick={onHome}>
@@ -763,7 +763,7 @@ function BigActionCard({ icon: Icon, title, desc, onClick }) {
         <Icon className="h-6 w-6" />
       </span>
       <div className="relative">
-        <p className="text-xl font-bold text-white">{title}</p>
+        <p className="text-xl font-bold text-fg-strong">{title}</p>
         <p className="mt-1 text-sm text-ink-400">{desc}</p>
       </div>
     </button>
@@ -783,7 +783,7 @@ function StageSetup({ value, onChange, onStart, onBack }) {
       transition={{ duration: 0.3 }}
       className="rounded-2xl border border-ink-700 bg-ink-850 p-6 sm:p-8"
     >
-      <h2 className="font-display text-2xl font-bold text-white">Select Start Time</h2>
+      <h2 className="font-display text-2xl font-bold text-fg-strong">Select Start Time</h2>
       <p className="mt-1 text-sm text-ink-400">All slots run in 30-minute increments from this time.</p>
 
       <div className="mt-8 flex flex-wrap items-end gap-3">
@@ -833,10 +833,10 @@ function StageCollect({ slots, onUpdate, onNext, onPrev, onEnd, onBack }) {
       <Button onClick={onBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">Back</Button>
       <div className="rounded-2xl border border-ink-700 bg-ink-850 p-5">
         <p className="text-xs uppercase tracking-wider text-ink-500">Activity {slots.length}</p>
-        <p className="mt-1 font-display text-2xl font-bold text-white">{slotLabel(cur)}</p>
+        <p className="mt-1 font-display text-2xl font-bold text-fg-strong">{slotLabel(cur)}</p>
 
         <div className="mt-6">
-          <label htmlFor="activity" className="mb-1.5 block text-sm font-medium text-slate-300">
+          <label htmlFor="activity" className="mb-1.5 block text-sm font-medium text-fg-muted">
             What did you do, who you were with, where you were, what happened or did not happen?
             Write in as much detail as you can. Do not rush. <span className="text-brand-400">*</span>
           </label>
@@ -880,7 +880,7 @@ function StageReview({ slots, editingId, onUpdate, onStartEdit, onStopEdit, onSt
       className="space-y-5"
     >
       <div>
-        <h2 className="font-display text-2xl font-bold text-white">Activity Summary</h2>
+        <h2 className="font-display text-2xl font-bold text-fg-strong">Activity Summary</h2>
         <p className="mt-1 text-sm text-ink-400">Review and edit your captured activities before classification.</p>
       </div>
 
@@ -890,7 +890,7 @@ function StageReview({ slots, editingId, onUpdate, onStartEdit, onStopEdit, onSt
             const isEditing = editingId === s.id;
             return (
               <li key={s.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
-                <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-1.5 text-sm font-medium text-slate-200">
+                <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-1.5 text-sm font-medium text-fg">
                   <FiClock className="h-4 w-4 text-brand-400" /> {slotLabel(s)}
                 </span>
                 {isEditing ? (
@@ -902,7 +902,7 @@ function StageReview({ slots, editingId, onUpdate, onStartEdit, onStopEdit, onSt
                     className="input-base flex-1"
                   />
                 ) : (
-                  <span className="flex-1 text-sm text-slate-200">{s.activity || <em className="text-ink-500">â€” empty</em>}</span>
+                  <span className="flex-1 text-sm text-fg">{s.activity || <em className="text-ink-500">â€” empty</em>}</span>
                 )}
                 <div className="ml-auto flex shrink-0 gap-1">
                   {isEditing ? (
@@ -941,13 +941,13 @@ function StageClassify({ slot, index, total, onChoose, onNext, onPrev, onEnd }) 
 
       <div className="rounded-2xl border border-ink-700 bg-ink-850 p-6 sm:p-8">
         <p className="text-xs uppercase tracking-wider text-ink-500">Time slot</p>
-        <p className="mt-1 font-display text-2xl font-bold text-white">{slotLabel(slot)}</p>
+        <p className="mt-1 font-display text-2xl font-bold text-fg-strong">{slotLabel(slot)}</p>
 
         <p className="mt-4 text-xs uppercase tracking-wider text-ink-500">Activity</p>
-        <p className="mt-1 text-lg font-semibold text-slate-200">{slot.activity}</p>
+        <p className="mt-1 text-lg font-semibold text-fg">{slot.activity}</p>
 
         <div className="mt-6">
-          <p className="mb-2 text-sm font-medium text-slate-300">Choose a classification <span className="text-brand-400">*</span></p>
+          <p className="mb-2 text-sm font-medium text-fg-muted">Choose a classification <span className="text-brand-400">*</span></p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {CLASSIFICATIONS.map((c) => (
               <ChoiceButton key={c} label={c} active={slot.classification === c} onClick={() => onChoose(c)} />
@@ -979,19 +979,19 @@ function StageProductive({ slot, index, total, onUpdate, onNext, onPrev, onEnd, 
       className="space-y-5"
     >
       <Button onClick={onBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">Back</Button>
-      <h2 className="font-display text-2xl font-bold text-white">PRODUCTIVE SLOTS</h2>
+      <h2 className="font-display text-2xl font-bold text-fg-strong">PRODUCTIVE SLOTS</h2>
       <ProgressBar label={`Productive slot ${index + 1} of ${total}`} value={index + 1} max={total} />
 
       <div className="rounded-2xl border border-ink-700 bg-ink-850 p-6 sm:p-8 space-y-6">
         <div>
           <p className="text-xs uppercase tracking-wider text-ink-500">Time slot</p>
-          <p className="mt-1 font-display text-xl font-bold text-white">{slotLabel(slot)}</p>
-          <p className="mt-2 text-lg font-semibold text-slate-200">{slot.activity}</p>
+          <p className="mt-1 font-display text-xl font-bold text-fg-strong">{slotLabel(slot)}</p>
+          <p className="mt-2 text-lg font-semibold text-fg">{slot.activity}</p>
         </div>
 
         {/* Classification */}
         <div>
-          <p className="mb-2 text-sm font-medium text-slate-300">Sub-Classification <span className="text-brand-400">*</span></p>
+          <p className="mb-2 text-sm font-medium text-fg-muted">Sub-Classification <span className="text-brand-400">*</span></p>
           <div className="grid grid-cols-3 gap-2">
             {PRODUCTIVE_TYPES.map((p) => (
               <ChoiceButton key={p} label={p} active={slot.productiveType === p} onClick={() => onUpdate(slot.id, { productiveType: p })} />
@@ -1004,7 +1004,7 @@ function StageProductive({ slot, index, total, onUpdate, onNext, onPrev, onEnd, 
 
         {/* Outcome */}
         <div>
-          <p className="mb-2 text-sm font-medium text-slate-300">Did you achieve an Outcome <span className="text-brand-400">*</span></p>
+          <p className="mb-2 text-sm font-medium text-fg-muted">Did you achieve an Outcome <span className="text-brand-400">*</span></p>
           <div className="grid grid-cols-3 gap-2">
             {OUTCOMES.map((o) => (
               <ChoiceButton key={o} label={o} active={slot.outcome === o} onClick={() => onUpdate(slot.id, { outcome: o })} />
@@ -1014,7 +1014,7 @@ function StageProductive({ slot, index, total, onUpdate, onNext, onPrev, onEnd, 
 
         {/* Notes â€” optional */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-300">Outcome Notes <span className="text-ink-500">(optional)</span></label>
+          <label className="mb-1.5 block text-sm font-medium text-fg-muted">Outcome Notes <span className="text-ink-500">(optional)</span></label>
           <textarea
             value={slot.notes}
             onChange={(e) => onUpdate(slot.id, { notes: e.target.value })}
@@ -1078,7 +1078,7 @@ function MoodEmojiRow({ value, onChange }) {
 function RatingRow({ label, value, onChange }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium text-slate-300">{label} <span className="text-brand-400">*</span></p>
+      <p className="mb-2 text-sm font-medium text-fg-muted">{label} <span className="text-brand-400">*</span></p>
       <div className="flex flex-wrap gap-2">
         {RATING_OPTIONS.map((n) => {
           const active = value === n;
@@ -1091,7 +1091,7 @@ function RatingRow({ label, value, onChange }) {
                 'grid h-11 w-11 place-items-center rounded-xl border text-base font-bold transition',
                 active
                   ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                  : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50 hover:text-white'
+                  : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
               )}
             >
               {n}
@@ -1116,11 +1116,11 @@ function StageTop3({ step, value, category, onChange, onCategoryChange, onNext, 
       <Button onClick={onBack} variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2 justify-self-start">
         Back
       </Button>
-      <h2 className="font-display text-2xl font-bold text-white">Top Things You are Paid For</h2>
+      <h2 className="font-display text-2xl font-bold text-fg-strong">Top Things You are Paid For</h2>
       <ProgressBar label={`Top #${step + 1}`} value={step + 1} max={3} />
 
       <div className="rounded-2xl border border-ink-700 bg-ink-850 p-6 sm:p-8">
-        <label htmlFor={`top3-category-${step}`} className="mb-1.5 block text-sm font-medium text-slate-300">
+        <label htmlFor={`top3-category-${step}`} className="mb-1.5 block text-sm font-medium text-fg-muted">
           Activity Category <span className="text-brand-400">*</span>
         </label>
         <div className="relative">
@@ -1140,7 +1140,7 @@ function StageTop3({ step, value, category, onChange, onCategoryChange, onNext, 
 
         {isOthers && (
           <div className="mt-4">
-            <label htmlFor={`top3-specify-${step}`} className="mb-1.5 block text-sm font-medium text-slate-300">
+            <label htmlFor={`top3-specify-${step}`} className="mb-1.5 block text-sm font-medium text-fg-muted">
               Specify Activity <span className="text-brand-400">*</span>
             </label>
             <input
@@ -1176,7 +1176,7 @@ function StageTop3Summary({ entries, categories, onEdit, onBack, onNext }) {
       className="space-y-5"
     >
       <div>
-        <h2 className="font-display text-2xl font-bold text-white">Top Things You are Paid For — Summary</h2>
+        <h2 className="font-display text-2xl font-bold text-fg-strong">Top Things You are Paid For — Summary</h2>
         <p className="mt-1 text-sm text-ink-400">Review your top 3. Use EDIT to revise an entry before continuing.</p>
       </div>
 
@@ -1184,16 +1184,16 @@ function StageTop3Summary({ entries, categories, onEdit, onBack, onNext }) {
         <ul className="divide-y divide-ink-800">
           {entries.map((value, idx) => (
             <li key={idx} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
-              <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-1.5 text-sm font-semibold text-slate-200">
+              <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-1.5 text-sm font-semibold text-fg">
                 Top #{idx + 1}
               </span>
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-100">
+                <p className="text-sm font-medium text-fg-strong">
                   {value || <em className="text-ink-500">— empty</em>}
                 </p>
                 {categories[idx] && (
                   <p className="mt-0.5 text-xs text-ink-400">
-                    Category: <span className="text-slate-300">{categories[idx]}</span>
+                    Category: <span className="text-fg-muted">{categories[idx]}</span>
                   </p>
                 )}
               </div>
@@ -1223,7 +1223,7 @@ function StageTop3Review({ slots, onSet, onSubmit, onBack }) {
       className="space-y-5"
     >
       <div>
-        <h2 className="font-display text-2xl font-bold text-white">Top 3 Review</h2>
+        <h2 className="font-display text-2xl font-bold text-fg-strong">Top 3 Review</h2>
         <p className="mt-1 text-sm text-ink-400">For each productive activity, mark whether it belongs to your Top 3.</p>
       </div>
 
@@ -1231,10 +1231,10 @@ function StageTop3Review({ slots, onSet, onSubmit, onBack }) {
         <ul className="divide-y divide-ink-800">
           {slots.map((s) => (
             <li key={s.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-              <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-1.5 text-sm font-medium text-slate-200">
+              <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-1.5 text-sm font-medium text-fg">
                 <FiClock className="h-4 w-4 text-brand-400" /> {slotLabel(s)}
               </span>
-              <span className="flex-1 text-sm text-slate-200">{s.activity}</span>
+              <span className="flex-1 text-sm text-fg">{s.activity}</span>
               <div className="ml-auto flex shrink-0 flex-col items-center gap-2 pt-2 sm:pt-3">
                 <span className="text-center text-xs font-semibold uppercase tracking-wider text-ink-500">
                   Is this part of top 3?
@@ -1246,7 +1246,7 @@ function StageTop3Review({ slots, onSet, onSubmit, onBack }) {
                       'rounded-lg border px-3 py-1.5 text-sm font-medium transition',
                       s.isTop3
                         ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                        : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50'
+                        : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50'
                     )}
                   >
                     YES
@@ -1256,8 +1256,8 @@ function StageTop3Review({ slots, onSet, onSubmit, onBack }) {
                     className={cn(
                       'rounded-lg border px-3 py-1.5 text-sm font-medium transition',
                       s.isTop3 === false
-                        ? 'border-transparent bg-ink-700 text-white'
-                        : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-ink-600'
+                        ? 'border-transparent bg-ink-700 text-fg-strong'
+                        : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-ink-600'
                     )}
                   >
                     NO
@@ -1289,7 +1289,7 @@ export function StageSummary({ slots, top3, onGoDashboard }) {
       className="space-y-6"
     >
       <div>
-        <h2 className="font-display text-2xl font-bold text-white">TIME AUDITOR FINAL SUMMARY</h2>
+        <h2 className="font-display text-2xl font-bold text-fg-strong">TIME AUDITOR FINAL SUMMARY</h2>
         <p className="mt-1 text-sm text-ink-400">A complete picture of your audit.</p>
       </div>
 
@@ -1311,7 +1311,7 @@ export function StageSummary({ slots, top3, onGoDashboard }) {
           {OUTCOMES.map((o) => (
             <div key={o} className="rounded-xl border border-ink-700 bg-ink-900/40 p-3 text-center">
               <p className="text-xs text-ink-400">{o}</p>
-              <p className="mt-1 text-2xl font-bold text-white">{stats.outcomeCounts[o] || 0}</p>
+              <p className="mt-1 text-2xl font-bold text-fg-strong">{stats.outcomeCounts[o] || 0}</p>
             </div>
           ))}
         </div>
@@ -1319,12 +1319,12 @@ export function StageSummary({ slots, top3, onGoDashboard }) {
 
       {/* KEY INSIGHTS */}
       <div>
-        <h3 className="font-display text-xl font-bold text-white">KEY INSIGHTS</h3>
+        <h3 className="font-display text-xl font-bold text-fg-strong">KEY INSIGHTS</h3>
       </div>
 
       <InsightBlock title="TOP 3 THINGS">
         {stats.top3.length > 0 ? (
-          <ol className="list-decimal space-y-1 pl-5 text-slate-200">
+          <ol className="list-decimal space-y-1 pl-5 text-fg">
             {stats.top3.map((t, i) => <li key={i}>{t}</li>)}
           </ol>
         ) : <p className="text-sm text-ink-400">No top 3 captured.</p>}
@@ -1332,18 +1332,18 @@ export function StageSummary({ slots, top3, onGoDashboard }) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <InsightBlock title="Most Productive Activity">
-          <p className="text-slate-200">{stats.mostProductiveActivity}</p>
+          <p className="text-fg">{stats.mostProductiveActivity}</p>
         </InsightBlock>
         <InsightBlock title="Most Time Consuming Activity">
-          <p className="text-slate-200">{stats.mostTimeConsuming}</p>
+          <p className="text-fg">{stats.mostTimeConsuming}</p>
         </InsightBlock>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <InsightBlock title="Planned Activities" tone="info">
-          <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-300">
-            <span>Number of Slots: <span className="font-semibold text-white">{stats.plannedMin / SLOT_MINUTES}</span></span>
-            <span>Total Duration: <span className="font-semibold text-white">{fmtMin(stats.plannedMin)}</span></span>
+          <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-fg-muted">
+            <span>Number of Slots: <span className="font-semibold text-fg-strong">{stats.plannedMin / SLOT_MINUTES}</span></span>
+            <span>Total Duration: <span className="font-semibold text-fg-strong">{fmtMin(stats.plannedMin)}</span></span>
           </div>
           <ChipList items={stats.plannedList} />
         </InsightBlock>
@@ -1370,7 +1370,7 @@ export function StageSummary({ slots, top3, onGoDashboard }) {
 
 function SummaryStat({ label, value, tone = 'default' }) {
   const tones = {
-    default: 'text-slate-100',
+    default: 'text-fg-strong',
     brand: 'text-brand-300',
     success: 'text-emerald-300',
     danger: 'text-red-300',
@@ -1406,7 +1406,7 @@ function ChipList({ items }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((t, i) => (
-        <span key={`${t}-${i}`} className="rounded-lg bg-ink-900/60 px-2.5 py-1 text-xs text-slate-200 ring-1 ring-ink-700">
+        <span key={`${t}-${i}`} className="rounded-lg bg-ink-900/60 px-2.5 py-1 text-xs text-fg ring-1 ring-ink-700">
           {t}
         </span>
       ))}
@@ -1442,7 +1442,7 @@ function StagePrevious({ assessments, onBack, onView, onEdit, onDelete, viewingI
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl font-bold text-white">Previous Assessments</h2>
+          <h2 className="font-display text-2xl font-bold text-fg-strong">Previous Assessments</h2>
           <p className="mt-1 text-sm text-ink-400">{assessments.length} saved.</p>
         </div>
         <Button variant="ghost" icon={FiArrowLeft} onClick={onBack}>Back</Button>
@@ -1467,10 +1467,10 @@ function StagePrevious({ assessments, onBack, onView, onEdit, onDelete, viewingI
                 const d = new Date(a.date);
                 return (
                   <tr key={a.id} className="border-b border-ink-800 last:border-0">
-                    <td className="px-4 py-3 text-slate-200">
+                    <td className="px-4 py-3 text-fg">
                       {d.toLocaleDateString()} <span className="text-ink-500">{d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-200">{fmtMin(a.stats?.totalMin || 0)}</td>
+                    <td className="px-4 py-3 text-fg">{fmtMin(a.stats?.totalMin || 0)}</td>
                     <td className="px-4 py-3">
                       <Badge tone="brand">{a.stats?.productivityPct ?? 0}%</Badge>
                     </td>
@@ -1537,7 +1537,7 @@ function ChoiceButton({ label, active, onClick }) {
         'rounded-xl border px-4 py-2.5 text-sm font-medium transition',
         active
           ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-          : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50 hover:text-white'
+          : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
       )}
     >
       {label}
@@ -1603,7 +1603,7 @@ function ConsultantClientsView() {
         <div className="space-y-6">
           <BackButton to="/participants" />
           <div>
-            <h1 className="font-display text-2xl font-bold text-white">Time Auditor — Consultant View</h1>
+            <h1 className="font-display text-2xl font-bold text-fg-strong">Time Auditor — Consultant View</h1>
             <p className="mt-1 text-sm text-ink-400">
               Pick a client below to open their dashboard.
             </p>
@@ -1627,7 +1627,7 @@ function ConsultantClientsView() {
                         {(c.name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-200">{c.name}</p>
+                        <p className="truncate text-sm font-medium text-fg">{c.name}</p>
                         <p className="truncate text-xs text-ink-500">
                           {c.clientId || '—'} · {c.tasks?.done ?? 0}/{c.tasks?.total ?? 0} tasks · {c.progress ?? 0}%
                         </p>
@@ -1678,7 +1678,7 @@ function AdminClientsView() {
         <div className="space-y-6">
           <BackButton to="/admin" />
           <div>
-            <h1 className="font-display text-2xl font-bold text-white">Time Auditor — Admin View</h1>
+            <h1 className="font-display text-2xl font-bold text-fg-strong">Time Auditor — Admin View</h1>
             <p className="mt-1 text-sm text-ink-400">Approvals, consultants, and clients — all in one place.</p>
           </div>
 
@@ -1692,7 +1692,7 @@ function AdminClientsView() {
                   onClick={() => setTab(t.id)}
                   className={cn(
                     'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                    active ? 'bg-brand-gradient text-white shadow' : 'text-ink-400 hover:text-slate-200'
+                    active ? 'bg-brand-gradient text-white shadow' : 'text-ink-400 hover:text-fg'
                   )}
                 >
                   {t.label}
@@ -1717,7 +1717,7 @@ function AdminClientsView() {
                         {(c.name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-200">{c.name}</p>
+                        <p className="truncate text-sm font-medium text-fg">{c.name}</p>
                         <p className="truncate text-xs text-ink-500">{c.clientId || '—'} · {c.email}</p>
                       </div>
                       <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-300">Pending</span>
@@ -1747,7 +1747,7 @@ function AdminClientsView() {
                         {(c.name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-200">{c.name}</p>
+                        <p className="truncate text-sm font-semibold text-fg">{c.name}</p>
                         <p className="truncate text-xs text-ink-500">{c.email || c.title || '—'}</p>
                         <p className="mt-1 text-xs text-ink-400">{c.assignedCount} client{c.assignedCount === 1 ? '' : 's'}</p>
                       </div>
@@ -1778,7 +1778,7 @@ function AdminClientsView() {
                           {(c.name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-slate-200">{c.name}</p>
+                          <p className="truncate text-sm font-medium text-fg">{c.name}</p>
                           <p className="truncate text-xs text-ink-500">{c.clientId || '—'} · {c.email} · {c.status}</p>
                         </div>
                         <FiArrowRight className="h-4 w-4 shrink-0 text-ink-500 transition-colors group-hover:text-brand-400" />

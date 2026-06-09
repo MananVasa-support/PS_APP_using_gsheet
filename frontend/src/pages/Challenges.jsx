@@ -14,7 +14,7 @@ const achIcon = {
   sunrise: FiSunrise, flame: FaFire, clock: FiClock, zap: FiZap, target: FiTarget, trophy: FaTrophy,
 };
 
-const medal = ['#f59e0b', '#94a3b8', '#b45309']; // gold / silver / bronze
+const medal = ['#a1a1aa', '#94a3b8', '#52525b']; // gold / silver / bronze
 
 export default function Challenges() {
   const [data, setData] = useState(null);
@@ -53,11 +53,11 @@ export default function Challenges() {
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-brand-gradient shadow-glow">
-              <FaTrophy className="h-7 w-7 text-white" />
+              <FaTrophy className="h-7 w-7 text-fg-strong" />
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-display text-2xl font-bold text-white">{c.name}</h2>
+                <h2 className="font-display text-2xl font-bold text-fg-strong">{c.name}</h2>
                 <Badge tone="danger" dot>{c.difficulty}</Badge>
               </div>
               <p className="mt-1 max-w-lg text-sm text-ink-400">{c.tagline}</p>
@@ -89,7 +89,7 @@ export default function Challenges() {
             <Card title="Current streak" className="flex flex-col items-center justify-center">
               <div className="flex items-center gap-3">
                 <FaFire className="h-12 w-12 text-brand-500" />
-                <span className="text-5xl font-extrabold text-white">{c.currentStreak}</span>
+                <span className="text-5xl font-extrabold text-fg-strong">{c.currentStreak}</span>
               </div>
               <p className="mt-3 text-sm text-ink-400">days in a row · best is 12</p>
             </Card>
@@ -108,7 +108,7 @@ export default function Challenges() {
                 {c.level}
               </span>
               <div className="flex-1">
-                <p className="font-semibold text-white">Level {c.level}</p>
+                <p className="font-semibold text-fg-strong">Level {c.level}</p>
                 <p className="text-xs text-ink-400">{c.levelProgress}% to level {c.level + 1}</p>
                 <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink-700">
                   <motion.div
@@ -136,12 +136,12 @@ export default function Challenges() {
                 </span>
                 <Avatar name={u.name} size={32} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-200">
+                  <p className="truncate text-sm font-medium text-fg">
                     {u.name} {u.isMe && <span className="text-brand-400">(You)</span>}
                   </p>
                   <p className="truncate text-xs text-ink-500">{u.dept}</p>
                 </div>
-                <span className="text-sm font-semibold text-white">{formatNumber(u.points)}</span>
+                <span className="text-sm font-semibold text-fg-strong">{formatNumber(u.points)}</span>
               </div>
             ))}
           </Card>
@@ -171,7 +171,7 @@ export default function Challenges() {
                     </span>
                   )}
                 </span>
-                <p className="mt-2 text-sm font-medium text-slate-200">{a.name}</p>
+                <p className="mt-2 text-sm font-medium text-fg">{a.name}</p>
                 <p className="text-xs text-ink-500">{a.desc}</p>
               </motion.div>
             );

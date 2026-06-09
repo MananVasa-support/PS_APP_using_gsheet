@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
-import Button from './Button.jsx';
 
 /**
  * Small ghost-style Back button used at the top of in-app pages. Uses browser
@@ -20,14 +19,17 @@ export default function BackButton({ to = '/dashboard', className }) {
   }
 
   return (
-    <Button
+    <button
+      type="button"
       onClick={handleClick}
-      variant="ghost"
-      size="sm"
-      icon={FiArrowLeft}
-      className={['-ml-2', className].filter(Boolean).join(' ')}
+      title="Back"
+      className={[
+        'inline-flex items-center gap-1.5 rounded-lg border border-black bg-white px-3 py-1.5 text-xs font-semibold text-black transition-colors duration-150 hover:bg-red-600 hover:border-red-600 hover:text-white',
+        className,
+      ].filter(Boolean).join(' ')}
     >
+      <FiArrowLeft />
       Back
-    </Button>
+    </button>
   );
 }

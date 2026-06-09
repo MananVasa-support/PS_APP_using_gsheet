@@ -17,7 +17,7 @@ export default function Tabs({ tabs, active, onChange, className }) {
             onClick={() => onChange(tab.id)}
             className={cn(
               'relative flex items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors',
-              isActive ? 'text-white' : 'text-ink-400 hover:text-slate-200'
+              isActive ? 'text-fg-strong' : 'text-ink-400 hover:text-fg'
             )}
           >
             {tab.icon && <tab.icon className="h-4 w-4" />}

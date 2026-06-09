@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiSave, FiTarget } from 'react-icons/fi';
-import { Button, Card, PageHeader } from '@/components/ui';
+import { BackButton, Button, Card, PageHeader } from '@/components/ui';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/context/ToastContext.jsx';
 import { cn } from '@/utils/cn';
@@ -41,9 +41,7 @@ export default function ExpectationFromPS() {
 
   return (
     <div className="space-y-6">
-      <Button as={Link} to="/pre-ps" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
+      <BackButton to="/pre-ps" />
 
       <PageHeader title="Expectation From PS" subtitle="Set your intent before the session" />
 
@@ -52,7 +50,7 @@ export default function ExpectationFromPS() {
           <form onSubmit={handleSave} className="space-y-6">
             {/* Area */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">
+              <label className="mb-1.5 block text-sm font-medium text-fg-muted">
                 Area <span className="text-brand-400">*</span>
               </label>
               <div className="flex flex-wrap gap-2">
@@ -67,7 +65,7 @@ export default function ExpectationFromPS() {
                         'rounded-xl border px-4 py-2 text-sm font-medium transition',
                         active
                           ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                          : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50 hover:text-white'
+                          : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
                       )}
                     >
                       {o}
@@ -80,7 +78,7 @@ export default function ExpectationFromPS() {
 
             {/* Accomplish */}
             <div>
-              <label htmlFor="accomplish" className="mb-1.5 block text-sm font-medium text-slate-300">
+              <label htmlFor="accomplish" className="mb-1.5 block text-sm font-medium text-fg-muted">
                 What do I want to accomplish out of participating? <span className="text-brand-400">*</span>
               </label>
               <textarea
@@ -97,9 +95,7 @@ export default function ExpectationFromPS() {
             </div>
 
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
-              <Button as={Link} to="/pre-ps" type="button" variant="ghost" icon={FiArrowLeft}>
-                Back
-              </Button>
+              <BackButton to="/pre-ps" />
               <Button type="submit" icon={FiSave} disabled={!isComplete}>
                 Save
               </Button>

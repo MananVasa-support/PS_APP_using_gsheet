@@ -1,25 +1,28 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
 const ThemeContext = createContext(null);
 
 /**
- * Dark/light theme. Persists the choice and toggles the `dark`/`light`
- * class on <html>, which drives the CSS-variable palette in index.css.
+ * Theme. The dark/night theme was removed by request — the app is light-only.
+ * We keep this provider (and a no-op toggle/setter) so existing consumers don't
+ * break, and we pin <html> to the light palette. Pre-login/public pages opt
+ * into a dark look locally via the `.always-dark` scope in index.css.
  */
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('ta_theme') || 'dark');
+  const theme = 'light';
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('ta_theme', theme);
-  }, [theme]);
+    root.classList.remove('dark');
+    root.classList.add('light');
+    localStorage.setItem('ps_theme', 'light');
+  }, []);
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  // Dark mode is gone, so toggling/setting is intentionally a no-op.
+  const noop = () => {};
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme: noop, toggleTheme: noop }}>
       {children}
     </ThemeContext.Provider>
   );

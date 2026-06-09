@@ -30,7 +30,7 @@ export default function Card({
       {(title || action) && (
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            {title && <h3 className="font-semibold text-white">{title}</h3>}
+            {title && <h3 className="font-semibold text-fg-strong">{title}</h3>}
             {subtitle && <p className="mt-0.5 text-sm text-ink-400">{subtitle}</p>}
           </div>
           {action}

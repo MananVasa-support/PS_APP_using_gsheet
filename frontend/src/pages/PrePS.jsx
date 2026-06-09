@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiArrowRight, FiTarget, FiGrid } from 'react-icons/fi';
-import { Button, PageHeader } from '@/components/ui';
+import { BackButton, Button, PageHeader } from '@/components/ui';
 
 // Sub-modules under Pre PS. Power Planner is accessed from within Totality.
 const SUB_ITEMS = [
@@ -12,9 +12,7 @@ const SUB_ITEMS = [
 export default function PrePS() {
   return (
     <div className="space-y-6">
-      <Button as={Link} to="/home" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
+      <BackButton to="/dashboard" />
 
       <PageHeader title="Pre PS" subtitle="Prepare before your problem-solving session" />
 
@@ -34,7 +32,7 @@ export default function PrePS() {
               <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-gradient text-white shadow-glow transition-transform group-hover:scale-110">
                 <s.icon className="h-5 w-5" />
               </span>
-              <span className="relative flex-1 text-lg font-bold text-white">{s.title}</span>
+              <span className="relative flex-1 text-lg font-bold text-fg-strong">{s.title}</span>
               <FiArrowRight className="relative h-5 w-5 shrink-0 text-ink-400 transition-transform group-hover:translate-x-1 group-hover:text-brand-400" />
             </Link>
           </motion.div>

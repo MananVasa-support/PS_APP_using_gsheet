@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiSave, FiSend } from 'react-icons/fi';
-import { Button, Card, Input, PageHeader, Badge } from '@/components/ui';
+import { BackButton, Button, Card, Input, PageHeader, Badge } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { PERSONAL_SPACE_MODULES } from '@/pages/PersonalSpace.jsx';
 import { MANDATORY_MSG, FIELD_REQUIRED_MSG, isEmptyValue } from '@/utils/validation';
@@ -124,9 +124,7 @@ export default function PersonalSpaceForm() {
   if (!moduleMeta || !schema) {
     return (
       <div className="space-y-6">
-        <Button as={Link} to="/personal-space" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-          Back
-        </Button>
+        <BackButton to="/personal-space" />
         <Card>
           <p className="py-12 text-center text-sm text-ink-400">This Personal Space module does not exist.</p>
         </Card>
@@ -184,7 +182,11 @@ export default function PersonalSpaceForm() {
   }
 
   function back() {
-    navigate('/personal-space');
+    // Go to the actual previous page; fall back to the Personal Space hub on a
+    // hard refresh / direct link where there is no in-app history to pop.
+    const idx = window.history.state?.idx;
+    if (typeof idx === 'number' && idx > 0) navigate(-1);
+    else navigate('/personal-space');
   }
 
   return (
@@ -232,7 +234,7 @@ export default function PersonalSpaceForm() {
             {schema.calc && (
               <div className="rounded-xl border border-brand-500/40 bg-brand-500/10 p-4">
                 <p className="text-xs uppercase tracking-wider text-brand-300">Productivity score</p>
-                <p className="mt-1 text-3xl font-bold text-white">
+                <p className="mt-1 text-3xl font-bold text-fg-strong">
                   {calculated == null ? '—' : `${calculated}%`}
                 </p>
                 <p className="mt-1 text-xs text-ink-400">Enter focus & total minutes above to calculate.</p>
@@ -261,7 +263,7 @@ function FormField({ field, value, onChange, error }) {
   if (field.type === 'textarea') {
     return (
       <div>
-        <label htmlFor={field.name} className="mb-1.5 block text-sm font-medium text-slate-300">
+        <label htmlFor={field.name} className="mb-1.5 block text-sm font-medium text-fg-muted">
           {field.label} <span className="text-brand-400">*</span>
         </label>
         <textarea

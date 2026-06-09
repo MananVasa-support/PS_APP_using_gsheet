@@ -124,7 +124,7 @@ export default function Admin() {
                         <div className="flex items-center gap-3">
                           <Avatar name={c.name} size={36} />
                           <div>
-                            <p className="font-medium text-slate-200">{c.name}</p>
+                            <p className="font-medium text-fg">{c.name}</p>
                             <p className="text-xs text-ink-500">{c.email}</p>
                           </div>
                         </div>
@@ -177,7 +177,7 @@ export default function Admin() {
                 <div key={c.id} className="flex items-center gap-3 rounded-xl border border-ink-700 bg-ink-900/40 p-3.5">
                   <Avatar name={c.name} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-200">{c.name}</p>
+                    <p className="truncate text-sm font-semibold text-fg">{c.name}</p>
                     <p className="truncate text-xs text-ink-500">{c.email || c.title || '—'}</p>
                     <p className="mt-1 text-xs text-ink-400">
                       <FiBriefcase className="mr-1 inline h-3 w-3" />
@@ -217,7 +217,7 @@ export default function Admin() {
                   >
                     <Avatar name={c.name} size={40} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-200">{c.name}</p>
+                      <p className="truncate text-sm font-semibold text-fg">{c.name}</p>
                       <p className="truncate text-xs text-ink-500">
                         <FiHash className="mr-0.5 inline h-3 w-3" />
                         {c.clientId || '—'} · {c.email}

@@ -1,20 +1,23 @@
 import { Link } from 'react-router-dom';
-import { FiGrid } from 'react-icons/fi';
+import { FiArrowLeft } from 'react-icons/fi';
 
 /**
- * Small fixed pill that returns the user from a full-screen tool back to the
- * dashboard hub (/home). Each merged tool renders full-screen with its own
- * layout, so this is the consistent way back to the module picker.
+ * Uniform "back to dashboard" control for the full-screen tools. Rendered inline
+ * at the top-left of each tool's content area (next to its left nav column), in
+ * the app's brand red so it's consistent and visible across every tool.
  */
-export default function HubLink() {
+export default function HubLink({ className = '' }) {
   return (
     <Link
-      to="/home"
+      to="/dashboard"
       title="Back to dashboard"
-      className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-lg backdrop-blur transition-colors hover:bg-white hover:text-black"
+      className={
+        'inline-flex items-center gap-1.5 rounded-lg border border-black bg-white px-3 py-1.5 text-xs font-semibold text-black transition-colors duration-150 hover:bg-red-600 hover:border-red-600 hover:text-white ' +
+        className
+      }
     >
-      <FiGrid className="h-4 w-4" />
-      Hub
+      <FiArrowLeft />
+      Back
     </Link>
   );
 }

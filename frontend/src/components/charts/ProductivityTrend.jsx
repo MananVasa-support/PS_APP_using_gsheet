@@ -54,9 +54,9 @@ export default function ProductivityTrend({
         {typeof average === 'number' && (
           <ReferenceLine
             y={average}
-            stroke="#f59e0b"
+            stroke="#a1a1aa"
             strokeDasharray="5 4"
-            label={{ value: `Avg ${average}%`, position: 'insideTopRight', fill: '#f59e0b', fontSize: 11 }}
+            label={{ value: `Avg ${average}%`, position: 'insideTopRight', fill: '#a1a1aa', fontSize: 11 }}
           />
         )}
         <Line type="monotone" dataKey="productivity" name="Productivity" stroke="#f93b48" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />

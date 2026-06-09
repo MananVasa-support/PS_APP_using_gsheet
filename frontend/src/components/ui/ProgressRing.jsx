@@ -41,7 +41,7 @@ export default function ProgressRing({
       <div className="absolute inset-0 grid place-items-center text-center">
         {children || (
           <div>
-            <div className="text-2xl font-bold text-white">{Math.round(value)}</div>
+            <div className="text-2xl font-bold text-fg-strong">{Math.round(value)}</div>
             {label && <div className="text-xs text-ink-400">{label}</div>}
           </div>
         )}

@@ -12,7 +12,7 @@ export default function PageHeader({ title, subtitle, children }) {
       className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        <h1 className="font-display text-2xl font-bold text-white">{title}</h1>
+        <h1 className="font-display text-2xl font-bold text-fg-strong">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-ink-400">{subtitle}</p>}
       </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}

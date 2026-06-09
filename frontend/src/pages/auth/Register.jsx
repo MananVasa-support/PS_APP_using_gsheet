@@ -108,7 +108,7 @@ export default function Register() {
       <Button as={Link} to="/client-login" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2 mb-4">
         Back
       </Button>
-      <h2 className="font-display text-3xl font-bold text-white">Registration Form</h2>
+      <h2 className="font-display text-3xl font-bold text-fg-strong">Registration Form</h2>
       <p className="mt-2 text-sm text-ink-400">Join Productivity Shastra to master your Life.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -127,7 +127,7 @@ export default function Register() {
 
         {/* Cell Number with country-code selector */}
         <div>
-          <label htmlFor="cellNumber" className="mb-1.5 block text-sm font-medium text-slate-300">
+          <label htmlFor="cellNumber" className="mb-1.5 block text-sm font-medium text-fg-muted">
             Cell Number<span className="ml-0.5 text-brand-400">*</span>
           </label>
           <div className="flex gap-2">

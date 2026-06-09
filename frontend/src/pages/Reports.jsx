@@ -137,7 +137,7 @@ export default function Reports() {
                       <FiFile className="h-4 w-4" />
                     </span>
                     <div>
-                      <p className="font-medium text-slate-200">{r.name}</p>
+                      <p className="font-medium text-fg">{r.name}</p>
                       <p className="text-xs text-ink-500">{r.id}</p>
                     </div>
                   </div>

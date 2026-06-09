@@ -6,7 +6,7 @@ import { titleCaseName } from '@/utils/format';
 function Label({ q }) {
   if (!q.label) return null;
   return (
-    <label className="mb-1.5 block text-sm font-medium text-slate-300">
+    <label className="mb-1.5 block text-sm font-medium text-fg-muted">
       {q.label}
       {q.required && <span className="text-brand-400"> *</span>}
     </label>
@@ -83,7 +83,7 @@ export default function FormField({ q, value, onChange, error }) {
                     'rounded-xl border px-4 py-2 text-sm font-medium transition',
                     active
                       ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                      : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50 hover:text-white'
+                      : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
                   )}
                 >
                   {o}
@@ -113,7 +113,7 @@ export default function FormField({ q, value, onChange, error }) {
                     'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition',
                     active
                       ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                      : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50 hover:text-white'
+                      : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
                   )}
                 >
                   <span className={cn('grid h-4 w-4 place-items-center rounded border', active ? 'border-white bg-white/20' : 'border-ink-500')}>
@@ -145,7 +145,7 @@ export default function FormField({ q, value, onChange, error }) {
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-ink-600 bg-ink-800 p-4 text-sm text-ink-400 transition hover:border-brand-500/50">
             <FiUploadCloud className="h-5 w-5 shrink-0 text-brand-400" />
             <span className="flex-1 truncate">{value || 'Click to upload a file'}</span>
-            <span className="rounded-lg bg-ink-700 px-3 py-1 text-xs text-slate-200">Browse</span>
+            <span className="rounded-lg bg-ink-700 px-3 py-1 text-xs text-fg">Browse</span>
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"

@@ -3,7 +3,7 @@ import { Card, Avatar, Badge, PageHeader, BackButton } from '@/components/ui';
 import { rankings } from '@/data/rankingsMock';
 import { formatNumber } from '@/utils/format';
 
-const medal = ['#f59e0b', '#94a3b8', '#b45309']; // gold / silver / bronze
+const medal = ['#a1a1aa', '#94a3b8', '#52525b']; // gold / silver / bronze
 const order = [1, 0, 2]; // visual podium order: 2nd, 1st, 3rd
 
 export default function Top3Rankings() {
@@ -31,11 +31,11 @@ export default function Top3Rankings() {
                 <Avatar name={u.name} size={isFirst ? 80 : 64} />
                 {isFirst && <FaTrophy className="absolute -right-2 -top-2 h-6 w-6 text-amber-400" />}
               </div>
-              <p className="mt-3 font-semibold text-white">
+              <p className="mt-3 font-semibold text-fg-strong">
                 {u.name} {u.isMe && <span className="text-brand-400">(You)</span>}
               </p>
               <p className="text-xs text-ink-500">{u.dept}</p>
-              <p className="mt-2 text-2xl font-extrabold text-white">{formatNumber(u.points)}</p>
+              <p className="mt-2 text-2xl font-extrabold text-fg-strong">{formatNumber(u.points)}</p>
               <Badge tone="brand" className="mt-2">{u.productivity}% productive</Badge>
             </Card>
           );

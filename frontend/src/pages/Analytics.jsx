@@ -148,7 +148,7 @@ export default function Analytics() {
                   >
                     <Avatar name={u.name} size={36} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-200">{u.name}</p>
+                      <p className="truncate text-sm font-medium text-fg">{u.name}</p>
                       <p className="truncate text-xs text-ink-500">{subtitle}</p>
                     </div>
                     {active && <Badge tone="brand">Selected</Badge>}
@@ -170,7 +170,7 @@ export default function Analytics() {
       <Card>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="mb-2 text-sm font-medium text-slate-300">Quick Range</p>
+            <p className="mb-2 text-sm font-medium text-fg-muted">Quick Range</p>
             <div className="inline-flex flex-wrap gap-1 rounded-xl bg-ink-800 p-1">
               {RANGES.map((r) => {
                 const active = !customActive && r.id === rangeId;
@@ -183,7 +183,7 @@ export default function Analytics() {
                       setEnd('');
                     }}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                      active ? 'bg-brand-gradient text-white shadow' : 'text-ink-400 hover:text-slate-200'
+                      active ? 'bg-brand-gradient text-white shadow' : 'text-ink-400 hover:text-fg'
                     }`}
                   >
                     {r.label}
@@ -206,12 +206,12 @@ export default function Analytics() {
 
           <div className="grid gap-5 lg:grid-cols-3">
             <Card title={<span className="flex items-center gap-2"><FiClock className="text-brand-400" /> Total Hours</span>} className="flex flex-col justify-center">
-              <p className="text-3xl font-bold text-white">{formatMinutes(data.totalTracked)}</p>
+              <p className="text-3xl font-bold text-fg-strong">{formatMinutes(data.totalTracked)}</p>
               <p className="mt-1 text-sm text-ink-400">Total time logged in this range.</p>
             </Card>
 
             <Card title={<span className="flex items-center gap-2"><FiZap className="text-brand-400" /> Productive</span>} className="flex flex-col justify-center">
-              <p className="text-3xl font-bold text-white">{formatMinutes(data.productiveMin)}</p>
+              <p className="text-3xl font-bold text-fg-strong">{formatMinutes(data.productiveMin)}</p>
               <p className="mt-1 text-sm text-ink-400">Hours spent on productive work.</p>
             </Card>
 
@@ -220,8 +220,8 @@ export default function Analytics() {
                 {data.topPeriods.map((p, i) => (
                   <li key={p.range}>
                     <div className="mb-1 flex justify-between text-sm">
-                      <span className="text-slate-300">{i + 1}. {p.range}</span>
-                      <span className="font-medium text-slate-200">{p.pct}%</span>
+                      <span className="text-fg-muted">{i + 1}. {p.range}</span>
+                      <span className="font-medium text-fg">{p.pct}%</span>
                     </div>
                     <Bar pct={p.pct} />
                   </li>
@@ -251,7 +251,7 @@ export default function Analytics() {
               <BarChartCard data={data.daily} color="#f93b48" unit="%" average xLabel="Day" yLabel="Productivity (%)" />
             </Card>
             <Card title="Weekly productivity" subtitle="Across the selected range">
-              <BarChartCard data={data.weekly} color="#22c55e" unit="%" average xLabel="Week" yLabel="Productivity (%)" />
+              <BarChartCard data={data.weekly} color="#e51d2b" unit="%" average xLabel="Week" yLabel="Productivity (%)" />
             </Card>
           </div>
 
@@ -300,7 +300,7 @@ function ConsultantOverviewSection({ consultantId }) {
               <div key={c.name} className="flex items-center gap-2 text-sm">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
                 <span className="text-ink-400">{c.name}</span>
-                <span className="ml-auto font-medium text-slate-200">{c.value}</span>
+                <span className="ml-auto font-medium text-fg">{c.value}</span>
               </div>
             ))}
           </div>
@@ -314,7 +314,7 @@ function ConsultantOverviewSection({ consultantId }) {
           <div className="flex items-center gap-4">
             <Avatar name={consultant?.name} size={56} />
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-white">{consultant?.name || '—'}</p>
+              <p className="truncate text-base font-semibold text-fg-strong">{consultant?.name || '—'}</p>
               <p className="truncate text-sm text-ink-400">{consultant?.email || '—'}</p>
               {consultant?.department && (
                 <p className="mt-1 text-xs text-ink-500">{consultant.department}</p>
@@ -353,7 +353,7 @@ function ConsultantOverviewSection({ consultantId }) {
                       <div className="flex items-center gap-3">
                         <Avatar name={c.name} size={32} />
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-200">{c.name}</p>
+                          <p className="truncate text-sm font-medium text-fg">{c.name}</p>
                           <p className="truncate text-xs text-ink-500">{c.clientId || '—'} · {c.dept || '—'}</p>
                         </div>
                       </div>
@@ -382,14 +382,14 @@ function ConsultantOverviewSection({ consultantId }) {
 function Stat({ label, value }) {
   return (
     <div className="rounded-xl border border-ink-700 bg-ink-900/40 px-3 py-2">
-      <p className="text-lg font-semibold text-white">{value}</p>
+      <p className="text-lg font-semibold text-fg-strong">{value}</p>
       <p className="text-xs text-ink-500">{label}</p>
     </div>
   );
 }
 
 function withTaskColors(breakdown) {
-  const colors = { Completed: '#22c55e', 'In Progress': '#f59e0b', Pending: '#64748b' };
+  const colors = { Completed: '#e51d2b', 'In Progress': '#a1a1aa', Pending: '#64748b' };
   return (breakdown || []).map((b) => ({ ...b, color: colors[b.name] || '#f93b48' }));
 }
 
@@ -403,7 +403,7 @@ function SectionHeader({ icon: Icon, title, subtitle }) {
         <Icon className="h-5 w-5" />
       </span>
       <div>
-        <h2 className="font-display text-lg font-bold text-white">{title}</h2>
+        <h2 className="font-display text-lg font-bold text-fg-strong">{title}</h2>
         <p className="text-sm text-ink-400">{subtitle}</p>
       </div>
     </div>

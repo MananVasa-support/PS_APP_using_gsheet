@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiSave, FiClipboard } from 'react-icons/fi';
-import { Button, Card, PageHeader } from '@/components/ui';
+import { BackButton, Button, Card, PageHeader } from '@/components/ui';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/context/ToastContext.jsx';
 import { cn } from '@/utils/cn';
@@ -34,9 +34,7 @@ export default function PostPS() {
 
   return (
     <div className="space-y-6">
-      <Button as={Link} to="/home" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
+      <BackButton to="/dashboard" />
 
       <PageHeader title="Post PS" subtitle="Wrap up after your problem-solving session" />
 
@@ -47,13 +45,13 @@ export default function PostPS() {
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-gradient text-white">
                 <FiClipboard className="h-4 w-4" />
               </span>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-fg-muted">
                 Capture your reflections, takeaways and follow-ups from the PS session.
               </p>
             </div>
 
             <div>
-              <label htmlFor="postNotes" className="mb-1.5 block text-sm font-medium text-slate-300">
+              <label htmlFor="postNotes" className="mb-1.5 block text-sm font-medium text-fg-muted">
                 Notes <span className="text-brand-400">*</span>
               </label>
               <textarea
@@ -70,9 +68,7 @@ export default function PostPS() {
             </div>
 
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
-              <Button as={Link} to="/home" type="button" variant="ghost" icon={FiArrowLeft}>
-                Back
-              </Button>
+              <BackButton to="/dashboard" />
               <Button type="submit" icon={FiSave} disabled={!isComplete}>
                 Save
               </Button>

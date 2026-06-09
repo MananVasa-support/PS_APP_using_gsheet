@@ -17,7 +17,7 @@ const DAY_OPTIONS = [
   { days: 10, label: 'Last 10 Days' },
   { days: 365, label: 'All' },
 ];
-const medal = ['#f59e0b', '#94a3b8', '#b45309']; // gold / silver / bronze
+const medal = ['#a1a1aa', '#94a3b8', '#52525b']; // gold / silver / bronze
 
 export default function Level2() {
   const { isAdmin, isConsultant } = useAuthContext();
@@ -89,18 +89,18 @@ function Level2Client() {
           <Card title="Streak counter" className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-3">
               <FaFire className="h-10 w-10 text-brand-500" />
-              <span className="text-4xl font-extrabold text-white">{streak}</span>
+              <span className="text-4xl font-extrabold text-fg-strong">{streak}</span>
             </div>
             <p className="mt-2 text-sm text-ink-400">day{streak === 1 ? '' : 's'} in a row</p>
           </Card>
           <Card title="Day progress" className="flex flex-col items-center justify-center">
-            <span className="text-4xl font-extrabold text-white">{elapsedDays}<span className="text-ink-500">/{days}</span></span>
+            <span className="text-4xl font-extrabold text-fg-strong">{elapsedDays}<span className="text-ink-500">/{days}</span></span>
             <p className="mt-2 text-sm text-ink-400">days completed</p>
           </Card>
           <Card title="Your rank" className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-3">
               <FaTrophy className="h-9 w-9 text-amber-400" />
-              <span className="text-4xl font-extrabold text-white">#{rankings.find((r) => r.isMe)?.rank ?? '—'}</span>
+              <span className="text-4xl font-extrabold text-fg-strong">#{rankings.find((r) => r.isMe)?.rank ?? '—'}</span>
             </div>
             <p className="mt-2 text-sm text-ink-400">on the ranking board</p>
           </Card>
@@ -132,12 +132,12 @@ function Level2Client() {
                 </span>
                 <Avatar name={u.name} size={32} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-200">
+                  <p className="truncate text-sm font-medium text-fg">
                     {u.name} {u.isMe && <span className="text-brand-400">(You)</span>}
                   </p>
                   <p className="truncate text-xs text-ink-500">{u.dept}</p>
                 </div>
-                <span className="text-sm font-semibold text-white">{formatNumber(u.points)}</span>
+                <span className="text-sm font-semibold text-fg-strong">{formatNumber(u.points)}</span>
               </div>
             ))}
           </Card>
@@ -155,13 +155,13 @@ function Level2Client() {
       <Card className="mx-auto max-w-2xl">
         <div className="flex flex-col items-center py-6 text-center">
           <span className="grid h-16 w-16 place-items-center rounded-2xl bg-brand-gradient shadow-glow">
-            <FiLayers className="h-7 w-7 text-white" />
+            <FiLayers className="h-7 w-7 text-fg-strong" />
           </span>
 
           {/* Step 1 — Select Challenge */}
           {!selecting && participating === null && (
             <>
-              <h2 className="mt-5 font-display text-2xl font-bold text-white">Ready for Challenges?</h2>
+              <h2 className="mt-5 font-display text-2xl font-bold text-fg-strong">Ready for Challenges?</h2>
               <p className="mt-2 max-w-md text-sm text-ink-400">
                 Pick a challenge, commit to a number of days, and track your progress against everyone else.
               </p>
@@ -174,7 +174,7 @@ function Level2Client() {
           {/* Step 2 — Participate? */}
           {selecting && participating === null && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-              <h2 className="mt-5 font-display text-2xl font-bold text-white">Participate?</h2>
+              <h2 className="mt-5 font-display text-2xl font-bold text-fg-strong">Participate?</h2>
               <p className="mt-2 text-sm text-ink-400">Would you like to take part in this challenge?</p>
               <div className="mt-6 flex justify-center gap-3">
                 <Button icon={FiCheck} onClick={() => setParticipating(true)}>Yes</Button>
@@ -186,7 +186,7 @@ function Level2Client() {
           {/* Declined */}
           {participating === false && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-              <h2 className="mt-5 font-display text-2xl font-bold text-white">No problem 👍</h2>
+              <h2 className="mt-5 font-display text-2xl font-bold text-fg-strong">No problem 👍</h2>
               <p className="mt-2 text-sm text-ink-400">Come back whenever you're ready to take on the Challenges.</p>
               <Button variant="outline" className="mt-6" onClick={() => { setParticipating(null); setSelecting(true); }}>
                 Choose again
@@ -197,7 +197,7 @@ function Level2Client() {
           {/* Step 3 — Select number of days */}
           {participating === true && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-              <h2 className="mt-5 font-display text-2xl font-bold text-white">Select number of days</h2>
+              <h2 className="mt-5 font-display text-2xl font-bold text-fg-strong">Select number of days</h2>
               <p className="mt-2 text-sm text-ink-400">How long do you want to commit?</p>
 
               <div className="mt-6 flex flex-nowrap justify-center gap-2 overflow-x-auto">
@@ -208,7 +208,7 @@ function Level2Client() {
                     className={`shrink-0 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
                       choice === o.days
                         ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                        : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50 hover:text-white'
+                        : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
                     }`}
                   >
                     {o.label}
@@ -219,7 +219,7 @@ function Level2Client() {
                   className={`shrink-0 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
                     choice === 'custom'
                       ? 'border-transparent bg-brand-gradient text-white shadow-glow'
-                      : 'border-ink-700 bg-ink-800 text-slate-300 hover:border-brand-500/50 hover:text-white'
+                      : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
                   }`}
                 >
                   Custom
@@ -304,7 +304,7 @@ function ChallengesOverview({ role }) {
                 </span>
                 <Avatar name={r.name} size={36} />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-white">{r.name}</p>
+                  <p className="truncate text-sm font-semibold text-fg-strong">{r.name}</p>
                   <p className="truncate text-xs text-ink-500">{r.dept}</p>
                 </div>
               </div>
@@ -348,11 +348,11 @@ function ChallengesOverview({ role }) {
                   <td className="py-3">
                     <div className="flex items-center gap-3">
                       <Avatar name={r.name} size={32} />
-                      <span className="text-sm font-medium text-slate-200">{r.name}</span>
+                      <span className="text-sm font-medium text-fg">{r.name}</span>
                     </div>
                   </td>
                   <td className="py-3 text-ink-300">{r.dept}</td>
-                  <td className="py-3 font-medium text-slate-200">{r.points}</td>
+                  <td className="py-3 font-medium text-fg">{r.points}</td>
                   <td className="py-3">{r.productivity}%</td>
                   <td className="py-3">
                     <span className="inline-flex items-center gap-1 text-ink-300">
@@ -380,7 +380,7 @@ function ChallengesOverview({ role }) {
 function Mini({ label, value }) {
   return (
     <div className="rounded-lg bg-ink-800 px-2 py-1.5">
-      <p className="text-sm font-semibold text-white">{value}</p>
+      <p className="text-sm font-semibold text-fg-strong">{value}</p>
       <p className="text-[10px] uppercase tracking-wider text-ink-500">{label}</p>
     </div>
   );

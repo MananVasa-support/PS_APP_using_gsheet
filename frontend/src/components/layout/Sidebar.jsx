@@ -22,7 +22,7 @@ function NavRow({ item, collapsed, onNavigate }) {
       className={({ isActive }) =>
         cn(
           rowBase,
-          isActive ? 'text-white' : 'text-ink-400 hover:bg-ink-800 hover:text-slate-200',
+          isActive ? 'text-fg-strong' : 'text-ink-400 hover:bg-ink-800 hover:text-fg',
           collapsed && 'justify-center'
         )
       }
@@ -96,12 +96,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
       >
         {/* Brand + collapse toggle. */}
         <div className="flex h-16 items-center justify-between px-4">
-          <Link to={homePath} onClick={onCloseMobile} aria-label="Go to home" className="rounded-xl">
+          <Link to="/dashboard" onClick={onCloseMobile} aria-label="Go to dashboard hub" className="rounded-xl">
             <Logo compact={collapsed} />
           </Link>
           <button
             onClick={onToggleCollapse}
-            className="hidden rounded-lg p-1.5 text-ink-400 hover:bg-ink-800 hover:text-white lg:block"
+            className="hidden rounded-lg p-1.5 text-ink-400 hover:bg-ink-800 hover:text-fg-strong lg:block"
             aria-label="Toggle sidebar"
           >
             <FiChevronsLeft className={cn('h-5 w-5 transition-transform', collapsed && 'rotate-180')} />
@@ -153,7 +153,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
             <Avatar name={user?.name} src={user?.avatar} size={36} />
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+                <p className="truncate text-sm font-medium text-fg-strong">{user?.name}</p>
                 <p className="truncate text-xs text-ink-400">{user?.title || user?.email}</p>
               </div>
             )}

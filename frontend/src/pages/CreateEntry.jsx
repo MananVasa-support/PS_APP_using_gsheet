@@ -11,10 +11,10 @@ import { formatDate } from '@/utils/format';
 
 const CATEGORIES = ['Productive', 'Non-Productive', 'Personal', 'Not Sure'];
 const catColor = {
-  Productive: '#22c55e',
+  Productive: '#e51d2b',
   'Non-Productive': '#ef4444',
-  Personal: '#8b5cf6',
-  'Not Sure': '#f59e0b',
+  Personal: '#71717a',
+  'Not Sure': '#a1a1aa',
 };
 const catTone = { Productive: 'success', 'Non-Productive': 'danger', Personal: 'personal', 'Not Sure': 'warning' };
 
@@ -142,7 +142,7 @@ export default function CreateEntry() {
           <span className="hidden text-sm text-ink-400 sm:block">{formatDate(new Date())}</span>
           <div className="flex items-center gap-2">
             <ProgressRing value={progress} size={48} stroke={6}>
-              <span className="text-xs font-bold text-white">{progress}%</span>
+              <span className="text-xs font-bold text-fg-strong">{progress}%</span>
             </ProgressRing>
             <span className="text-sm text-ink-400">Day progress</span>
           </div>
@@ -171,7 +171,7 @@ export default function CreateEntry() {
                   <span className="hidden w-1 self-stretch rounded-full sm:block" style={{ background: catColor[b.category] }} />
 
                   {/* Left — time */}
-                  <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-2 text-sm font-medium text-slate-200">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink-800 px-3 py-2 text-sm font-medium text-fg">
                     <FiClock className={`h-4 w-4 ${isActive ? 'text-brand-400' : 'text-ink-400'}`} />
                     <span className="tabular-nums">{slotLabel(b.slot)}</span>
                     {isActive && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500" />}
@@ -217,7 +217,7 @@ export default function CreateEntry() {
       {/* Past / Inactive */}
       {inactive.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+          <p className="mb-2 flex items-center gap-2 text-sm font-medium text-fg-muted">
             <FiArchive className="h-4 w-4" /> Past / Inactive
           </p>
           <ul className="space-y-2">
@@ -231,7 +231,7 @@ export default function CreateEntry() {
                   className="flex items-center gap-3 rounded-xl bg-ink-850 p-3"
                 >
                   <span className="text-sm tabular-nums text-ink-400">{slotLabel(b.slot)}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-slate-300">{b.task || '—'}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-fg-muted">{b.task || '—'}</span>
                   <Badge tone={catTone[b.category]}>{b.category}</Badge>
                   <Badge tone="warning">{b.reason}</Badge>
                 </motion.li>
@@ -245,8 +245,8 @@ export default function CreateEntry() {
       <div className="sticky bottom-4 z-20 mt-6">
         <div className="glass flex flex-col gap-3 rounded-2xl p-3 shadow-card sm:flex-row sm:items-center sm:justify-between">
           <p className="px-1 text-sm text-ink-400">
-            <span className="font-semibold text-white">{filled.length}</span> logged ·{' '}
-            <span className="font-semibold text-white">{blocks.length}</span> blocks
+            <span className="font-semibold text-fg-strong">{filled.length}</span> logged ·{' '}
+            <span className="font-semibold text-fg-strong">{blocks.length}</span> blocks
           </p>
           <div className="flex gap-3">
             <Button variant="secondary" icon={FiSave} className="flex-1 sm:flex-none" onClick={saveEntry}>Save Entry</Button>
@@ -269,7 +269,7 @@ export default function CreateEntry() {
                 <FiClock className="h-4 w-4 animate-pulse" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white">Still working?</p>
+                <p className="text-sm font-medium text-fg-strong">Still working?</p>
                 <p className="text-xs text-ink-400">
                   No activity for a while. The current block moves to Past in{' '}
                   <span className="font-mono text-brand-400">{remaining}s</span>.
@@ -303,7 +303,7 @@ export default function CreateEntry() {
             <div className="flex items-center gap-4">
               <ProgressRing value={summary.productivePct} size={84} stroke={9} />
               <div>
-                <p className="text-2xl font-bold text-white">{summary.total}</p>
+                <p className="text-2xl font-bold text-fg-strong">{summary.total}</p>
                 <p className="text-sm text-ink-400">activities logged today</p>
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function CreateEntry() {
                 <div key={c.name} className="flex items-center gap-2 rounded-xl bg-ink-800 p-2.5 text-sm">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: catColor[c.name] }} />
                   <span className="text-ink-400">{c.name}</span>
-                  <span className="ml-auto font-semibold text-slate-200">{c.count}</span>
+                  <span className="ml-auto font-semibold text-fg">{c.count}</span>
                 </div>
               ))}
             </div>

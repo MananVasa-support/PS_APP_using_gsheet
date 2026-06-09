@@ -28,7 +28,7 @@ export default function DonutChart({ data, height = 220, centerLabel, centerValu
       {(centerLabel || centerValue) && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
           <div>
-            <div className="text-xl font-bold text-white">{centerValue}</div>
+            <div className="text-xl font-bold text-fg-strong">{centerValue}</div>
             <div className="text-xs text-ink-400">{centerLabel}</div>
           </div>
         </div>

@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import AuthLayout from '@/layouts/AuthLayout.jsx';
 import HomeLayout from '@/layouts/HomeLayout.jsx';
 import DashboardLayout from '@/layouts/DashboardLayout.jsx';
+import ToolLayout from '@/layouts/ToolLayout.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import ErrorBoundary from '@/components/ErrorBoundary.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
@@ -14,7 +15,6 @@ const Login = lazy(() => import('@/pages/auth/Login.jsx'));
 const Register = lazy(() => import('@/pages/auth/Register.jsx'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword.jsx'));
 const WaitingApproval = lazy(() => import('@/pages/WaitingApproval.jsx'));
-const Home = lazy(() => import('@/pages/Home.jsx'));
 const Dashboard = lazy(() => import('@/pages/Dashboard.jsx'));
 const Analytics = lazy(() => import('@/pages/Analytics.jsx'));
 const Challenges = lazy(() => import('@/pages/Challenges.jsx'));
@@ -107,7 +107,10 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           >
-            <Route path="/home" element={<Home />} />
+            {/* The old card-grid home was removed — /dashboard (the vertical
+                tools list) is the single home. Keep /home as a redirect so any
+                old links/bookmarks still land in the right place. */}
+            <Route path="/home" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pre-ps" element={<PrePS />} />
             <Route path="/pre-ps/expectation" element={<ExpectationFromPS />} />
@@ -140,53 +143,24 @@ export default function AppRoutes() {
             <Route path="/settings" element={<Settings />} />
           </Route>
 
-          {/* Time Auditor runs in its own full-screen workflow shell —
-              the sidebar is intentionally hidden until the user clicks
-              "Go To Dashboard" at the end of the assessment. */}
+          {/* Tools — Time Auditor (shell-native) and the 4 merged tools all
+              mount under the shared ToolLayout, so every tool carries the same
+              top navbar (brand, user menu, theme toggle — no search) and reads
+              as part of one website. Each tool still owns its internal routing
+              and renders its own sidebar below the bar. */}
           <Route
-            path="/time-auditor"
             element={
               <ProtectedRoute>
-                <TimeAuditor />
+                <ToolLayout />
               </ProtectedRoute>
             }
-          />
-
-          {/* Merged tools — each runs full-screen in its own theme/layout and
-              owns its internal routing (splat). Mounted outside HomeLayout so
-              the tool's own sidebar/header isn't double-wrapped. */}
-          <Route
-            path="/power-planner"
-            element={
-              <ProtectedRoute>
-                <PowerPlannerPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reason-eliminator/*"
-            element={
-              <ProtectedRoute>
-                <ReasonEliminatorPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/time-finder/*"
-            element={
-              <ProtectedRoute>
-                <TimeFinderPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/meeting-framework/*"
-            element={
-              <ProtectedRoute>
-                <MeetingFramework />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route path="/time-auditor" element={<TimeAuditor />} />
+            <Route path="/power-planner" element={<PowerPlannerPage />} />
+            <Route path="/reason-eliminator/*" element={<ReasonEliminatorPage />} />
+            <Route path="/time-finder/*" element={<TimeFinderPage />} />
+            <Route path="/meeting-framework/*" element={<MeetingFramework />} />
+          </Route>
 
           {/* Admin-only — uses sidebar-less HomeLayout so the admin panel
               gets the full-width view, matching tool pages. */}

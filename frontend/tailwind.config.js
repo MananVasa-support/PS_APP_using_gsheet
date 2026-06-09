@@ -1,51 +1,59 @@
 /** @type {import('tailwindcss').Config} */
+
+// ── Strict brand system: RED + BLACK + WHITE + GRAY only ────────────────────
+// The whole merged app uses ONE red for every accent and TRUE grays for every
+// neutral. Stray colour families (green/blue/purple/amber/…) are remapped to RED
+// below, so no other hue can appear anywhere across the shell or the 5 tools.
+const RED = {
+  50: '#fff1f2',
+  100: '#ffe1e3',
+  200: '#ffc8cc',
+  300: '#ffa1a8',
+  400: '#ff6b76',
+  500: '#f93b48',
+  600: '#e51d2b',
+  700: '#c11420',
+  800: '#a0141f',
+  900: '#84171f',
+  950: '#48070b',
+  DEFAULT: '#e51d2b',
+};
+
+const GRAY = {
+  50: '#f7f7f8',
+  100: '#efeff1',
+  200: '#e4e4e7',
+  300: '#d1d1d6',
+  400: '#a1a1aa',
+  500: '#71717a',
+  600: '#52525b',
+  700: '#3f3f46',
+  800: '#27272a',
+  900: '#18181b',
+  950: '#0b0b0c',
+};
+
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
-        // ── Brand red ─────────────────────────────────────────────────────
-        // Shell uses the numeric 50–950 scale; the merged tools add named keys
-        // (Reasons Eliminator, Meeting, Time Finder). Numeric + named keys
-        // coexist on one object, so every existing class keeps working.
+        // Single brand red. All the tools' different reds + named aliases
+        // collapse onto this one red so the app reads as one product.
         brand: {
-          50: '#fff1f2',
-          100: '#ffe1e3',
-          200: '#ffc8cc',
-          300: '#ffa1a8',
-          400: '#ff6b76',
-          500: '#f93b48',
-          600: '#e51d2b',
-          700: '#c11420',
-          800: '#a0141f',
-          900: '#84171f',
-          950: '#48070b',
-          // Time Finder
-          DEFAULT: '#E24B4A',
-          dark: '#C13D3C',
-          soft: '#FCEBEB',
-          // Reasons Eliminator + Meeting (near-identical reds — unified)
-          red: '#E11D2A',
-          'red-light': '#EF4444',
-          'red-dark': '#B8141F',
-          'red-soft': '#FDECEE',
-          'red-tint': '#FEF2F2',
-          black: '#0B0B0C',
-          ink: '#1A1A1D',
-          gray: {
-            50: '#F7F7F8',
-            100: '#EFEFF1',
-            200: '#E4E4E7',
-            300: '#D1D1D6',
-            400: '#A1A1AA',
-            500: '#71717A',
-            600: '#52525B',
-            700: '#3F3F46',
-            800: '#27272A',
-            900: '#18181B',
-          },
+          ...RED,
+          dark: RED[700],
+          soft: RED[50],
+          red: RED[600],
+          'red-light': RED[500],
+          'red-dark': RED[700],
+          'red-soft': RED[50],
+          'red-tint': RED[50],
+          black: '#0b0b0c',
+          ink: '#18181b',
+          gray: GRAY,
         },
-        // ── Shell "ink" surfaces (CSS-var driven dark/light) — untouched ───
+        // Adaptive ink surfaces (CSS-var driven light/dark) — neutral grays.
         ink: {
           950: 'rgb(var(--ink-950) / <alpha-value>)',
           900: 'rgb(var(--ink-900) / <alpha-value>)',
@@ -57,37 +65,41 @@ export default {
           500: 'rgb(var(--ink-500) / <alpha-value>)',
           400: 'rgb(var(--ink-400) / <alpha-value>)',
         },
-        // Shell category colors.
-        productive: '#22c55e',
-        unproductive: '#ef4444',
-        personal: '#8b5cf6',
-        neutral: '#f59e0b',
-        // ── Meeting Success Maximizer light-theme tokens ──────────────────
-        // ("ink" is namespaced to "mkink" to avoid clashing with the shell.)
+        // Adaptive foreground text (readable in both light & dark — see index.css).
+        fg: 'rgb(var(--fg) / <alpha-value>)',
+        'fg-strong': 'rgb(var(--fg-strong) / <alpha-value>)',
+        'fg-muted': 'rgb(var(--fg-muted) / <alpha-value>)',
+        // Category colours reduced to red/black/gray (no green/purple/amber).
+        productive: GRAY[900],
+        unproductive: RED[600],
+        personal: GRAY[500],
+        neutral: GRAY[400],
+        // Tool neutral tokens → black / white / gray.
         mkink: '#000000',
-        'mkink-soft': '#374151',
-        muted: '#6B7280',
-        'muted-soft': '#9CA3AF',
-        line: '#E5E7EB',
-        'line-soft': '#F3F4F6',
-        surface: '#FFFFFF',
-        'surface-alt': '#F9FAFB',
-        // ── Time Finder ink (namespaced) ──────────────────────────────────
-        tfink: {
-          900: '#0d0d0d',
-          500: '#737373',
-          200: '#e5e5e5',
-        },
+        'mkink-soft': GRAY[700],
+        muted: GRAY[500],
+        'muted-soft': GRAY[400],
+        line: GRAY[200],
+        'line-soft': GRAY[100],
+        surface: '#ffffff',
+        'surface-alt': GRAY[50],
+        tfink: { 900: GRAY[900], 500: GRAY[500], 200: GRAY[200] },
+        // ── Kill all non-red chroma: every stray family resolves to RED ────
+        green: RED, emerald: RED, teal: RED, lime: RED, cyan: RED, sky: RED,
+        blue: RED, indigo: RED, violet: RED, purple: RED, fuchsia: RED,
+        pink: RED, rose: RED, amber: RED, yellow: RED, orange: RED,
+        // One true-gray family (no blue-tinted slate) for all neutrals.
+        slate: GRAY, gray: GRAY, zinc: GRAY, stone: GRAY,
       },
       fontFamily: {
+        // One typeface across the whole app for a single cohesive look.
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-        meeting: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        meeting: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         card: '0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6)',
         glow: '0 0 0 1px rgba(249,59,72,0.4), 0 8px 30px -6px rgba(249,59,72,0.45)',
-        // Merged tool shadows (light-theme depth).
         'card-hover': '0 6px 20px rgba(0, 0, 0, 0.08)',
         modal: '0 4px 12px rgba(15, 15, 15, 0.10), 0 18px 48px rgba(15, 15, 15, 0.20)',
         control: '0 1px 2px rgba(15, 15, 15, 0.05), 0 2px 6px rgba(15, 15, 15, 0.05)',

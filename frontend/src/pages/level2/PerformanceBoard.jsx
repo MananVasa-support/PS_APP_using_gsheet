@@ -30,22 +30,22 @@ export default function PerformanceBoard() {
           <tbody>
             {rankings.map((u) => (
               <tr key={u.rank} className={`border-b border-ink-800 ${u.isMe ? 'bg-brand-500/10' : ''}`}>
-                <td className="px-3 py-3 font-bold text-white">{u.rank}</td>
+                <td className="px-3 py-3 font-bold text-fg-strong">{u.rank}</td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar name={u.name} size={32} />
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-200">
+                      <p className="truncate font-medium text-fg">
                         {u.name} {u.isMe && <span className="text-brand-400">(You)</span>}
                       </p>
                       <p className="truncate text-xs text-ink-500">{u.dept}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-3 text-slate-300">{u.productivity}%</td>
-                <td className="px-3 py-3 text-slate-300">{u.streak} days</td>
-                <td className="px-3 py-3 text-slate-300">{u.completion}%</td>
-                <td className="px-3 py-3 text-right font-semibold text-white">{formatNumber(u.points)}</td>
+                <td className="px-3 py-3 text-fg-muted">{u.productivity}%</td>
+                <td className="px-3 py-3 text-fg-muted">{u.streak} days</td>
+                <td className="px-3 py-3 text-fg-muted">{u.completion}%</td>
+                <td className="px-3 py-3 text-right font-semibold text-fg-strong">{formatNumber(u.points)}</td>
               </tr>
             ))}
           </tbody>

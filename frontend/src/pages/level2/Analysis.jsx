@@ -17,14 +17,14 @@ export default function Analysis() {
           <ProgressRing value={avg} size={120} stroke={11} />
         </Card>
         <Card title="Best day" className="flex flex-col items-center justify-center">
-          <span className="text-3xl font-extrabold text-white">{best.label}</span>
+          <span className="text-3xl font-extrabold text-fg-strong">{best.label}</span>
           <p className="mt-2 text-sm text-ink-400">{best.value}% productive</p>
         </Card>
         <Card title="Completion" className="flex flex-col items-center justify-center">
           <ProgressRing value={me?.completion ?? 0} size={120} stroke={11} />
         </Card>
         <Card title="Current streak" className="flex flex-col items-center justify-center">
-          <span className="text-4xl font-extrabold text-white">{me?.streak ?? 0}</span>
+          <span className="text-4xl font-extrabold text-fg-strong">{me?.streak ?? 0}</span>
           <p className="mt-2 text-sm text-ink-400">days in a row</p>
         </Card>
       </div>

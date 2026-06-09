@@ -65,9 +65,9 @@ export default function BarChartCard({
         {computedAvg != null && (
           <ReferenceLine
             y={computedAvg}
-            stroke="#f59e0b"
+            stroke="#a1a1aa"
             strokeDasharray="5 4"
-            label={{ value: `Avg ${computedAvg}${unit}`, position: 'insideTopRight', fill: '#f59e0b', fontSize: 11 }}
+            label={{ value: `Avg ${computedAvg}${unit}`, position: 'insideTopRight', fill: '#a1a1aa', fontSize: 11 }}
           />
         )}
         <Bar

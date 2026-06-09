@@ -57,15 +57,15 @@ export default function Modal({
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                {title && <h3 className="text-lg font-semibold text-white">{title}</h3>}
+                {title && <h3 className="text-lg font-semibold text-fg-strong">{title}</h3>}
                 {subtitle && <p className="text-sm text-ink-400">{subtitle}</p>}
               </div>
-              <button onClick={onClose} className="rounded-lg p-1 text-ink-400 hover:bg-ink-800 hover:text-white" aria-label="Close">
+              <button onClick={onClose} className="rounded-lg p-1 text-ink-400 hover:bg-ink-800 hover:text-fg-strong" aria-label="Close">
                 <FiX className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="text-slate-200">{children}</div>
+            <div className="text-fg">{children}</div>
 
             {footer && <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>}
           </motion.div>

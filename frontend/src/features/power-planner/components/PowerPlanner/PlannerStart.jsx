@@ -6,6 +6,7 @@ import {
   FiClock,
   FiPieChart,
 } from "react-icons/fi";
+import HubLink from "@/components/ui/HubLink.jsx";
 
 // Landing screen shown before the planner. Each option leads into the planner
 // at the matching section (Totality is a placeholder for now).
@@ -38,8 +39,13 @@ const OPTIONS = [
 
 const PlannerStart = ({ heading = "Power Planner", onSelect }) => {
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-12 md:py-16">
-      <div className="mb-8 text-center">
+    <>
+      {/* Back to dashboard — flush top-left, matching the other tools. */}
+      <div className="px-4 pt-4 sm:px-6">
+        <HubLink />
+      </div>
+      <div className="mx-auto w-full max-w-2xl px-4 pb-12 pt-6 md:pb-16">
+        <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-black md:text-4xl">
           {heading}
         </h1>
@@ -77,7 +83,8 @@ const PlannerStart = ({ heading = "Power Planner", onSelect }) => {
           );
         })}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

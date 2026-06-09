@@ -6,13 +6,17 @@ import {
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
+import HubLink from '@/components/ui/HubLink.jsx';
 
 const COLLAPSE_KEY = 'msm_sidebar_collapsed';
 
+// Absolute paths prefixed with the tool's mount (/meeting-framework). Bare
+// paths like "/" or "/dashboard" would escape the tool and land on the shell
+// (404 / back to the app home), so they MUST stay fully qualified.
 const menuItems = [
-  { path: '/', name: 'Plan a Meeting', icon: FiClipboard, end: true },
-  { path: '/meeting-list', name: 'Meeting List', icon: FiFolder, end: false },
-  { path: '/dashboard', name: 'Dashboard', icon: FiBarChart2, end: false },
+  { path: '/meeting-framework', name: 'Plan a Meeting', icon: FiClipboard, end: true },
+  { path: '/meeting-framework/meeting-list', name: 'Meeting List', icon: FiFolder, end: false },
+  { path: '/meeting-framework/dashboard', name: 'Dashboard', icon: FiBarChart2, end: false },
 ];
 
 export default function Layout({ children }) {
@@ -134,6 +138,9 @@ export default function Layout({ children }) {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0">
+        <div className="px-6 pt-3 sm:px-8 bg-surface">
+          <HubLink />
+        </div>
         {/* Top Header */}
         <header className="h-20 border-b border-line px-6 sm:px-8 flex items-center justify-between bg-surface/80 backdrop-blur-md sticky top-0 z-40">
           <div>

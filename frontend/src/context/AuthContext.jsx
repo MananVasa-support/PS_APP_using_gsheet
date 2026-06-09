@@ -30,9 +30,13 @@ export function AuthProvider({ children }) {
     async function bootstrap() {
       try {
         if (!isConfigured) {
-          // Demo / offline mode — keep the legacy localStorage path so existing
-          // demos still work without env vars.
-          const raw = localStorage.getItem('ta_user');
+          // Demo / offline mode. The session lives in sessionStorage (per browser
+          // tab) — NOT localStorage — so every fresh launch starts logged-out at
+          // the public Landing/Login, while a mid-session refresh keeps the user
+          // signed in. Drop any legacy localStorage session from older builds so
+          // it no longer auto-logs the demo user back in.
+          localStorage.removeItem('ta_user');
+          const raw = sessionStorage.getItem('ta_user');
           if (raw) {
             try {
               setUser(JSON.parse(raw));
@@ -89,11 +93,12 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // Mirror demo-mode user back to localStorage so a refresh keeps them signed in.
+  // Mirror demo-mode user into sessionStorage so a refresh keeps them signed in
+  // for the current tab only. Closing the tab / a new launch starts logged-out.
   useEffect(() => {
     if (isConfigured) return; // Supabase manages its own persistence
-    if (user) localStorage.setItem('ta_user', JSON.stringify(user));
-    else localStorage.removeItem('ta_user');
+    if (user) sessionStorage.setItem('ta_user', JSON.stringify(user));
+    else sessionStorage.removeItem('ta_user');
   }, [user]);
 
   async function fetchProfile(id) {

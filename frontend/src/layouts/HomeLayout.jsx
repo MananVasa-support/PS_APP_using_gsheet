@@ -5,7 +5,7 @@ import Logo from '@/components/ui/Logo.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
 
 /**
- * Minimal authenticated shell for the "Dashboard Home" (/home) — the 4-card
+ * Minimal authenticated shell for the "Dashboard Home" (/dashboard) — the 4-card
  * module picker. Per the product flow, this screen has NO sidebar: the sidebar
  * only appears once the user clicks into a module (e.g. Time Auditor → /dashboard,
  * which renders inside DashboardLayout).
@@ -17,7 +17,7 @@ export default function HomeLayout() {
   return (
     <div className="min-h-screen bg-ink-950">
       {/* No sidebar here, so the brand logo lives in the top bar (shown everywhere). */}
-      <Navbar leading={<Logo height={36} className="mr-1" />} />
+      <Navbar leading={<Logo height={36} className="mr-1" to="/dashboard" />} />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <Suspense
           fallback={

@@ -130,7 +130,7 @@ export default function Consultant() {
                       <div className="flex items-center gap-3">
                         <Avatar name={c.name} size={36} />
                         <div>
-                          <p className="font-medium text-slate-200">{c.name}</p>
+                          <p className="font-medium text-fg">{c.name}</p>
                           <p className="text-xs text-ink-500">{c.email}</p>
                         </div>
                       </div>
@@ -180,7 +180,7 @@ export default function Consultant() {
                   >
                     <Avatar name={c.name} size={36} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-200">{c.name}</p>
+                      <p className="truncate text-sm font-medium text-fg">{c.name}</p>
                       <p className="truncate font-mono text-xs text-ink-500">{c.clientId || '—'}</p>
                     </div>
                     <FiChevronRight className="h-4 w-4 shrink-0 text-ink-500" />
@@ -227,7 +227,7 @@ export default function Consultant() {
           </>
         }
       >
-        <p className="text-sm text-ink-300">Remove <span className="font-medium text-white">{confirmDelete?.name}</span>?</p>
+        <p className="text-sm text-ink-300">Remove <span className="font-medium text-fg-strong">{confirmDelete?.name}</span>?</p>
       </Modal>
     </div>
   );
@@ -309,7 +309,7 @@ function ClientDetail({ client, onChanged, onDeleteClient }) {
                 <li key={t._id} className="rounded-xl border border-ink-700 bg-ink-900/40 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-slate-200">{t.title}</p>
+                      <p className="font-medium text-fg">{t.title}</p>
                       {t.dueDate && <p className="text-xs text-ink-500">Due {new Date(t.dueDate).toLocaleDateString()}</p>}
                     </div>
                     <button onClick={() => removeTask(t._id)} aria-label="Delete task" className="rounded-lg p-1.5 text-ink-400 hover:bg-unproductive/10 hover:text-unproductive">
@@ -361,7 +361,7 @@ function ClientDetail({ client, onChanged, onDeleteClient }) {
               <li key={r._id} className="flex items-center gap-3 py-3">
                 <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-500/10 text-brand-400"><FiActivity className="h-4 w-4" /></span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-200">{r.name}</p>
+                  <p className="truncate text-sm font-medium text-fg">{r.name}</p>
                   <p className="truncate text-xs text-ink-500">{r.range || r.type}</p>
                 </div>
                 <Badge tone="default">{r.format}</Badge>
@@ -387,7 +387,7 @@ function ClientAnalytics({ client }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-slate-200">{client.name}'s analytics</p>
+          <p className="text-sm font-medium text-fg">{client.name}'s analytics</p>
           <p className="text-xs text-ink-500">Productivity, time use & top apps for the selected window</p>
         </div>
         <div className="inline-flex rounded-xl bg-ink-800 p-1">
@@ -397,7 +397,7 @@ function ClientAnalytics({ client }) {
               onClick={() => setRangeId(r.id)}
               className={cn(
                 'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                rangeId === r.id ? 'bg-brand-gradient text-white shadow' : 'text-ink-400 hover:text-slate-200'
+                rangeId === r.id ? 'bg-brand-gradient text-white shadow' : 'text-ink-400 hover:text-fg'
               )}
             >
               {r.label}
@@ -449,7 +449,7 @@ function MiniBarList({ items, render }) {
       {items.map((item) => (
         <li key={item.name}>
           <div className="mb-1 flex justify-between text-sm">
-            <span className="text-slate-300">{item.name}</span>
+            <span className="text-fg-muted">{item.name}</span>
             <span className="text-ink-400">{render(item.minutes)}</span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-ink-700">
@@ -468,6 +468,6 @@ function nearestStep(p) {
 
 // Attach theme colours to the task-breakdown donut slices.
 function withColors(breakdown) {
-  const colors = { Completed: '#22c55e', 'In Progress': '#f59e0b', Pending: '#64748b' };
+  const colors = { Completed: '#e51d2b', 'In Progress': '#a1a1aa', Pending: '#64748b' };
   return breakdown.map((b) => ({ ...b, color: colors[b.name] || '#f93b48' }));
 }

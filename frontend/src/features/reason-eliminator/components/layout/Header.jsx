@@ -10,7 +10,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-brand-gray-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group">
+        <Link to="/reason-eliminator" className="flex items-center gap-2 group">
           <img
             src="https://res.cloudinary.com/drwoydou3/image/upload/v1777300803/ChatGPT_Image_Apr_23_2026_11_54_33_PM_km0ken.png"
             alt="Altus Corp logo"

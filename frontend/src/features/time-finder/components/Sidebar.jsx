@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { FiPlayCircle, FiClock, FiBarChart2, FiChevronLeft } from 'react-icons/fi';
 
+// Absolute paths prefixed with the tool's mount (/time-finder). Bare paths
+// like "/" or "/dashboard" would escape the tool and land on the shell
+// (404 / back to the app home), so they MUST stay fully qualified.
 const NAV = [
-  { to: '/', label: 'Start Assessment', Icon: FiPlayCircle, end: true },
-  { to: '/previous-assessment', label: 'Previous Assessments', Icon: FiClock },
-  { to: '/dashboard', label: 'Dashboard', Icon: FiBarChart2 },
+  { to: '/time-finder', label: 'Start Assessment', Icon: FiPlayCircle, end: true },
+  { to: '/time-finder/previous-assessment', label: 'Previous Assessments', Icon: FiClock },
+  { to: '/time-finder/dashboard', label: 'Dashboard', Icon: FiBarChart2 },
 ];
 
 export default function Sidebar() {

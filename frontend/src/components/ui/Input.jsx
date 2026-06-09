@@ -19,7 +19,7 @@ const Input = forwardRef(function Input(
   return (
     <div className={className}>
       {label && (
-        <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-slate-300">
+        <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-fg-muted">
           {label}
           {props.required && <span className="ml-0.5 text-brand-400">*</span>}
         </label>
@@ -45,7 +45,7 @@ const Input = forwardRef(function Input(
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-slate-200"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-fg"
             aria-label={show ? 'Hide password' : 'Show password'}
           >
             {show ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}

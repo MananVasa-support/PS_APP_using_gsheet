@@ -63,7 +63,7 @@ export default function Profile() {
           <div className="flex items-end gap-4">
             <Avatar name={user?.name} src={user?.avatar} size={96} className="-mt-12 ring-4 ring-ink-850" />
             <div className="pb-1">
-              <h2 className="text-xl font-bold text-white">{form.name}</h2>
+              <h2 className="text-xl font-bold text-fg-strong">{form.name}</h2>
               <p className="text-sm text-ink-400">{form.title || 'Senior Product Designer'}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge tone="brand" className="capitalize">{user?.role}</Badge>
@@ -101,7 +101,7 @@ export default function Profile() {
                 <s.icon className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-xl font-bold text-white">{s.value}</p>
+                <p className="text-xl font-bold text-fg-strong">{s.value}</p>
                 <p className="text-sm text-ink-400">{s.label}</p>
               </div>
             </motion.div>
@@ -127,7 +127,7 @@ export default function Profile() {
                   </span>
                   <div>
                     <dt className="text-xs text-ink-500">{d.label}</dt>
-                    <dd className="text-slate-200">{d.value}</dd>
+                    <dd className="text-fg">{d.value}</dd>
                   </div>
                 </div>
               ))}

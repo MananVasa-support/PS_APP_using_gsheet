@@ -191,7 +191,7 @@ function Row({ title, desc, action }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-ink-800 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="font-medium text-slate-200">{title}</p>
+        <p className="font-medium text-fg">{title}</p>
         <p className="text-sm text-ink-400">{desc}</p>
       </div>
       {action}

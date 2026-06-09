@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   FiArrowLeft, FiUsers, FiSearch, FiChevronRight, FiClipboard, FiFileText, FiActivity,
 } from 'react-icons/fi';
-import { Card, Badge, Avatar, Button, Spinner, PageHeader, Tabs, Input } from '@/components/ui';
+import { Card, Badge, Avatar, Button, Spinner, PageHeader, Tabs, Input, BackButton } from '@/components/ui';
 import FormsViewer from '@/components/features/FormsViewer.jsx';
 import * as consultantService from '@/services/consultantService';
 
@@ -56,9 +56,7 @@ export default function Participants() {
 
   return (
     <div className="space-y-6">
-      <Button as={Link} to="/dashboard" variant="ghost" size="sm" icon={FiArrowLeft} className="-ml-2">
-        Back
-      </Button>
+      <BackButton to="/dashboard" />
 
       <PageHeader title="Participants" subtitle="Your assigned clients.">
         <Badge tone="brand" dot>{clients.length} assigned</Badge>
@@ -103,7 +101,7 @@ export default function Participants() {
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar name={c.name} size={32} />
-                          <p className="truncate font-medium text-slate-200">{c.name}</p>
+                          <p className="truncate font-medium text-fg">{c.name}</p>
                         </div>
                       </td>
                       <td className="px-3 py-3 font-mono text-xs text-ink-300">{c.clientId || '—'}</td>
@@ -177,7 +175,7 @@ function ParticipantDetail({ client }) {
                 <li key={t._id} className="rounded-xl border border-ink-700 bg-ink-900/40 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-slate-200">{t.title}</p>
+                      <p className="font-medium text-fg">{t.title}</p>
                       {t.dueDate && <p className="text-xs text-ink-500">Due {new Date(t.dueDate).toLocaleDateString()}</p>}
                     </div>
                     <Badge tone={taskTone[t.status] || 'default'} dot>{t.status}</Badge>
@@ -211,7 +209,7 @@ function ParticipantDetail({ client }) {
                 <li key={r._id} className="flex items-center gap-3 py-3">
                   <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-500/10 text-brand-400"><FiActivity className="h-4 w-4" /></span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-200">{r.name}</p>
+                    <p className="truncate text-sm font-medium text-fg">{r.name}</p>
                     <p className="truncate text-xs text-ink-500">{r.range || r.type}</p>
                   </div>
                   <Badge tone="default">{r.format}</Badge>

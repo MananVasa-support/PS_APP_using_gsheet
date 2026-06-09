@@ -13,8 +13,16 @@ backend planned but not started.
 
 ## Current state (as of 2026-06-08)
 
-- **Monorepo:** `frontend/` (the app), `backend/` (empty scaffold), `documentation/`
-  (official docs + PDFs), `.claude/` (memory anchor, never move).
+- **Monorepo (clean root):** `frontend/` (the app), `backend/` (empty scaffold),
+  `documentation/` (official docs + PDFs), `README.md`, `CLAUDE.md`, `.claude/`
+  (memory anchor, never move). The pre-merge source folders were **removed** (code
+  is safe under `frontend/src/features/`; originals re-obtainable from teammate
+  zips if ever needed).
+- **Under git** since 2026-06-08 (branch `master`, root `.gitignore` excludes
+  node_modules/dist/.env/local Claude settings). No remote yet. Commit/push only
+  when the user asks. Root `package.json` has convenience scripts
+  (`npm run dev|build` proxy to frontend). `frontend/STRUCTURE.md` explains
+  base-vs-tools; `frontend/.env.example` holds the future `VITE_API_BASE_URL`.
 - **Merge DONE & building green.** Five tools live under `frontend/src/features/`:
   `power-planner`, `reason-eliminator`, `meeting`, `time-finder` (+ the shell's own
   Time Auditor). `npm run build` passes (369 modules).

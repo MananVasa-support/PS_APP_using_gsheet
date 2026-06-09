@@ -6,7 +6,7 @@ export default function Toggle({ checked, onChange, label, description, disabled
     <label className={cn('flex items-center justify-between gap-4', disabled && 'opacity-50')}>
       {(label || description) && (
         <span>
-          {label && <span className="block text-sm font-medium text-slate-200">{label}</span>}
+          {label && <span className="block text-sm font-medium text-fg">{label}</span>}
           {description && <span className="block text-xs text-ink-400">{description}</span>}
         </span>
       )}
