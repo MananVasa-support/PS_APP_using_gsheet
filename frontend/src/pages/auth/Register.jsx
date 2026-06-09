@@ -175,7 +175,7 @@ export default function Register() {
 
       <p className="mt-6 text-center text-sm text-ink-400">
         Already have an account?{' '}
-        <Link to="/client-login" className="font-medium text-brand-400 hover:text-brand-300">Sign in</Link>
+        <Link to="/client-login" className="font-medium text-brand-400 hover:text-brand-300">Log in</Link>
       </p>
     </motion.div>
   );
