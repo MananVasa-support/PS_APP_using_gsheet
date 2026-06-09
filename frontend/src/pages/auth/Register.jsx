@@ -119,8 +119,8 @@ export default function Register() {
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <Input label="First Name" name="firstName" icon={FiUser} value={form.firstName} onChange={update} placeholder="Hardik" error={fieldErrors.firstName} required />
-          <Input label="Last Name" name="lastName" value={form.lastName} onChange={update} placeholder="Patel" error={fieldErrors.lastName} required />
+          <Input label="First Name" name="firstName" icon={FiUser} value={form.firstName} onChange={update} placeholder="John" error={fieldErrors.firstName} required />
+          <Input label="Last Name" name="lastName" value={form.lastName} onChange={update} placeholder="Smith" error={fieldErrors.lastName} required />
         </div>
 
         <Input label="Email" name="email" type="email" icon={FiMail} value={form.email} onChange={update} placeholder="Enter your Email" error={fieldErrors.email} autoComplete="off" required />
