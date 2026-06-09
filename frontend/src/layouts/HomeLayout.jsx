@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar.jsx';
 import Logo from '@/components/ui/Logo.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
@@ -14,6 +14,7 @@ import Spinner from '@/components/ui/Spinner.jsx';
  * `onOpenMobile` so its sidebar-toggle button stays hidden here.
  */
 export default function HomeLayout() {
+  const location = useLocation();
   return (
     <div className="min-h-screen bg-ink-950">
       {/* No sidebar here, so the brand logo lives in the top bar (shown everywhere). */}
@@ -26,7 +27,10 @@ export default function HomeLayout() {
             </div>
           }
         >
-          <Outlet />
+          {/* Keyed by route so the entrance animation replays on each navigation. */}
+          <div key={location.pathname} className="page-enter">
+            <Outlet />
+          </div>
         </Suspense>
       </main>
     </div>

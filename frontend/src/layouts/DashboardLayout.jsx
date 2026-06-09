@@ -1,5 +1,5 @@
 import { Suspense, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar.jsx';
 import Navbar from '@/components/layout/Navbar.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
@@ -13,6 +13,7 @@ import { cn } from '@/utils/cn';
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useLocalStorage('ta_sidebar_collapsed', false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-ink-950">
@@ -35,7 +36,10 @@ export default function DashboardLayout() {
               </div>
             }
           >
-            <Outlet />
+            {/* Keyed by route so the entrance animation replays on each navigation. */}
+            <div key={location.pathname} className="page-enter">
+              <Outlet />
+            </div>
           </Suspense>
         </main>
       </div>
