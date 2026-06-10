@@ -14,7 +14,7 @@ import { titleCaseName } from '@/utils/format';
 import { MANDATORY_MSG } from '@/utils/validation';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^\d{7,15}$/;
+const PHONE_RE = /^\d{7,10}$/;
 // Min 8 chars, with at least one uppercase, lowercase, number and special char.
 const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
@@ -104,7 +104,7 @@ export default function Register() {
     if (name === 'firstName' || name === 'lastName') {
       value = titleCaseName(value); // "hardik" → "Hardik"; "naresh" → "Naresh"
     } else if (name === 'cellNumber') {
-      value = value.replace(/\D/g, '').slice(0, 15);
+      value = value.replace(/\D/g, '').slice(0, 10);
     }
     setForm((f) => ({ ...f, [name]: value }));
     setFieldErrors((fe) => (fe[name] ? { ...fe, [name]: undefined } : fe));
@@ -141,7 +141,7 @@ export default function Register() {
     if (!form.email) e.email = 'Email is required.';
     else if (!EMAIL_RE.test(form.email)) e.email = 'Enter a valid email address.';
     if (!form.cellNumber) e.cellNumber = 'Cell number is required.';
-    else if (!PHONE_RE.test(form.cellNumber)) e.cellNumber = 'Enter a valid cell number (7–15 digits).';
+    else if (!PHONE_RE.test(form.cellNumber)) e.cellNumber = 'Enter a valid cell number (7–10 digits).';
     if (!form.password) e.password = 'Password is required.';
     else if (!PASSWORD_RE.test(form.password))
       e.password = 'Min 8 chars with an uppercase, lowercase, number & special character.';
@@ -342,7 +342,7 @@ export default function Register() {
                 name="cellNumber"
                 type="tel"
                 inputMode="numeric"
-                maxLength={15}
+                maxLength={10}
                 value={form.cellNumber}
                 onChange={update}
                 onBlur={() => checkAvailability('cellNumber')}
