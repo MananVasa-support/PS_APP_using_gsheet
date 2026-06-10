@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiMail, FiArrowLeft, FiKey } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
+import { useAuth } from '@/hooks/useAuth';
 import { requestPasswordResetCode, verifyPasswordResetCode } from '@/services/authService';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -16,6 +17,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const { setAuthBusy } = useAuth();
   const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -52,6 +54,7 @@ export default function ForgotPassword() {
       return;
     }
     setLoading(true);
+    setAuthBusy(true); // recovery session becomes active — don't flash the dashboard before we redirect
     try {
       await verifyPasswordResetCode(email, code);
       // Recovery session is now active → go set the new password.
@@ -60,6 +63,7 @@ export default function ForgotPassword() {
       setError(err?.message || 'That code is invalid or has expired. Request a new one.');
     } finally {
       setLoading(false);
+      setAuthBusy(false);
     }
   }
 

@@ -21,6 +21,10 @@ export function AuthProvider({ children }) {
   // Start in loading=true so ProtectedRoute waits for the initial session check
   // before deciding to redirect to /login.
   const [loading, setLoading] = useState(true);
+  // True while a short-lived auth flow (signup, email/code verify) is creating a
+  // session it's about to discard. AuthLayout reads this to NOT bounce the user
+  // to the dashboard during that flicker.
+  const [authBusy, setAuthBusy] = useState(false);
   const mountedRef = useRef(true);
 
   // Bootstrap the session + subscribe to auth events.
@@ -186,13 +190,15 @@ export function AuthProvider({ children }) {
       isConsultant: isConsultant(user?.role),
       isClient: isClient(user?.role),
       role: user?.role,
+      authBusy,
+      setAuthBusy,
       login,
       register,
       logout,
       applySession,
       setUser,
     }),
-    [user, session, loading, login, register, logout, applySession]
+    [user, session, loading, authBusy, login, register, logout, applySession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -9,6 +9,7 @@ import {
   verifySignupCode,
   resendSignupCode,
 } from '@/services/authService';
+import { useAuth } from '@/hooks/useAuth';
 import { titleCaseName } from '@/utils/format';
 import { MANDATORY_MSG } from '@/utils/validation';
 
@@ -79,6 +80,7 @@ const COUNTRY_CODES = [
  */
 export default function Register() {
   const navigate = useNavigate();
+  const { setAuthBusy } = useAuth();
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -159,6 +161,7 @@ export default function Register() {
     }
 
     setLoading(true);
+    setAuthBusy(true); // signUp may briefly create a session — don't let it flash the dashboard
     try {
       const fullPhone = `${form.countryCode}${form.cellNumber}`;
 
@@ -198,6 +201,7 @@ export default function Register() {
       setError(err?.response?.data?.message || err.message || 'Registration failed.');
     } finally {
       setLoading(false);
+      setAuthBusy(false);
     }
   }
 
@@ -209,6 +213,7 @@ export default function Register() {
       return;
     }
     setLoading(true);
+    setAuthBusy(true); // verifyOtp signs in then we sign out — suppress the flash
     try {
       await verifySignupCode(form.email, code);
       navigate('/login');
@@ -216,6 +221,7 @@ export default function Register() {
       setError(err?.message || 'That code is invalid or has expired. Request a new one.');
     } finally {
       setLoading(false);
+      setAuthBusy(false);
     }
   }
 

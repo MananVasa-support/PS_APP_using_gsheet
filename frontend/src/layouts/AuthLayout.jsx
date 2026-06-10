@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiTarget, FiTrendingUp, FiAward } from 'react-icons/fi';
 import Logo from '@/components/ui/Logo.jsx';
@@ -17,8 +17,16 @@ const features = [
  * on the right. Already-authenticated users are bounced to the dashboard.
  */
 export default function AuthLayout() {
-  const { isAuthenticated } = useAuth();
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  const { isAuthenticated, authBusy } = useAuth();
+  const location = useLocation();
+  // /reset-password runs on a temporary "recovery" session — that counts as
+  // authenticated, but we must NOT bounce it to the dashboard or the user could
+  // never set their new password. authBusy covers the brief signup/verify
+  // sessions that get signed out a moment later (prevents a dashboard flicker).
+  const isResetRoute = location.pathname === '/reset-password';
+  if (isAuthenticated && !authBusy && !isResetRoute) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="always-dark grid min-h-screen lg:grid-cols-2">
