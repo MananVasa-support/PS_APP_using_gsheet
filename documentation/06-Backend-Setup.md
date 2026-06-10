@@ -106,16 +106,29 @@ Full table list + the runnable SQL: [`../backend/supabase/schema.sql`](../backen
 |---|---|---|---|
 | Password | `PASSWORD_RE`: min 8 + upper + lower + digit + special | Auth → Passwords: **Min length 8**, requirements **"lowercase, uppercase, digits, and symbols"** | ✅ done 2026-06-09 |
 | Email sign-in | email + password sign up/login | Auth → Providers → **Email provider ON** | ✅ on |
-| Custom SMTP (REQUIRED for code emails + production) | code-based signup/reset emails | Supabase's built-in email is link-only, **un-editable**, and rate-limited (testing only). Connect **custom SMTP** (free: **Resend** 3k/mo) → Auth → SMTP Settings → Enable. Host `smtp.resend.com`, port `465`, user `resend`, pass = Resend API key (`re_…`). Testing sender `onboarding@resend.dev` (delivers to your own account email only); verify a company domain before launch to email all users. | ⚠️ **set up Resend SMTP** (unlocks template editing) |
-| Email confirm (**OTP at signup**) | Signup emails a **6-digit code**; user types it to finish (proves the email is real — no fake/typo signups) | **(1)** Auth → **"Confirm email" ON**. **(2)** Auth → **Email Templates → "Confirm signup"**: template MUST include `{{ .Token }}` (the code). **(3)** **Email OTP length = 6**, expiry 3600. | ⚠️ **turn Confirm email ON + add `{{ .Token }}` to the Confirm-signup template** |
+| Custom SMTP (REQUIRED for code emails + production) | code-based signup/reset emails | Connected **Resend** SMTP (free 3k/mo). Host `smtp.resend.com`, port `465`, user `resend`, pass = Resend API key. **Domain VERIFIED** in Resend → now delivers to **any** email (not just the account owner). Sender on the verified domain. | ✅ done 2026-06-10 (Resend + domain verified) |
+| Email confirm (**OTP at signup**) | Signup emails a **6-digit code**; user types it to finish (proves the email is real — no fake/typo signups) | **"Confirm email" ON**; **Confirm signup** template uses `{{ .Token }}`; **OTP length 6**. | ✅ done 2026-06-10 (signup OTP working) |
 | Schema | tables/RLS | Run `backend/supabase/schema.sql` in SQL Editor | ✅ done 2026-06-09 |
 | Duplicate accounts | one account per email & phone | **email** unique index (`profiles_email_unique`, case-insensitive) + **phone** unique index + `signup_availability` RPC (all in schema.sql). Live "already exists" message shows on blur of the email/phone fields; signup re-checks before creating. | ✅ done 2026-06-10 (email index added after a dup slipped past Supabase's built-in check — see note below) |
 | Post-signup | return to **login** page; do NOT auto-log-in | none in dashboard — handled in code (`register()` signs out the session that confirm-email-off creates) | ✅ done 2026-06-10 |
-| Password reset (email, **code-based**) | Forgot Password → enter email (says **"No account exists with this email"** if unknown) → type the **6-digit code** from the email → `/reset-password` sets a new password | **(1)** Auth → **Email Templates → Reset Password**: template MUST include `{{ .Token }}` (the 6-digit code). **(2)** Auth → Email → **Email OTP length = 6**, **Email OTP expiry = 3600**. **(3)** Auth → **URL Configuration**: Redirect URL `http://localhost:3000/reset-password` (port **3000**; live URL later) — fallback only. | ⚠️ **edit Reset Password email template to use `{{ .Token }}`** |
+| Password reset (email, **code-based**) | Forgot Password → enter email (says **"No account exists with this email"** if unknown) → type the **6-digit code** → `/reset-password` sets a new password | **Reset Password** template uses `{{ .Token }}`; **OTP length 6**, expiry 3600; Redirect URL `http://localhost:3000/reset-password` (live URL later). | ✅ done 2026-06-10 (reset OTP working) |
 | Password reset (SMS/phone) | **not wanted** — user declined (it's paid: Twilio + India DLT) | Auth → Providers → **Phone: keep OFF permanently** | ⛔ off — **declined 2026-06-10, email reset only** |
 
 Add a row here whenever a new validation rule or auth/setting is introduced on
 either side, so the two never drift.
+
+> **2026-06-10 — AUTH FULLY WORKING (signup-OTP + reset-OTP + login).** Resend
+> SMTP connected with a **verified domain** (emails any address). Both OTP flows
+> send a real 6-digit code.
+> **Testing gotcha that cost us time:** re-signing-up an **existing** email sends
+> NO new email (user already exists), so you keep seeing the OLD link email and
+> think the template is broken. Always test signup with a **never-used** address
+> (Gmail `+alias` trick, e.g. `you+test1@gmail.com`, hits the same inbox but is a
+> new user → forces a fresh email with the current template).
+> **Optional polish (not blocking):** Resend flags "don't use no-reply" — can
+> switch the SMTP sender to `hello@`/`accounts@` for slightly better deliverability.
+> **Before launch:** re-point the sender to the production domain if different;
+> keep "Confirm email" ON.
 
 > **2026-06-10 — duplicate-email fix.** Supabase's built-in email check let a
 > duplicate through during testing (two `profiles` rows, same Gmail). Root cause:

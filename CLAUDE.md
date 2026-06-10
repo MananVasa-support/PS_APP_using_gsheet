@@ -29,17 +29,23 @@ backend planned but not started.
 - **Auth:** frontend-only mock (Supabase removed; `lib/supabase.js` →
   `isConfigured=false`). No backend needed to run. Do **not** add backend/auth
   unless asked — the user explicitly deferred it.
-- **Backend = Supabase (AUTH NOW LIVE), hosting = Cloudflare Pages** — free at our
-  scale. Project ref `cotcaijxuyxbhodxpxrs`; keys in `frontend/.env` (git-ignored;
+- **Backend = Supabase (AUTH FULLY WORKING), hosting = Cloudflare Pages** — free at
+  our scale. Project ref `cotcaijxuyxbhodxpxrs`; keys in `frontend/.env` (git-ignored;
   `isConfigured` TRUE → real auth, demo path off). `@supabase/supabase-js`
   installed; real `lib/supabase.js` restored; `backend/supabase/schema.sql` run in
-  Supabase (tables + RLS + signup trigger). Password policy + duplicate email/phone
-  blocking synced both sides. "Confirm email" OFF for testing (re-enable before
-  launch). **Pending:** user to test signup/login + verify in Supabase. **Next:**
-  wire tool DATA to Supabase one tool at a time (Meeting first, Power Planner last;
-  tools still use localStorage until migrated), then dashboards/admin views, then
-  deploy. Keep frontend↔Supabase rules in sync and give an end-of-session
-  Supabase-settings checklist (see `documentation/06-Backend-Setup.md`).
+  Supabase (tables + RLS + signup trigger). **Auth complete (2026-06-10):** signup
+  with **email-OTP confirmation** (6-digit code), login, **forgot-password via OTP
+  code** → `/reset-password`, duplicate email+phone blocked (DB unique indexes +
+  live "already exists" check), phone capped at 10 digits, post-signup returns to
+  login (no auto-login), orphaned/deleted sessions auto-sign-out. **Email:** Resend
+  SMTP with a **verified domain** (sends to any address); "Confirm email" ON;
+  Confirm-signup + Reset-password templates use `{{ .Token }}`. SMS/phone reset
+  **declined** (paid). See `documentation/06-Backend-Setup.md` for the full
+  Supabase-settings checklist + the "+alias" testing gotcha.
+  **Next:** wire tool DATA to Supabase one tool at a time (Meeting first, Power
+  Planner last; tools still use localStorage until migrated), then dashboards/admin
+  views, then deploy. Keep frontend↔Supabase rules in sync and give an
+  end-of-session Supabase-settings checklist.
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
 
