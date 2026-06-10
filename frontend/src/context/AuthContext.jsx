@@ -54,7 +54,17 @@ export function AuthProvider({ children }) {
         setSession(s);
         if (s?.user?.id) {
           const profile = await fetchProfile(s.user.id);
-          if (mountedRef.current) setUser(profile);
+          if (!mountedRef.current) return;
+          if (!profile) {
+            // The session points to an account with no profile (e.g. it was
+            // deleted). Don't strand the user on a broken "?" dashboard — clear
+            // the stale session so they land back on the login page.
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+          } else {
+            setUser(profile);
+          }
         }
       } finally {
         if (mountedRef.current) setLoading(false);
@@ -83,7 +93,16 @@ export function AuthProvider({ children }) {
         event === 'USER_UPDATED'
       ) {
         const profile = await fetchProfile(s.user.id);
-        if (mountedRef.current) setUser(profile);
+        if (!mountedRef.current) return;
+        if (!profile) {
+          // Account/profile no longer exists — clear the stale session instead
+          // of showing a half-logged-in "?" state.
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else {
+          setUser(profile);
+        }
       }
     });
 
