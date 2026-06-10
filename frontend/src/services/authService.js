@@ -113,12 +113,13 @@ export async function register({ name, email, phone, password }) {
     throw mapped;
   }
 
-  const profile = data.user ? await fetchProfileById(data.user.id) : null;
-
-  // Do NOT keep the user signed in after registering. With "Confirm email" off,
-  // signUp returns an active session (it would auto-log them in); we clear it so
-  // they land on the login page and must sign in with their new credentials.
-  if (data.session) {
+  // With "Confirm email" ON, signUp returns NO session — the account stays
+  // unconfirmed until the user enters the emailed 6-digit code (verifySignupCode
+  // below). With it OFF, signUp returns a session; we sign out so the user still
+  // logs in manually instead of being auto-logged-in.
+  let profile = null;
+  if (data.session?.user?.id) {
+    profile = await fetchProfileById(data.session.user.id);
     await supabase.auth.signOut();
   }
 
@@ -128,6 +129,36 @@ export async function register({ name, email, phone, password }) {
     pending: true,
     needsEmailConfirmation: !data.session,
   };
+}
+
+/**
+ * Verify the 6-digit code emailed at signup (type 'signup'). On success the
+ * email is confirmed; we sign out so the user logs in fresh.
+ */
+export async function verifySignupCode(email, code) {
+  if (!isConfigured) return { ok: true };
+  const { error } = await supabase.auth.verifyOtp({
+    email: (email || '').trim(),
+    token: (code || '').trim(),
+    type: 'signup',
+  });
+  if (error) {
+    const mapped = unwrapError(error);
+    if (/expired|invalid|token/i.test(mapped.message || '')) {
+      mapped.message = 'That code is invalid or has expired. Request a new one.';
+    }
+    throw mapped;
+  }
+  await supabase.auth.signOut();
+  return { ok: true };
+}
+
+/** Re-send the signup confirmation code to the same email. */
+export async function resendSignupCode(email) {
+  if (!isConfigured) return { ok: true };
+  const { error } = await supabase.auth.resend({ type: 'signup', email: (email || '').trim() });
+  if (error) throw unwrapError(error);
+  return { ok: true };
 }
 
 /**

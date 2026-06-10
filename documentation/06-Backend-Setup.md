@@ -106,7 +106,7 @@ Full table list + the runnable SQL: [`../backend/supabase/schema.sql`](../backen
 |---|---|---|---|
 | Password | `PASSWORD_RE`: min 8 + upper + lower + digit + special | Auth → Passwords: **Min length 8**, requirements **"lowercase, uppercase, digits, and symbols"** | ✅ done 2026-06-09 |
 | Email sign-in | email + password sign up/login | Auth → Providers → **Email provider ON** | ✅ on |
-| Email confirm | (n/a — testing) | Auth → **"Confirm email" OFF** for now; **re-enable before launch** | ⚠️ off (re-enable later) |
+| Email confirm (**OTP at signup**) | Signup emails a **6-digit code**; user types it to finish (proves the email is real — no fake/typo signups) | **(1)** Auth → **"Confirm email" ON**. **(2)** Auth → **Email Templates → "Confirm signup"**: template MUST include `{{ .Token }}` (the code). **(3)** **Email OTP length = 6**, expiry 3600. | ⚠️ **turn Confirm email ON + add `{{ .Token }}` to the Confirm-signup template** |
 | Schema | tables/RLS | Run `backend/supabase/schema.sql` in SQL Editor | ✅ done 2026-06-09 |
 | Duplicate accounts | one account per email & phone | **email** unique index (`profiles_email_unique`, case-insensitive) + **phone** unique index + `signup_availability` RPC (all in schema.sql). Live "already exists" message shows on blur of the email/phone fields; signup re-checks before creating. | ✅ done 2026-06-10 (email index added after a dup slipped past Supabase's built-in check — see note below) |
 | Post-signup | return to **login** page; do NOT auto-log-in | none in dashboard — handled in code (`register()` signs out the session that confirm-email-off creates) | ✅ done 2026-06-10 |

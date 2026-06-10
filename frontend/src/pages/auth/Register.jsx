@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiUser, FiMail, FiPhone, FiLock, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiLock, FiArrowLeft, FiCheck, FiKey } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
-import { register as registerRequest, checkSignupAvailability } from '@/services/authService';
+import {
+  register as registerRequest,
+  checkSignupAvailability,
+  verifySignupCode,
+  resendSignupCode,
+} from '@/services/authService';
 import { titleCaseName } from '@/utils/format';
 import { MANDATORY_MSG } from '@/utils/validation';
 
@@ -86,6 +91,10 @@ export default function Register() {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  // After a successful signUp that needs email confirmation, we switch to a
+  // code-entry step instead of leaving for /login.
+  const [step, setStep] = useState('form'); // 'form' | 'code'
+  const [code, setCode] = useState('');
 
   const update = (e) => {
     const { name } = e.target;
@@ -179,12 +188,104 @@ export default function Register() {
         password: form.password,
       });
       localStorage.setItem('ps_pending_registration', JSON.stringify(res.user || {}));
-      navigate('/login');
+      if (res.needsEmailConfirmation) {
+        // Email confirmation is on — prove the address is real via a code.
+        setStep('code');
+      } else {
+        navigate('/login');
+      }
     } catch (err) {
       setError(err?.response?.data?.message || err.message || 'Registration failed.');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleCodeSubmit(e) {
+    e.preventDefault();
+    setError('');
+    if (!code.trim()) {
+      setError('Enter the code from your email.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await verifySignupCode(form.email, code);
+      navigate('/login');
+    } catch (err) {
+      setError(err?.message || 'That code is invalid or has expired. Request a new one.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendCode() {
+    setError('');
+    setLoading(true);
+    try {
+      await resendSignupCode(form.email);
+    } catch {
+      /* ignore — they can try again */
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (step === 'code') {
+    return (
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <h2 className="font-display text-3xl font-bold text-fg-strong">Verify your email</h2>
+        <p className="mt-2 text-sm text-ink-400">
+          We sent a 6-digit code to <span className="font-medium text-fg-strong">{form.email}</span>. Enter it below
+          to finish creating your account.
+        </p>
+
+        <form onSubmit={handleCodeSubmit} className="mt-8 space-y-4">
+          {error && (
+            <div className="rounded-xl border border-brand-500/40 bg-brand-500/10 px-4 py-3 text-sm text-brand-300">
+              {error}
+            </div>
+          )}
+          <Input
+            label="Verification code"
+            name="code"
+            icon={FiKey}
+            inputMode="numeric"
+            maxLength={8}
+            placeholder="6-digit code"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+            autoComplete="one-time-code"
+            required
+          />
+          <Button type="submit" size="lg" loading={loading} className="w-full">
+            Verify &amp; create account
+          </Button>
+        </form>
+
+        <div className="mt-6 flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              setStep('form');
+              setCode('');
+              setError('');
+            }}
+            className="inline-flex items-center gap-2 font-medium text-ink-400 hover:text-fg-strong"
+          >
+            <FiArrowLeft className="h-4 w-4" /> Back
+          </button>
+          <button
+            type="button"
+            onClick={resendCode}
+            disabled={loading}
+            className="font-medium text-brand-400 hover:text-brand-300 disabled:opacity-50"
+          >
+            Resend code
+          </button>
+        </div>
+      </motion.div>
+    );
   }
 
   return (
