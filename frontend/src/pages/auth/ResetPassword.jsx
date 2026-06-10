@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiLock, FiCheck, FiCheckCircle } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
+import { useAuth } from '@/hooks/useAuth';
 import { updatePassword } from '@/services/authService';
 import { supabase, isConfigured } from '@/lib/supabase';
 
@@ -54,6 +55,7 @@ function PasswordRules({ value = '' }) {
  */
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const { setAuthBusy } = useAuth();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -61,6 +63,12 @@ export default function ResetPassword() {
   const [done, setDone] = useState(false);
   // Whether we actually arrived from a valid reset link (a recovery session).
   const [ready, setReady] = useState(!isConfigured); // demo mode is always "ready"
+  // Tracks "did the user actually finish the reset?" — read in the unmount
+  // cleanup below to decide whether to discard the recovery session.
+  const doneRef = useRef(false);
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -74,6 +82,19 @@ export default function ResetPassword() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // If the user LEAVES this page without finishing (clicks Back, closes, etc.),
+  // the recovery session would otherwise linger and silently log them into the
+  // dashboard (with no profile → "?"). So on unmount-without-completion we clear
+  // it. authBusy suppresses the brief dashboard flash while signOut resolves.
+  useEffect(() => {
+    return () => {
+      if (isConfigured && !doneRef.current) {
+        setAuthBusy(true);
+        supabase.auth.signOut().finally(() => setAuthBusy(false));
+      }
+    };
+  }, [setAuthBusy]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -94,6 +115,19 @@ export default function ResetPassword() {
       setError(err?.message || 'Could not reset your password. The link may have expired — request a new one.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Leaving mid-reset: drop the temporary recovery session first, then go to
+  // login — so you land on the login page like normal, never half-logged-in.
+  async function backToLogin() {
+    doneRef.current = true; // we're handling the session here; skip the unmount cleanup
+    setAuthBusy(true);
+    try {
+      if (isConfigured) await supabase.auth.signOut();
+    } finally {
+      setAuthBusy(false);
+      navigate('/login');
     }
   }
 
@@ -166,7 +200,13 @@ export default function ResetPassword() {
 
       <p className="mt-6 text-center text-sm text-ink-400">
         Remembered it?{' '}
-        <Link to="/login" className="font-medium text-brand-400 hover:text-brand-300">Back to login</Link>
+        <button
+          type="button"
+          onClick={backToLogin}
+          className="font-medium text-brand-400 hover:text-brand-300"
+        >
+          Back to login
+        </button>
       </p>
     </motion.div>
   );
