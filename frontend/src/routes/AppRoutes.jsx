@@ -14,6 +14,7 @@ const Landing = lazy(() => import('@/pages/Landing.jsx'));
 const Login = lazy(() => import('@/pages/auth/Login.jsx'));
 const Register = lazy(() => import('@/pages/auth/Register.jsx'));
 const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword.jsx'));
+const ResetPassword = lazy(() => import('@/pages/auth/ResetPassword.jsx'));
 const WaitingApproval = lazy(() => import('@/pages/WaitingApproval.jsx'));
 const Dashboard = lazy(() => import('@/pages/Dashboard.jsx'));
 const Analytics = lazy(() => import('@/pages/Analytics.jsx'));
@@ -82,6 +83,7 @@ export default function AppRoutes() {
             <Route path="/client-login" element={<Login role="client" />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Route>
 
           {/* Authenticated but possibly pending */}

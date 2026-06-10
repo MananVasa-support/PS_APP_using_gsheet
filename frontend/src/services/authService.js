@@ -132,11 +132,30 @@ export async function forgotPassword(email) {
   if (!isConfigured) {
     return { message: `If an account exists for ${email}, a reset link has been sent.` };
   }
+  // The link in the email lands on /reset-password, where Supabase has put the
+  // user in a temporary "recovery" session so they can set a new password.
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/login` : undefined,
+    redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined,
   });
   if (error) throw unwrapError(error);
   return { message: `If an account exists for ${email}, a reset link has been sent.` };
+}
+
+/**
+ * Set a new password for the user who arrived via the reset email link. The
+ * recovery session is already active (Supabase processes the link on load), so
+ * this just updates the password on that session.
+ */
+export async function updatePassword(newPassword) {
+  if (!isConfigured) {
+    return { message: 'Password updated.' };
+  }
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw unwrapError(error);
+  // Don't leave them logged in on the recovery session — make them sign in
+  // fresh with the new password (consistent with the rest of the auth flow).
+  await supabase.auth.signOut();
+  return { message: 'Password updated. Please log in with your new password.' };
 }
 
 export async function getCurrentUser() {
