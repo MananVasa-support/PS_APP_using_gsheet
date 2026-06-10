@@ -108,10 +108,20 @@ Full table list + the runnable SQL: [`../backend/supabase/schema.sql`](../backen
 | Email sign-in | email + password sign up/login | Auth → Providers → **Email provider ON** | ✅ on |
 | Email confirm | (n/a — testing) | Auth → **"Confirm email" OFF** for now; **re-enable before launch** | ⚠️ off (re-enable later) |
 | Schema | tables/RLS | Run `backend/supabase/schema.sql` in SQL Editor | ✅ done 2026-06-09 |
-| Duplicate accounts | one account per email & phone | Email unique = built-in; phone unique index + `signup_availability` RPC (in schema.sql) | ✅ done 2026-06-09 |
+| Duplicate accounts | one account per email & phone | **email** unique index (`profiles_email_unique`, case-insensitive) + **phone** unique index + `signup_availability` RPC (all in schema.sql). Live "already exists" message shows on blur of the email/phone fields; signup re-checks before creating. | ✅ done 2026-06-10 (email index added after a dup slipped past Supabase's built-in check — see note below) |
+| Post-signup | return to **login** page; do NOT auto-log-in | none in dashboard — handled in code (`register()` signs out the session that confirm-email-off creates) | ✅ done 2026-06-10 |
 
 Add a row here whenever a new validation rule or auth/setting is introduced on
 either side, so the two never drift.
+
+> **2026-06-10 — duplicate-email fix.** Supabase's built-in email check let a
+> duplicate through during testing (two `profiles` rows, same Gmail). Root cause:
+> we had a DB unique index for **phone** but not for **email** (we trusted
+> Auth's built-in). Fix: added `profiles_email_unique` so the DB is the hard
+> guarantee for both. **To apply in Supabase:** first delete the existing
+> duplicate user(s) (Authentication → Users → delete the extra one → it cascades
+> to `profiles`), THEN re-run `schema.sql` (or just the email-index statement) —
+> the index can't be created while duplicates still exist.
 
 ## First thing to do tomorrow
 

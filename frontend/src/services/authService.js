@@ -99,7 +99,13 @@ export async function register({ name, email, phone, password }) {
   });
   if (error) {
     const mapped = unwrapError(error);
-    if (/already\s*(registered|exists)|user already/i.test(mapped.message || '')) {
+    const msg = mapped.message || '';
+    // Friendly duplicate messages — whether the block comes from Supabase Auth
+    // ("user already registered") or from our DB unique indexes firing inside
+    // the signup trigger ("profiles_email_unique" / "profiles_phone_unique").
+    if (/profiles_phone_unique/i.test(msg)) {
+      mapped.message = 'An account already exists with this phone number.';
+    } else if (/already\s*(registered|exists)|user already|profiles_email_unique|duplicate key/i.test(msg)) {
       mapped.message = 'An account already exists with this email.';
     }
     throw mapped;
@@ -107,8 +113,15 @@ export async function register({ name, email, phone, password }) {
 
   const profile = data.user ? await fetchProfileById(data.user.id) : null;
 
+  // Do NOT keep the user signed in after registering. With "Confirm email" off,
+  // signUp returns an active session (it would auto-log them in); we clear it so
+  // they land on the login page and must sign in with their new credentials.
+  if (data.session) {
+    await supabase.auth.signOut();
+  }
+
   return {
-    token: data.session?.access_token || null,
+    token: null,
     user: profile,
     pending: true,
     needsEmailConfirmation: !data.session,

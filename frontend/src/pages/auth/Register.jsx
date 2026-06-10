@@ -99,6 +99,30 @@ export default function Register() {
     setFieldErrors((fe) => (fe[name] ? { ...fe, [name]: undefined } : fe));
   };
 
+  // Live "already registered" check — runs when the user leaves the email or
+  // phone field, so they see it immediately instead of only on submit. Network
+  // hiccups are ignored here; handleSubmit re-checks before creating the account.
+  async function checkAvailability(field) {
+    try {
+      if (field === 'email') {
+        if (!form.email || !EMAIL_RE.test(form.email)) return;
+        const { emailTaken } = await checkSignupAvailability(form.email, '');
+        if (emailTaken) {
+          setFieldErrors((fe) => ({ ...fe, email: 'An account already exists with this email.' }));
+        }
+      } else if (field === 'cellNumber') {
+        if (!form.cellNumber || !PHONE_RE.test(form.cellNumber)) return;
+        const fullPhone = `${form.countryCode}${form.cellNumber}`;
+        const { phoneTaken } = await checkSignupAvailability('', fullPhone);
+        if (phoneTaken) {
+          setFieldErrors((fe) => ({ ...fe, cellNumber: 'An account already exists with this phone number.' }));
+        }
+      }
+    } catch {
+      /* ignore — submit will re-check */
+    }
+  }
+
   function validate() {
     const e = {};
     if (!form.firstName.trim()) e.firstName = 'First name is required.';
@@ -183,7 +207,7 @@ export default function Register() {
           <Input label="Last Name" name="lastName" value={form.lastName} onChange={update} placeholder="Smith" error={fieldErrors.lastName} required />
         </div>
 
-        <Input label="Email" name="email" type="email" icon={FiMail} value={form.email} onChange={update} placeholder="Enter your Email" error={fieldErrors.email} autoComplete="off" required />
+        <Input label="Email" name="email" type="email" icon={FiMail} value={form.email} onChange={update} onBlur={() => checkAvailability('email')} placeholder="Enter your Email" error={fieldErrors.email} autoComplete="off" required />
 
         {/* Cell Number with country-code selector */}
         <div>
@@ -214,6 +238,7 @@ export default function Register() {
                 maxLength={15}
                 value={form.cellNumber}
                 onChange={update}
+                onBlur={() => checkAvailability('cellNumber')}
                 placeholder="10-digit cell number"
                 className={`input-base pl-10 ${fieldErrors.cellNumber ? 'border-brand-500 focus:border-brand-500 focus:ring-brand-500/30' : ''}`}
                 required

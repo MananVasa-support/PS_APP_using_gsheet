@@ -35,6 +35,13 @@ create table if not exists public.profiles (
 create unique index if not exists profiles_phone_unique
   on public.profiles (phone) where phone is not null and phone <> '';
 
+-- One account per email (case-insensitive). This is the hard guarantee — even
+-- if Supabase Auth ever lets a duplicate email through, the profile insert (run
+-- by the signup trigger below) fails, which rolls the whole signup back. Blank/
+-- null emails are not constrained.
+create unique index if not exists profiles_email_unique
+  on public.profiles (lower(email)) where email is not null and email <> '';
+
 -- Auto-create a profile row whenever a new auth user signs up (copies the phone
 -- the user entered on the form, passed via signup metadata).
 create or replace function public.handle_new_user()
