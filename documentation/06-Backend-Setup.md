@@ -111,7 +111,7 @@ Full table list + the runnable SQL: [`../backend/supabase/schema.sql`](../backen
 | Duplicate accounts | one account per email & phone | **email** unique index (`profiles_email_unique`, case-insensitive) + **phone** unique index + `signup_availability` RPC (all in schema.sql). Live "already exists" message shows on blur of the email/phone fields; signup re-checks before creating. | ✅ done 2026-06-10 (email index added after a dup slipped past Supabase's built-in check — see note below) |
 | Post-signup | return to **login** page; do NOT auto-log-in | none in dashboard — handled in code (`register()` signs out the session that confirm-email-off creates) | ✅ done 2026-06-10 |
 | Password reset (email) | Forgot Password → email link → `/reset-password` sets a new password | Auth → **URL Configuration**: add Redirect URL `http://localhost:5173/reset-password` (and the live site URL later, e.g. `https://<your-domain>/reset-password`). Email templates can stay default. | ⚠️ **add the redirect URL** in the dashboard |
-| Password reset (SMS/phone) | deferred — **paid** (needs Twilio + India DLT) | Auth → Providers → **Phone: leave OFF** until a paid SMS plan is approved | ⛔ off (paid; deferred) |
+| Password reset (SMS/phone) | **not wanted** — user declined (it's paid: Twilio + India DLT) | Auth → Providers → **Phone: keep OFF permanently** | ⛔ off — **declined 2026-06-10, email reset only** |
 
 Add a row here whenever a new validation rule or auth/setting is introduced on
 either side, so the two never drift.
