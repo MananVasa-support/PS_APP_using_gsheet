@@ -55,6 +55,20 @@ export function AuthProvider({ children }) {
           data: { session: s },
         } = await supabase.auth.getSession();
         if (!mountedRef.current) return;
+
+        // A password reset that was started but never finished leaves a recovery
+        // session in storage. Don't auto-login from it — sign out and start at
+        // the login page (auto-login stays OFF for incomplete flows).
+        if (s?.user?.id && localStorage.getItem('ps_reset_pending') === '1') {
+          localStorage.removeItem('ps_reset_pending');
+          await supabase.auth.signOut();
+          if (mountedRef.current) {
+            setSession(null);
+            setUser(null);
+          }
+          return;
+        }
+
         setSession(s);
         if (s?.user?.id) {
           const profile = await fetchProfile(s.user.id);

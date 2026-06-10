@@ -57,6 +57,10 @@ export default function ForgotPassword() {
     setAuthBusy(true); // recovery session becomes active — don't flash the dashboard before we redirect
     try {
       await verifyPasswordResetCode(email, code);
+      // Mark the reset as in-progress: if the user abandons it and reopens the
+      // app, AuthContext will refuse to auto-login from the leftover recovery
+      // session (cleared again once the password is actually changed).
+      localStorage.setItem('ps_reset_pending', '1');
       // Recovery session is now active → go set the new password.
       navigate('/reset-password');
     } catch (err) {

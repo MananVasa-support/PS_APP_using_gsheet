@@ -90,6 +90,7 @@ export default function ResetPassword() {
   useEffect(() => {
     return () => {
       if (isConfigured && !doneRef.current) {
+        localStorage.removeItem('ps_reset_pending');
         setAuthBusy(true);
         supabase.auth.signOut().finally(() => setAuthBusy(false));
       }
@@ -110,6 +111,7 @@ export default function ResetPassword() {
     setLoading(true);
     try {
       await updatePassword(password);
+      localStorage.removeItem('ps_reset_pending'); // reset completed successfully
       setDone(true);
     } catch (err) {
       setError(err?.message || 'Could not reset your password. The link may have expired — request a new one.');
@@ -122,6 +124,7 @@ export default function ResetPassword() {
   // login — so you land on the login page like normal, never half-logged-in.
   async function backToLogin() {
     doneRef.current = true; // we're handling the session here; skip the unmount cleanup
+    localStorage.removeItem('ps_reset_pending');
     setAuthBusy(true);
     try {
       if (isConfigured) await supabase.auth.signOut();
