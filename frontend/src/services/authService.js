@@ -9,7 +9,9 @@ import { demoUser } from '@/data/mockData';
  * Public surface (kept stable so existing pages don't change):
  *   login({ email, password, role }) -> { token, user }
  *   register({ name, email, phone, password }) -> { token, user, pending, needsEmailConfirmation }
- *   forgotPassword(email)            -> { message }
+ *   requestPasswordResetCode(email)  -> { exists, message? }
+ *   verifyPasswordResetCode(email,code) -> { ok, session }
+ *   updatePassword(newPassword)      -> { message }
  *   getCurrentUser()                 -> profile | null
  *   logout()
  *
@@ -128,17 +130,49 @@ export async function register({ name, email, phone, password }) {
   };
 }
 
-export async function forgotPassword(email) {
+/**
+ * Step 1 of the code-based reset. Returns { exists:false } when no account uses
+ * this email (so the UI can say "no account exists with this email"); otherwise
+ * sends the recovery email (which carries a 6-digit code) and returns
+ * { exists:true }.
+ */
+export async function requestPasswordResetCode(email) {
+  const clean = (email || '').trim();
   if (!isConfigured) {
-    return { message: `If an account exists for ${email}, a reset link has been sent.` };
+    return { exists: true, message: 'A reset code has been sent (demo).' };
   }
-  // The link in the email lands on /reset-password, where Supabase has put the
-  // user in a temporary "recovery" session so they can set a new password.
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  const { emailTaken } = await checkSignupAvailability(clean, '');
+  if (!emailTaken) return { exists: false };
+
+  const { error } = await supabase.auth.resetPasswordForEmail(clean, {
+    // Kept as a fallback so the email's link (if the template still has one)
+    // also lands somewhere sensible; the primary path is the typed code.
     redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined,
   });
   if (error) throw unwrapError(error);
-  return { message: `If an account exists for ${email}, a reset link has been sent.` };
+  return { exists: true };
+}
+
+/**
+ * Step 2 of the code-based reset. Verifies the 6-digit code from the email; on
+ * success Supabase establishes a temporary recovery session, after which
+ * updatePassword() can set the new password.
+ */
+export async function verifyPasswordResetCode(email, code) {
+  if (!isConfigured) return { ok: true };
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: (email || '').trim(),
+    token: (code || '').trim(),
+    type: 'recovery',
+  });
+  if (error) {
+    const mapped = unwrapError(error);
+    if (/expired|invalid|token/i.test(mapped.message || '')) {
+      mapped.message = 'That code is invalid or has expired. Request a new one.';
+    }
+    throw mapped;
+  }
+  return { ok: true, session: data.session };
 }
 
 /**

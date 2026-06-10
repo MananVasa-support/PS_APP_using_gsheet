@@ -1,25 +1,75 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiMail, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
+import { FiMail, FiArrowLeft, FiKey } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
-import { forgotPassword } from '@/services/authService';
+import { requestPasswordResetCode, verifyPasswordResetCode } from '@/services/authService';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Code-based password reset.
+ *  Step "email" — enter email. If no account exists we say so plainly; if it
+ *                 does, Supabase emails a 6-digit code and we move to step 2.
+ *  Step "code"  — type the code. On success Supabase opens a recovery session
+ *                 and we send the user to /reset-password to set a new password.
+ */
 export default function ForgotPassword() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [sent, setSent] = useState(false);
 
-  async function handleSubmit(e) {
+  async function handleEmailSubmit(e) {
     e.preventDefault();
+    setError('');
+    if (!EMAIL_RE.test(email)) {
+      setError('Enter a valid email address.');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await forgotPassword(email);
-      setMessage(res.message);
-      setSent(true);
+      const res = await requestPasswordResetCode(email);
+      if (!res.exists) {
+        setError('No account exists with this email.');
+        return;
+      }
+      setStep('code');
     } catch (err) {
-      setMessage(err?.response?.data?.message || 'Something went wrong. Please try again.');
+      setError(err?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCodeSubmit(e) {
+    e.preventDefault();
+    setError('');
+    if (!code.trim()) {
+      setError('Enter the code from your email.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await verifyPasswordResetCode(email, code);
+      // Recovery session is now active → go set the new password.
+      navigate('/reset-password');
+    } catch (err) {
+      setError(err?.message || 'That code is invalid or has expired. Request a new one.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendCode() {
+    setError('');
+    setLoading(true);
+    try {
+      await requestPasswordResetCode(email);
+    } catch {
+      /* ignore — they can try again */
     } finally {
       setLoading(false);
     }
@@ -27,25 +77,19 @@ export default function ForgotPassword() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      {sent ? (
-        <div className="text-center">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-productive/15 text-productive">
-            <FiCheckCircle className="h-7 w-7" />
-          </span>
-          <h2 className="mt-5 font-display text-2xl font-bold text-fg-strong">Check your inbox</h2>
-          <p className="mt-2 text-sm text-ink-400">{message}</p>
-          <Button as={Link} to="/login" variant="outline" size="lg" className="mt-8 w-full">
-            Back to login
-          </Button>
-        </div>
-      ) : (
+      {step === 'email' ? (
         <>
           <h2 className="font-display text-3xl font-bold text-fg-strong">Forgot Password?</h2>
           <p className="mt-2 text-sm text-ink-400">
-            Enter your email and we&apos;ll send you a link to reset your password.
+            Enter your email and we&apos;ll send you a code to reset your password.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <form onSubmit={handleEmailSubmit} className="mt-8 space-y-4">
+            {error && (
+              <div className="rounded-xl border border-brand-500/40 bg-brand-500/10 px-4 py-3 text-sm text-brand-300">
+                {error}
+              </div>
+            )}
             <Input
               label="Email"
               name="email"
@@ -58,7 +102,7 @@ export default function ForgotPassword() {
               required
             />
             <Button type="submit" size="lg" loading={loading} className="w-full">
-              Send reset link
+              Send reset code
             </Button>
           </form>
 
@@ -68,6 +112,58 @@ export default function ForgotPassword() {
           >
             <FiArrowLeft className="h-4 w-4" /> Back to login
           </Link>
+        </>
+      ) : (
+        <>
+          <h2 className="font-display text-3xl font-bold text-fg-strong">Enter your code</h2>
+          <p className="mt-2 text-sm text-ink-400">
+            We sent a code to <span className="font-medium text-fg-strong">{email}</span>. Enter it below to continue.
+          </p>
+
+          <form onSubmit={handleCodeSubmit} className="mt-8 space-y-4">
+            {error && (
+              <div className="rounded-xl border border-brand-500/40 bg-brand-500/10 px-4 py-3 text-sm text-brand-300">
+                {error}
+              </div>
+            )}
+            <Input
+              label="Reset code"
+              name="code"
+              icon={FiKey}
+              inputMode="numeric"
+              maxLength={8}
+              placeholder="6-digit code"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+              autoComplete="one-time-code"
+              required
+            />
+            <Button type="submit" size="lg" loading={loading} className="w-full">
+              Verify code
+            </Button>
+          </form>
+
+          <div className="mt-6 flex items-center justify-between text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setStep('email');
+                setCode('');
+                setError('');
+              }}
+              className="inline-flex items-center gap-2 font-medium text-ink-400 hover:text-fg-strong"
+            >
+              <FiArrowLeft className="h-4 w-4" /> Use a different email
+            </button>
+            <button
+              type="button"
+              onClick={resendCode}
+              disabled={loading}
+              className="font-medium text-brand-400 hover:text-brand-300 disabled:opacity-50"
+            >
+              Resend code
+            </button>
+          </div>
         </>
       )}
     </motion.div>
