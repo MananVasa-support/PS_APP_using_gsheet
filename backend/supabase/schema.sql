@@ -64,12 +64,25 @@ $$;
 
 -- Lets the (logged-out) signup form ask "is this email/phone already taken?"
 -- without being able to read any actual profile data — returns only booleans.
+-- Only a CONFIRMED account counts as "taken" — so a half-finished signup that
+-- never entered the email code does NOT lock the email/phone out of being used
+-- (retrying just re-sends the code). Joins auth.users for the confirmation flag.
 create or replace function public.signup_availability(p_email text, p_phone text)
 returns table (email_taken boolean, phone_taken boolean)
 language sql security definer set search_path = public as $$
   select
-    exists (select 1 from public.profiles where lower(email) = lower(p_email)),
-    exists (select 1 from public.profiles where phone = p_phone and p_phone is not null and p_phone <> '');
+    exists (
+      select 1 from public.profiles pr
+      join auth.users u on u.id = pr.id
+      where lower(pr.email) = lower(p_email)
+        and u.email_confirmed_at is not null
+    ),
+    exists (
+      select 1 from public.profiles pr
+      join auth.users u on u.id = pr.id
+      where pr.phone = p_phone and p_phone is not null and p_phone <> ''
+        and u.email_confirmed_at is not null
+    );
 $$;
 grant execute on function public.signup_availability(text, text) to anon, authenticated;
 
