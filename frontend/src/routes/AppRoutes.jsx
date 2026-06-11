@@ -20,7 +20,6 @@ const Dashboard = lazy(() => import('@/pages/Dashboard.jsx'));
 const Analytics = lazy(() => import('@/pages/Analytics.jsx'));
 const Challenges = lazy(() => import('@/pages/Challenges.jsx'));
 const Reports = lazy(() => import('@/pages/Reports.jsx'));
-const Profile = lazy(() => import('@/pages/Profile.jsx'));
 const Settings = lazy(() => import('@/pages/Settings.jsx'));
 const Admin = lazy(() => import('@/pages/Admin.jsx'));
 const Consultant = lazy(() => import('@/pages/Consultant.jsx'));
@@ -122,8 +121,7 @@ export default function AppRoutes() {
             <Route path="/personal-space" element={<PersonalSpace />} />
             <Route path="/personal-space/:moduleId" element={<PersonalSpaceForm />} />
             <Route path="/reminder" element={<Reminder />} />
-            {/* Account pages — clean, no Time Auditor sidebar. */}
-            <Route path="/profile" element={<Profile />} />
+            {/* Account page — clean, no Time Auditor sidebar. */}
             <Route path="/settings" element={<Settings />} />
           </Route>
 

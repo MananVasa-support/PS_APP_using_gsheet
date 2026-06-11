@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  FiUser, FiSliders, FiBell, FiDatabase, FiRefreshCw, FiSave, FiHash,
+  FiUser, FiSliders, FiBell, FiDatabase, FiRefreshCw, FiSave, FiKey,
   FiDownload, FiFileText, FiActivity, FiCamera, FiPauseCircle,
 } from 'react-icons/fi';
 import {
@@ -12,6 +12,9 @@ import { useToast } from '@/context/ToastContext.jsx';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { downloadCsv, exportPdf } from '@/utils/export';
 import { titleCaseName } from '@/utils/format';
+import { countryFromPhone } from '@/utils/phone';
+import { updateProfile } from '@/services/userService';
+import { requestEmailChange, verifyEmailChange } from '@/services/authService';
 import { timeEntries } from '@/data/mockData';
 
 const tabs = [
@@ -24,11 +27,71 @@ const tabs = [
 const LOCAL_KEYS = ['ta_prefs', 'ta_notifs', 'ta_sections', 'ta_tracking', 'ta_sidebar_collapsed'];
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
   const [tab, setTab] = useState('profile');
   const [confirm, setConfirm] = useState(null); // 'reset' | null
+
+  // Profile tab — real, editable account data (name/phone save to Supabase;
+  // changing the email triggers an in-tab 6-digit confirmation).
+  const [pform, setPform] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+  });
+  const [pSaving, setPSaving] = useState(false);
+  const [pError, setPError] = useState('');
+  const [emailChange, setEmailChange] = useState(null); // { newEmail } while awaiting the code
+  const [emailCode, setEmailCode] = useState('');
+
+  const setP = (e) => {
+    const { name, value } = e.target;
+    setPform((f) => ({ ...f, [name]: name === 'name' ? titleCaseName(value) : value }));
+  };
+
+  async function saveProfile() {
+    setPError('');
+    setPSaving(true);
+    try {
+      const nameChanged = (pform.name || '') !== (user?.name || '');
+      const phoneChanged = (pform.phone || '') !== (user?.phone || '');
+      if (nameChanged || phoneChanged) {
+        const updated = await updateProfile({ name: pform.name, phone: pform.phone });
+        setUser((u) => ({ ...u, ...updated }));
+      }
+      const newEmail = (pform.email || '').trim();
+      if (newEmail && newEmail !== (user?.email || '')) {
+        // Email change needs confirmation on the NEW address — do it right here.
+        await requestEmailChange(newEmail);
+        setEmailChange({ newEmail });
+        toast.info(`Enter the code we sent to ${newEmail}.`);
+      } else {
+        toast.success('Profile saved');
+      }
+    } catch (err) {
+      setPError(err?.message || 'Could not save your changes.');
+    } finally {
+      setPSaving(false);
+    }
+  }
+
+  async function confirmEmail(e) {
+    e.preventDefault();
+    setPError('');
+    setPSaving(true);
+    try {
+      await verifyEmailChange(emailChange.newEmail, emailCode);
+      setUser((u) => ({ ...u, email: emailChange.newEmail }));
+      setEmailChange(null);
+      setEmailCode('');
+      toast.success('Email updated.');
+    } catch (err) {
+      setPError(err?.message || 'Invalid or expired code.');
+    } finally {
+      setPSaving(false);
+    }
+  }
 
   const [prefs, setPrefs] = useLocalStorage('ta_prefs', { weekStart: 'Monday', compactMode: false, timeFormat: '12h' });
   const [notifs, setNotifs] = useLocalStorage('ta_notifs', { weeklyReport: true, streakReminders: true, teamUpdates: false, productEmails: false });
@@ -66,35 +129,77 @@ export default function Settings() {
       <Tabs tabs={tabs} active={tab} onChange={setTab} />
 
       {tab === 'profile' && (
-        <Card title="Profile settings" subtitle="Update how you appear in Productivity Shastra">
+        <Card title="Profile" subtitle="Your account details">
           <div className="flex items-center gap-4">
             <Avatar name={user?.name} src={user?.avatar} size={64} />
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => toast.info('Photo upload coming soon')}>Upload new</Button>
-              <Button variant="ghost" size="sm" onClick={() => toast.info('Photo removed')}>Remove</Button>
+            <div>
+              <p className="font-medium text-fg-strong">{pform.name || user?.name}</p>
+              <p className="text-sm text-ink-400 capitalize">{user?.role}</p>
             </div>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <Input
-              label="Display name"
-              defaultValue={user?.name}
-              onChange={(e) => { e.target.value = titleCaseName(e.target.value); }}
-            />
-            <Input label="Email" type="email" defaultValue={user?.email} />
-            <Input label="Job title" defaultValue={user?.title} />
-            <Input label="Department" defaultValue={user?.department} />
-            <Input
-              label="Client ID"
-              icon={FiHash}
-              value={user?.clientId || ''}
-              readOnly
-              hint="Auto-generated — cannot be changed."
-              className="sm:col-span-2"
-            />
-          </div>
-          <div className="mt-6 flex justify-end">
-            <Button icon={FiSave} onClick={() => toast.success('Profile saved')}>Save changes</Button>
-          </div>
+
+          {pError && (
+            <div className="mt-4 rounded-xl border border-brand-500/40 bg-brand-500/10 px-4 py-3 text-sm text-brand-300">
+              {pError}
+            </div>
+          )}
+
+          {emailChange ? (
+            /* In-tab email-change confirmation */
+            <form onSubmit={confirmEmail} className="mt-6 max-w-md space-y-4">
+              <p className="text-sm text-ink-400">
+                We sent a 6-digit code to{' '}
+                <span className="font-medium text-fg-strong">{emailChange.newEmail}</span>. Enter it to confirm your
+                new email.
+              </p>
+              <Input
+                label="Confirmation code"
+                icon={FiKey}
+                inputMode="numeric"
+                maxLength={8}
+                placeholder="6-digit code"
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                autoComplete="one-time-code"
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setEmailChange(null);
+                    setEmailCode('');
+                    setPError('');
+                    setPform((f) => ({ ...f, email: user?.email || '' }));
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" icon={FiSave} loading={pSaving}>
+                  Confirm email
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <Input label="Display name" name="name" value={pform.name} onChange={setP} />
+                <Input label="Email" type="email" name="email" value={pform.email} onChange={setP} autoComplete="off" />
+                <Input label="Phone" name="phone" value={pform.phone} onChange={setP} />
+                <Input
+                  label="Country"
+                  value={countryFromPhone(pform.phone || user?.phone) || 'Not set'}
+                  readOnly
+                  hint="From your phone's country code."
+                />
+              </div>
+              <div className="mt-6 flex justify-end">
+                <Button icon={FiSave} loading={pSaving} onClick={saveProfile}>
+                  Save changes
+                </Button>
+              </div>
+            </>
+          )}
         </Card>
       )}
 

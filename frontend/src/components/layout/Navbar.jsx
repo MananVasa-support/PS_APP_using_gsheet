@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiMenu, FiSearch, FiBell, FiUser, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiSearch, FiBell, FiSettings, FiLogOut } from 'react-icons/fi';
 import Avatar from '@/components/ui/Avatar.jsx';
 import { useAuth } from '@/hooks/useAuth';
 import { useClickOutside } from '@/hooks/useClickOutside';
@@ -31,7 +31,6 @@ const SEARCH_DESTINATIONS = [
   { label: 'Export Reports', to: '/reports' },
   { label: 'Challenges', to: '/level-2' },
   { label: 'Settings', to: '/settings' },
-  { label: 'Profile', to: '/profile' },
 ];
 
 export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
@@ -186,9 +185,6 @@ export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
                 transition={{ duration: 0.15 }}
                 className="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-ink-700 bg-ink-850 py-1 shadow-card"
               >
-                <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-fg hover:bg-ink-800">
-                  <FiUser className="h-4 w-4 text-ink-400" /> My Profile
-                </Link>
                 <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-fg hover:bg-ink-800">
                   <FiSettings className="h-4 w-4 text-ink-400" /> Settings
                 </Link>

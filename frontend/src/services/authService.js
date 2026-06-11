@@ -223,6 +223,36 @@ export async function updatePassword(newPassword) {
   return { message: 'Password updated. Please log in with your new password.' };
 }
 
+/**
+ * Start changing the signed-in user's email. Supabase emails a confirmation to
+ * the NEW address (a 6-digit code if the "Change Email Address" template uses
+ * {{ .Token }}). The change only takes effect once verifyEmailChange() succeeds.
+ */
+export async function requestEmailChange(newEmail) {
+  if (!isConfigured) return { ok: true };
+  const { error } = await supabase.auth.updateUser({ email: (newEmail || '').trim() });
+  if (error) throw unwrapError(error);
+  return { ok: true };
+}
+
+/** Confirm the email change with the 6-digit code sent to the new address. */
+export async function verifyEmailChange(newEmail, code) {
+  if (!isConfigured) return { ok: true };
+  const { error } = await supabase.auth.verifyOtp({
+    email: (newEmail || '').trim(),
+    token: (code || '').trim(),
+    type: 'email_change',
+  });
+  if (error) {
+    const mapped = unwrapError(error);
+    if (/expired|invalid|token/i.test(mapped.message || '')) {
+      mapped.message = 'That code is invalid or has expired. Try changing your email again.';
+    }
+    throw mapped;
+  }
+  return { ok: true };
+}
+
 export async function getCurrentUser() {
   if (!isConfigured) return demoUser;
   const {

@@ -1,24 +1,43 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
-  FiMail, FiPhone, FiMapPin, FiBriefcase, FiCalendar, FiEdit2, FiSave, FiAward, FiClock, FiTrendingUp, FiHash, FiSettings,
+  FiMail, FiPhone, FiMapPin, FiCalendar, FiEdit2, FiSave, FiHash, FiSettings,
 } from 'react-icons/fi';
 import { Card, Avatar, Badge, Button, Input, PageHeader, BackButton } from '@/components/ui';
 import { updateProfile } from '@/services/userService';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDate, titleCaseName } from '@/utils/format';
 
+// Country isn't stored separately yet — but the signup phone carries the dial
+// code (e.g. +91), so we can show the right country from it. Longest-prefix wins.
+const DIAL_COUNTRIES = [
+  { code: '+91', name: 'India' },
+  { code: '+1', name: 'United States' },
+  { code: '+44', name: 'United Kingdom' },
+  { code: '+61', name: 'Australia' },
+  { code: '+971', name: 'UAE' },
+  { code: '+65', name: 'Singapore' },
+  { code: '+49', name: 'Germany' },
+  { code: '+33', name: 'France' },
+  { code: '+81', name: 'Japan' },
+  { code: '+86', name: 'China' },
+  { code: '+92', name: 'Pakistan' },
+  { code: '+880', name: 'Bangladesh' },
+];
+function countryFromPhone(phone) {
+  if (!phone) return '';
+  const byLongest = [...DIAL_COUNTRIES].sort((a, b) => b.code.length - a.code.length);
+  return byLongest.find((c) => phone.startsWith(c.code))?.name || '';
+}
+
 export default function Profile() {
   const { user, setUser } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Only fields that actually exist as DB columns are editable here.
   const [form, setForm] = useState({
     name: user?.name || '',
-    title: user?.title || '',
-    department: user?.department || '',
-    phone: user?.phone || '+1 555 0142',
-    country: user?.country || 'United States',
+    phone: user?.phone || '',
   });
 
   const update = (e) => {
@@ -29,25 +48,22 @@ export default function Profile() {
 
   async function save() {
     setSaving(true);
-    const updated = await updateProfile(form);
-    setUser((u) => ({ ...u, ...updated }));
-    setSaving(false);
-    setEditing(false);
+    try {
+      const updated = await updateProfile(form);
+      setUser((u) => ({ ...u, ...updated }));
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const stats = [
-    { icon: FiClock, label: 'Hours logged', value: '1,245' },
-    { icon: FiTrendingUp, label: 'Avg. productivity', value: '78%' },
-    { icon: FiAward, label: 'Current level', value: `Lvl ${user?.level || 12}` },
-  ];
-
+  const country = countryFromPhone(form.phone || user?.phone);
+  // Only the user's REAL account data — no placeholder stats/fields.
   const details = [
-    { icon: FiMail, label: 'Email', value: user?.email },
-    { icon: FiHash, label: 'Client ID', value: user?.clientId || '—' },
-    { icon: FiPhone, label: 'Phone', value: form.phone },
-    { icon: FiBriefcase, label: 'Department', value: form.department || 'Design' },
-    { icon: FiMapPin, label: 'Country', value: form.country },
-    { icon: FiCalendar, label: 'Joined', value: formatDate(user?.joined || '2024-03-14') },
+    { icon: FiMail, label: 'Email', value: user?.email || '—' },
+    { icon: FiPhone, label: 'Phone', value: form.phone || user?.phone || 'Not set' },
+    { icon: FiMapPin, label: 'Country', value: country || 'Not set' },
+    { icon: FiCalendar, label: 'Joined', value: user?.joined ? formatDate(user.joined) : '—' },
   ];
 
   return (
@@ -64,8 +80,7 @@ export default function Profile() {
           <div className="flex items-end gap-4">
             <Avatar name={user?.name} src={user?.avatar} size={96} className="-mt-12 ring-4 ring-ink-850" />
             <div className="pb-1">
-              <h2 className="text-xl font-bold text-fg-strong">{form.name}</h2>
-              <p className="text-sm text-ink-400">{form.title || 'Senior Product Designer'}</p>
+              <h2 className="text-xl font-bold text-fg-strong">{form.name || user?.name}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge tone="brand" className="capitalize">{user?.role}</Badge>
                 {user?.clientId && (
@@ -92,55 +107,29 @@ export default function Profile() {
         </div>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        {/* Stats */}
-        <div className="space-y-5 lg:col-span-1">
-          {stats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="card flex items-center gap-4 p-5"
-            >
-              <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
-                <s.icon className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-xl font-bold text-fg-strong">{s.value}</p>
-                <p className="text-sm text-ink-400">{s.label}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Details / edit form */}
-        <Card title="Personal information" className="lg:col-span-2">
-          {editing ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Full name" name="name" value={form.name} onChange={update} />
-              <Input label="Job title" name="title" value={form.title} onChange={update} />
-              <Input label="Department" name="department" value={form.department} onChange={update} />
-              <Input label="Phone" name="phone" value={form.phone} onChange={update} />
-              <Input label="Country" name="country" value={form.country} onChange={update} className="sm:col-span-2" />
-            </div>
-          ) : (
-            <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
-              {details.map((d) => (
-                <div key={d.label} className="flex items-start gap-3">
-                  <span className="mt-0.5 grid h-9 w-9 place-items-center rounded-lg bg-ink-800 text-ink-400">
-                    <d.icon className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <dt className="text-xs text-ink-500">{d.label}</dt>
-                    <dd className="text-fg">{d.value}</dd>
-                  </div>
+      {/* Details / edit form */}
+      <Card title="Personal information">
+        {editing ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input label="Full name" name="name" value={form.name} onChange={update} />
+            <Input label="Phone" name="phone" value={form.phone} onChange={update} />
+          </div>
+        ) : (
+          <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+            {details.map((d) => (
+              <div key={d.label} className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 place-items-center rounded-lg bg-ink-800 text-ink-400">
+                  <d.icon className="h-4 w-4" />
+                </span>
+                <div>
+                  <dt className="text-xs text-ink-500">{d.label}</dt>
+                  <dd className="text-fg">{d.value}</dd>
                 </div>
-              ))}
-            </dl>
-          )}
-        </Card>
-      </div>
+              </div>
+            ))}
+          </dl>
+        )}
+      </Card>
     </div>
   );
 }
