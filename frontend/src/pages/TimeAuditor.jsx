@@ -10,8 +10,7 @@ import {
 import { Button, Badge, Modal, BackButton } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { MANDATORY_MSG, isEmptyValue } from '@/utils/validation';
-import Sidebar from '@/components/layout/Sidebar.jsx';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import TimeAuditorSidebar from '@/components/layout/TimeAuditorSidebar.jsx';
 import { cn } from '@/utils/cn';
 
 /**
@@ -201,12 +200,6 @@ export default function TimeAuditor() {
   const [stage, setStage] = useState('home'); // see top-of-file enum
   const [assessments, setAssessments] = useState(loadAssessments);
 
-  // Sidebar (collapsible, persisted) â€” shown on the final summary AND when
-  // viewing a previously-saved assessment (which renders the same summary).
-  // Hidden on every other Time Auditor stage to preserve the focused workflow.
-  const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage('ta_sidebar_collapsed', false);
-  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
-
   // Active assessment in progress
   const [start, setStart] = useState({ hour: '06', minute: '00', ampm: 'AM' });
   const [slots, setSlots] = useState([]);
@@ -218,8 +211,6 @@ export default function TimeAuditor() {
   const [topStep, setTopStep] = useState(0);
   const [viewingId, setViewingId] = useState(null);
   const [savedAssessmentId, setSavedAssessmentId] = useState(null);
-
-  const showSidebar = stage === 'summary' || (stage === 'previous' && Boolean(viewingId));
 
   // Productive slots in original order (computed on demand)
   const productiveSlots = useMemo(
@@ -551,19 +542,10 @@ export default function TimeAuditor() {
   if (isConsultant) return <ConsultantClientsView />;
 
   return (
-    <div className="min-h-screen bg-ink-950">
-      {showSidebar && (
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
-          mobileOpen={sidebarMobileOpen}
-          onCloseMobile={() => setSidebarMobileOpen(false)}
-        />
-      )}
+    <div className="flex min-h-screen bg-ink-950">
+      <TimeAuditorSidebar onHome={goHome} />
 
-      <div className={cn('transition-all duration-300', showSidebar && (sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'))}>
-      <TopBar onHome={goHome} stage={stage} onOpenMobileSidebar={showSidebar ? () => setSidebarMobileOpen(true) : null} />
-
+      <div className="min-w-0 flex-1">
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <AnimatePresence mode="wait">
           {stage === 'home' && (
