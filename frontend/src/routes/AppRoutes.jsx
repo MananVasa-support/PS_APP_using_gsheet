@@ -122,6 +122,9 @@ export default function AppRoutes() {
             <Route path="/personal-space" element={<PersonalSpace />} />
             <Route path="/personal-space/:moduleId" element={<PersonalSpaceForm />} />
             <Route path="/reminder" element={<Reminder />} />
+            {/* Account pages — clean, no Time Auditor sidebar. */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
 
           {/* Sidebar shell — main app pages only (no tool/module pages). */}
@@ -141,8 +144,6 @@ export default function AppRoutes() {
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/final-summary" element={<FinalSummary />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
           </Route>
 
           {/* Tools — Time Auditor (shell-native) and the 4 merged tools all

@@ -11,12 +11,19 @@ import {
   FiTrendingUp,
   FiFileText,
   FiRefreshCcw,
+  FiClock,
 } from 'react-icons/fi';
 
 /**
  * Sidebar navigation, grouped by role.
  *
- * - `mainNav`           : client (default) — full app feature set.
+ * - `mainNav`           : client (default) — the **Time Auditor** suite. Every
+ *                         item here belongs to Time Auditor and reads its data
+ *                         (assessment workflow + Analytics / Challenges / Reports
+ *                         / Final Summary). The leading "Dashboard" links back to
+ *                         the global tools hub. Account pages (Profile, Settings)
+ *                         are NOT here — they live in the top-right profile menu
+ *                         and render on the clean, no-sidebar shell.
  * - `adminMainNav`      : admin — only Admin Panel, Analytics, Settings.
  *                         Client-flow items (Dashboard, Challenges, Reports,
  *                         Final Summary) are intentionally hidden.
@@ -32,12 +39,12 @@ import {
  * "Challenges" (label) maps to the existing /level-2 flow.
  */
 export const mainNav = [
-  { label: 'Dashboard', to: '/dashboard', icon: FiGrid },
+  { label: 'Dashboard', to: '/dashboard', icon: FiGrid }, // back to the global tools hub
+  { label: 'Time Auditor', to: '/time-auditor', icon: FiClock },
   { label: 'Analytics', to: '/analytics', icon: FiPieChart },
   { label: 'Challenges', to: '/level-2', icon: FiAward },
   { label: 'Export Reports', to: '/reports', icon: FiDownload },
   { label: 'Final Summary', to: '/final-summary', icon: FiFileText },
-  { label: 'Settings', to: '/settings', icon: FiSettings },
 ];
 
 export const adminMainNav = [
