@@ -30,14 +30,14 @@ import { computeAnalytics } from '@/features/power-planner/utils/powerPlannerUti
 
 const DEBOUNCE_MS = 900;
 
-let uidCache = null;
+// Always read the CURRENT session (never cache): if one user logs out and
+// another logs in without a reload, a cached id would silently write nothing
+// (RLS rejects) or worse, mis-tag queued syncs.
 async function myId() {
-  if (uidCache) return uidCache;
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  uidCache = session?.user?.id || null;
-  return uidCache;
+  return session?.user?.id || null;
 }
 
 // ── Load everything for hydration ───────────────────────────────────────────
