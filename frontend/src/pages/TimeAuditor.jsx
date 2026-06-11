@@ -216,6 +216,10 @@ export default function TimeAuditor() {
   const [topStep, setTopStep] = useState(0);
   const [viewingId, setViewingId] = useState(null);
   const [savedAssessmentId, setSavedAssessmentId] = useState(null);
+  // When editing a previous assessment: the ORIGINAL row's id. The original is
+  // kept until the edited version saves successfully (replace-only-on-save) —
+  // abandoning an edit midway loses nothing.
+  const [editSourceId, setEditSourceId] = useState(null);
 
   // Productive slots in original order (computed on demand)
   const productiveSlots = useMemo(
@@ -256,6 +260,7 @@ export default function TimeAuditor() {
     setTopCategories(['', '', '']);
     setTopStep(0);
     setSavedAssessmentId(null);
+    setEditSourceId(null);
   }
 
   function beginAssessment() {
@@ -509,7 +514,12 @@ export default function TimeAuditor() {
     try {
       const saved = await saveAssessmentRow(payload); // → row in time_auditor_entries
       setSavedAssessmentId(saved.id);
-      setAssessments((list) => [saved, ...list]);
+      setAssessments((list) => [saved, ...list.filter((a) => a.id !== editSourceId)]);
+      // Edit flow: the new version saved fine — NOW remove the original.
+      if (editSourceId) {
+        deleteAssessmentRow(editSourceId).catch(() => {});
+        setEditSourceId(null);
+      }
       toast.success('Saved to your account — visible in Previous Assessments.');
     } catch (err) {
       setSavedAssessmentId(null); // allow retry
@@ -542,10 +552,10 @@ export default function TimeAuditor() {
     );
     setEditingId(null);
     setStage('review');
-    // Remove the old record (DB + local list) so finishing the edit saves a
-    // fresh row — same "edit = redo from review" behavior as before.
-    setAssessments((list) => list.filter((x) => x.id !== id));
-    deleteAssessmentRow(id).catch(() => toast.error('Could not remove the old copy — you may see a duplicate.'));
+    // Replace-only-on-save: keep the original row; it's deleted only AFTER the
+    // edited version saves successfully (see saveCurrentAssessment). Abandoning
+    // the edit midway leaves the original untouched.
+    setEditSourceId(id);
   }
 
   async function deleteAssessment(id) {
