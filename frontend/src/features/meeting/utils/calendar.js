@@ -38,6 +38,13 @@ export async function scheduleMeetingOnCalendar(meeting, dateISO, startHHMM) {
   const [h, m] = startHHMM.split(':').map((n) => parseInt(n, 10) || 0);
   const endTotal = h * 60 + m + minutes;
   const end = `${pad(Math.floor(endTotal / 60) % 24)}:${pad(endTotal % 60)}`;
+  // A meeting that crosses midnight ends on the NEXT day.
+  let endDateISO = dateISO;
+  if (endTotal >= 24 * 60) {
+    const d = new Date(`${dateISO}T00:00:00`);
+    d.setDate(d.getDate() + 1);
+    endDateISO = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
 
   const details = [
     meeting.answers?.q2 && `What: ${meeting.answers.q2}`,
@@ -51,7 +58,7 @@ export async function scheduleMeetingOnCalendar(meeting, dateISO, startHHMM) {
     summary: `Meeting: ${meeting.title || 'Untitled Meeting'}`,
     ...(details ? { description: details } : {}),
     start: { dateTime: `${dateISO}T${startHHMM}:00`, timeZone: tz },
-    end: { dateTime: `${dateISO}T${end}:00`, timeZone: tz },
+    end: { dateTime: `${endDateISO}T${end}:00`, timeZone: tz },
   });
 
   const headers = {
