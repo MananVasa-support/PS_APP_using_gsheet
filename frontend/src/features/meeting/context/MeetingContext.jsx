@@ -229,6 +229,10 @@ export const MeetingProvider = ({ children }) => {
 
   const updateMeetingStatus = (id, status) => updateById(id, (m) => ({ ...m, status }));
 
+  // Shallow-merge arbitrary fields into a meeting (e.g. gcalEventId /
+  // scheduledFor after scheduling on Google Calendar). Persists like any update.
+  const patchMeeting = (id, patch) => updateById(id, (m) => ({ ...m, ...patch }));
+
   // Mark a meeting Completed together with its post-meeting reflection.
   // `reflection` = { planningHelpfulness, learnings }.
   const completeMeetingWithReflection = (id, reflection) =>
@@ -351,6 +355,7 @@ export const MeetingProvider = ({ children }) => {
         addMeeting,
         getMeeting,
         updateMeetingStatus,
+        patchMeeting,
         completeMeetingWithReflection,
         archiveMeeting,
         unarchiveMeeting,

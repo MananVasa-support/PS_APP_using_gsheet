@@ -8,6 +8,12 @@ import {
 import { FaRegFilePdf, FaRegFileExcel } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDate, statusBadgeStyles } from '../utils/meetingFormat';
+import {
+  scheduleMeetingOnCalendar,
+  removeMeetingFromCalendar,
+  durationToMinutes,
+  isGoogleConfigured,
+} from '../utils/calendar';
 import clsx from 'clsx';
 
 export default function MeetingList() {
@@ -18,9 +24,58 @@ export default function MeetingList() {
     unarchiveMeeting,
     duplicateMeeting,
     deleteMeeting,
+    patchMeeting,
   } = useMeeting();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ---- Schedule on Google Calendar ----
+  const [scheduling, setScheduling] = useState(null); // the meeting being scheduled
+  const [schedDate, setSchedDate] = useState('');
+  const [schedTime, setSchedTime] = useState('10:00');
+  const [schedBusy, setSchedBusy] = useState(false);
+  const [schedError, setSchedError] = useState('');
+
+  const openSchedule = (m) => {
+    if (!isGoogleConfigured()) {
+      alert('Google Calendar is not configured yet (missing Client ID).');
+      return;
+    }
+    setScheduling(m);
+    // Prefill from a previous scheduling, else today at 10:00.
+    if (m.scheduledFor) {
+      const d = new Date(m.scheduledFor);
+      setSchedDate(d.toISOString().slice(0, 10));
+      setSchedTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+    } else {
+      setSchedDate(new Date().toISOString().slice(0, 10));
+      setSchedTime('10:00');
+    }
+    setSchedError('');
+  };
+
+  const confirmSchedule = async () => {
+    if (!scheduling || !schedDate || !schedTime) {
+      setSchedError('Pick a date and a start time.');
+      return;
+    }
+    setSchedBusy(true);
+    setSchedError('');
+    try {
+      const { eventId } = await scheduleMeetingOnCalendar(scheduling, schedDate, schedTime);
+      // Remember the event + chosen time on the meeting (persists to the DB),
+      // so re-scheduling UPDATES the same calendar event.
+      patchMeeting(scheduling.id, {
+        gcalEventId: eventId,
+        scheduledFor: `${schedDate}T${schedTime}:00`,
+      });
+      setScheduling(null);
+    } catch (e) {
+      setSchedError(e?.message || 'Could not add the meeting to Google Calendar.');
+    } finally {
+      setSchedBusy(false);
+    }
+  };
 
   // Which list to show. Default view = active "Meeting List".
   const [view, setView] = useState('active'); // 'active' | 'archived'
@@ -39,9 +94,13 @@ export default function MeetingList() {
   const activeMeetings = meetings;
   const visibleMeetings = view === 'active' ? activeMeetings : archivedMeetings;
 
-  const handleDelete = (id) => {
-    if (confirm('Delete this meeting? This cannot be undone.')) {
-      deleteMeeting(id);
+  const handleDelete = (m) => {
+    const note = m.gcalEventId ? ' Its Google Calendar event will be removed too.' : '';
+    if (confirm(`Delete this meeting? This cannot be undone.${note}`)) {
+      // Best-effort calendar cleanup first (needs a Google token → may show a
+      // quick consent popup); the meeting is deleted regardless of the outcome.
+      if (m.gcalEventId) removeMeetingFromCalendar(m).catch(() => {});
+      deleteMeeting(m.id);
     }
   };
 
@@ -170,10 +229,10 @@ export default function MeetingList() {
                 meeting={m}
                 archived={view === 'archived'}
                 onView={() => navigate(`/meeting-framework/meeting-list/${m.id}`)}
-                onSchedule={() => {}}
+                onSchedule={() => openSchedule(m)}
                 onEdit={() => navigate(`/meeting-framework/edit/${m.id}`)}
                 onDuplicate={() => duplicateMeeting(m.id)}
-                onDelete={() => handleDelete(m.id)}
+                onDelete={() => handleDelete(m)}
                 onArchive={() => archiveMeeting(m.id)}
                 onRestore={() => unarchiveMeeting(m.id)}
                 onExportExcel={() => handleExportExcel(m)}
@@ -183,6 +242,78 @@ export default function MeetingList() {
           </AnimatePresence>
         </motion.div>
       )}
+
+      {/* Schedule on Google Calendar */}
+      <AnimatePresence>
+        {scheduling && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => !schedBusy && setScheduling(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.97 }}
+              className="w-full max-w-sm rounded-2xl bg-surface border border-line p-6 shadow-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-base font-bold text-mkink flex items-center gap-2">
+                <FiCalendar className="text-brand-red" /> Schedule on Google Calendar
+              </h3>
+              <p className="mt-1 text-xs text-muted break-words">
+                {scheduling.title} · duration{' '}
+                {durationToMinutes(scheduling.answers?.q17 || scheduling.answers?.q3)} min
+                {scheduling.gcalEventId ? ' · updates the existing event' : ''}
+              </p>
+
+              <div className="mt-4 space-y-3">
+                <label className="block text-xs font-semibold text-mkink">
+                  Date
+                  <input
+                    type="date"
+                    value={schedDate}
+                    onChange={(e) => setSchedDate(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-mkink focus:border-brand-red focus:outline-none"
+                  />
+                </label>
+                <label className="block text-xs font-semibold text-mkink">
+                  Start time
+                  <input
+                    type="time"
+                    value={schedTime}
+                    onChange={(e) => setSchedTime(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-mkink focus:border-brand-red focus:outline-none"
+                  />
+                </label>
+              </div>
+
+              {schedError && <p className="mt-3 text-xs font-medium text-brand-red">{schedError}</p>}
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={schedBusy}
+                  onClick={() => setScheduling(null)}
+                  className="rounded-lg border border-line px-4 py-2 text-xs font-bold text-mkink hover:bg-brand-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={schedBusy}
+                  onClick={confirmSchedule}
+                  className="rounded-lg bg-brand-red px-4 py-2 text-xs font-bold uppercase text-white hover:bg-brand-red-dark transition-colors disabled:opacity-50"
+                >
+                  {schedBusy ? 'Adding…' : scheduling.gcalEventId ? 'Update event' : 'Add to Calendar'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -255,6 +386,16 @@ function MeetingCard({
           </h3>
           <p className="text-xs text-muted mt-1">
             Created: <span className="text-mkink font-semibold">{formatDate(m.createdDate)}</span>
+            {m.scheduledFor && (
+              <>
+                {' · '}Scheduled:{' '}
+                <span className="text-mkink font-semibold">
+                  {new Date(m.scheduledFor).toLocaleString([], {
+                    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                  })}
+                </span>
+              </>
+            )}
           </p>
         </div>
 
