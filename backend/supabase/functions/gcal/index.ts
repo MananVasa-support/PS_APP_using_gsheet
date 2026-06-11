@@ -76,7 +76,9 @@ Deno.serve(async (req) => {
       response_type: "code",
       scope: "https://www.googleapis.com/auth/calendar.events",
       access_type: "offline", // ← gives us the refresh token
-      prompt: "consent", //      ← guarantees a refresh token every connect
+      // select_account → ALWAYS show the account chooser on connect (a user
+      // with 5 Gmails picks which one); consent → guarantees a refresh token.
+      prompt: "select_account consent",
       state: state.state,
     });
     return json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${params}` });

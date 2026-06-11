@@ -17,7 +17,8 @@ import { formatDate } from '@/utils/format';
  * @param leading       Optional element rendered at the far left (e.g. the Logo on
  *                      the sidebar-less Home, so the brand shows "everywhere").
  */
-// Everything the dashboard search can jump to (tools + main pages).
+// The dashboard search jumps only to the tool cards shown on the hub page —
+// keep this list in sync with MODULES in pages/Dashboard.jsx.
 const SEARCH_DESTINATIONS = [
   { label: 'Totality Collector', to: '/pre-ps/totality' },
   { label: 'Sales Cultivator', to: '/sales-cultivator' },
@@ -27,10 +28,6 @@ const SEARCH_DESTINATIONS = [
   { label: 'Time Finder', to: '/time-finder' },
   { label: 'Meeting Success Maximizer', to: '/meeting-framework' },
   { label: 'Personal Space', to: '/personal-space' },
-  { label: 'Analytics', to: '/analytics' },
-  { label: 'Export Reports', to: '/reports' },
-  { label: 'Challenges', to: '/level-2' },
-  { label: 'Settings', to: '/settings' },
 ];
 
 export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
