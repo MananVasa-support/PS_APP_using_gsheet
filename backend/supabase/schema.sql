@@ -208,6 +208,69 @@ create table if not exists public.level2_challenges (
   created_at timestamptz not null default now()
 );
 
+-- CROSS-USER challenge leaderboard. RLS (rightly) stops one client reading
+-- another's rows, so the ranking is computed HERE, server-side, and returns
+-- only safe aggregates (name + scores) — never raw assessment data.
+--
+-- Challenge Score (0–100) per participant, fair across challenge lengths:
+--   50% consistency — share of elapsed challenge days with ≥1 Time Auditor audit
+--   50% quality     — avg productivity % of audits inside the challenge window
+-- Participants = each user's most recent non-abandoned run. Everyone sees the
+-- SAME list; only actual participants appear.
+create or replace function public.challenge_leaderboard()
+returns table (
+  rank int, user_id uuid, name text, days int, status text,
+  days_elapsed int, coverage_pct int, avg_productivity int, score int
+)
+language sql stable security definer set search_path = public as $$
+  with latest_run as (
+    select distinct on (c.user_id)
+      c.user_id, c.days, c.status, c.started_at::date as start_day,
+      least(
+        c.days,
+        greatest(1, (extract(epoch from (coalesce(c.completed_at, now()) - c.started_at)) / 86400)::int + 1)
+      ) as days_elapsed
+    from level2_challenges c
+    where c.status in ('Active Challenge','Completed Challenge')
+    order by c.user_id, c.started_at desc
+  ),
+  audits as (
+    select t.user_id,
+           ((t.entry->>'date')::timestamptz)::date as audit_day,
+           coalesce((t.entry->'stats'->>'productivityPct')::numeric, 0) as pct
+    from time_auditor_entries t
+    where t.entry->>'date' is not null
+  ),
+  joined as (
+    select lr.user_id, lr.days, lr.status, lr.days_elapsed,
+           count(distinct a.audit_day) as audit_days,
+           coalesce(avg(a.pct), 0) as avg_pct
+    from latest_run lr
+    left join audits a
+      on a.user_id = lr.user_id
+     and a.audit_day >= lr.start_day
+     and a.audit_day <  lr.start_day + lr.days
+    group by lr.user_id, lr.days, lr.status, lr.days_elapsed
+  ),
+  scored as (
+    select j.*,
+           round(100.0 * least(j.audit_days, j.days_elapsed) / j.days_elapsed)::int as coverage_pct,
+           round(j.avg_pct)::int as avg_productivity,
+           round(
+             0.5 * (100.0 * least(j.audit_days, j.days_elapsed) / j.days_elapsed)
+             + 0.5 * j.avg_pct
+           )::int as score
+    from joined j
+  )
+  select row_number() over (order by s.score desc, s.days_elapsed desc, p.name asc)::int as rank,
+         s.user_id, coalesce(p.name, 'Anonymous') as name, s.days, s.status,
+         s.days_elapsed, s.coverage_pct, s.avg_productivity, s.score
+  from scored s
+  join profiles p on p.id = s.user_id
+  order by 1;
+$$;
+grant execute on function public.challenge_leaderboard() to authenticated;
+
 -- Shell flow tools (shapes to confirm when wired) -----------------------------
 create table if not exists public.personal_space_entries (
   id uuid primary key default gen_random_uuid(),

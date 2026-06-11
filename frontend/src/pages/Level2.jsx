@@ -10,6 +10,7 @@ import { useAuthContext } from '@/context/AuthContext.jsx';
 import { rankings, weeklyProductivity } from '@/data/rankingsMock'; // admin overview only (parked)
 import { formatNumber } from '@/utils/format';
 import { listAssessments } from '@/services/taService';
+import { getLeaderboard } from '@/services/level2Service';
 import { buildRealAnalytics, filterByRange } from '@/utils/taAnalytics';
 
 const DAY_OPTIONS = [
@@ -32,9 +33,10 @@ export default function Level2() {
 
 function Level2Client() {
   const {
-    unlocked, participating, started, days, startDate, completedCount,
+    unlocked, participating, started, days, startDate,
     setParticipating, setDays, startChallenge, resetChallenge, enterLevel2,
   } = useChallenge();
+  const { user } = useAuthContext();
   const toast = useToast();
 
   // Entering this page unlocks the Level 2 ranking links in the sidebar.
@@ -45,11 +47,16 @@ function Level2Client() {
   // Real audit data — the challenge charts are computed from the user's actual
   // Time Auditor assessments during the challenge window (no demo numbers).
   const [assessments, setAssessments] = useState([]);
+  // Cross-user leaderboard (server-computed; same list for every participant).
+  const [board, setBoard] = useState([]);
   useEffect(() => {
     if (!started) return;
     let active = true;
     listAssessments()
       .then((list) => active && setAssessments(list))
+      .catch(() => {});
+    getLeaderboard()
+      .then((rows) => active && setBoard(rows))
       .catch(() => {});
     return () => {
       active = false;
@@ -110,6 +117,9 @@ function Level2Client() {
       filterByRange(assessments, { start: startDate, end: new Date().toISOString() })
     );
 
+    // My position on the common leaderboard (null until the board loads).
+    const myRank = board.find((r) => r.user_id === user?.id)?.rank || null;
+
     return (
       <div className="space-y-6">
         <BackButton />
@@ -134,27 +144,75 @@ function Level2Client() {
             <span className="text-4xl font-extrabold text-fg-strong">{elapsedDays}<span className="text-ink-500">/{days}</span></span>
             <p className="mt-2 text-sm text-ink-400">days completed</p>
           </Card>
-          <Card title="Challenges completed" className="flex flex-col items-center justify-center">
+          <Card title="Your rank" className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-3">
               <FaTrophy className="h-9 w-9 text-amber-400" />
-              <span className="text-4xl font-extrabold text-fg-strong">{completedCount || 0}</span>
+              <span className="text-4xl font-extrabold text-fg-strong">
+                {myRank ? `#${myRank}` : '—'}
+              </span>
             </div>
-            <p className="mt-2 text-sm text-ink-400">finished so far</p>
+            <p className="mt-2 text-sm text-ink-400">
+              {myRank ? `of ${board.length} participant${board.length === 1 ? '' : 's'}` : 'syncing…'}
+            </p>
           </Card>
         </div>
 
-        {/* Charts — built from the user's REAL audits during the challenge. */}
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Card title="Daily progress" subtitle="Avg productivity of your audits each challenge day">
-            <BarChartCard data={dailyProgress} color="#f93b48" unit="%" height={220} xLabel="Day" yLabel="Productivity (%)" />
-          </Card>
-          <Card title="Productivity analysis" subtitle="Weekly average during this challenge">
-            {challengeAnalytics.weekly.length ? (
-              <BarChartCard data={challengeAnalytics.weekly} color="#f93b48" unit="%" average height={220} xLabel="Week" yLabel="Productivity (%)" />
-            ) : (
-              <p className="grid h-[220px] place-items-center text-sm text-ink-400">
-                Complete a Time Auditor assessment during the challenge to see your productivity here.
+        <div className="grid gap-5 lg:grid-cols-3">
+          {/* Charts — built from the user's REAL audits during the challenge. */}
+          <div className="space-y-5 lg:col-span-2">
+            <Card title="Daily progress" subtitle="Avg productivity of your audits each challenge day">
+              <BarChartCard data={dailyProgress} color="#f93b48" unit="%" height={220} xLabel="Day" yLabel="Productivity (%)" />
+            </Card>
+            <Card title="Productivity analysis" subtitle="Weekly average during this challenge">
+              {challengeAnalytics.weekly.length ? (
+                <BarChartCard data={challengeAnalytics.weekly} color="#f93b48" unit="%" average height={220} xLabel="Week" yLabel="Productivity (%)" />
+              ) : (
+                <p className="grid h-[220px] place-items-center text-sm text-ink-400">
+                  Complete a Time Auditor assessment during the challenge to see your productivity here.
+                </p>
+              )}
+            </Card>
+          </div>
+
+          {/* Ranking board — REAL participants only (server-computed, same list
+              for everyone). Score = 50% daily-audit consistency + 50% avg
+              productivity, fair across 3-day and 30-day challenges. */}
+          <Card
+            title="Ranking board"
+            subtitle={board.length ? `Top ${Math.min(board.length, 10)} of ${board.length} participant${board.length === 1 ? '' : 's'}` : 'Live participants'}
+            bodyClassName="space-y-1"
+          >
+            {board.length === 0 ? (
+              <p className="py-8 text-center text-sm text-ink-400">
+                No participants yet — rankings appear as people join challenges and do their daily audits.
               </p>
+            ) : (
+              board.slice(0, 10).map((u) => {
+                const isMe = u.user_id === user?.id;
+                return (
+                  <div
+                    key={u.user_id}
+                    className={`flex items-center gap-3 rounded-xl px-2 py-2 ${isMe ? 'bg-brand-500/10 ring-1 ring-brand-500/30' : ''}`}
+                  >
+                    <span
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold"
+                      style={u.rank <= 3 ? { background: medal[u.rank - 1], color: '#0b0e16' } : { background: '#202637', color: '#94a3b8' }}
+                    >
+                      {u.rank}
+                    </span>
+                    <Avatar name={u.name} size={32} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-fg">
+                        {u.name} {isMe && <span className="text-brand-400">(You)</span>}
+                      </p>
+                      <p className="truncate text-xs text-ink-500">
+                        {u.days}-day · {u.coverage_pct}% consistent
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-fg-strong">{u.score}</span>
+                  </div>
+                );
+              })
             )}
           </Card>
         </div>

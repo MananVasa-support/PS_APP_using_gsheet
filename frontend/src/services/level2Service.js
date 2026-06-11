@@ -39,6 +39,19 @@ export async function startRun(days) {
   return data;
 }
 
+/**
+ * The cross-user leaderboard — computed server-side (SECURITY DEFINER RPC) so
+ * it works despite RLS and exposes only safe aggregates (rank/name/score).
+ * Returns ALL participants ranked; callers slice the top N. Score = 50%
+ * consistency (challenge days with an audit) + 50% avg audit productivity.
+ */
+export async function getLeaderboard() {
+  if (!isConfigured) return [];
+  const { data, error } = await supabase.rpc('challenge_leaderboard');
+  if (error) throw unwrapError(error);
+  return data || [];
+}
+
 export async function setRunStatus(id, status) {
   if (!isConfigured || !id) return null;
   const patch = { status };
