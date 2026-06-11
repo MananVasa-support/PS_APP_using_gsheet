@@ -60,13 +60,21 @@ backend planned but not started.
   settings + NEW `gcal_event_ids` column → `power_planner_settings`.
   Carry-forward = flagged rows, no table. usePowerPlanner hydrates from DB;
   localStorage demo-only. ⚠️ schema.sql must be re-run (adds reviews + column).
-  **Google Calendar:** event map now per-user in DB; user wants sign-in ONCE →
-  silent exports = Edge Function with refresh tokens (NEXT STEP — user is
-  creating the Google OAuth Client ID first; then VITE_GOOGLE_CLIENT_ID in
-  frontend/.env; Meeting's schedule button reuses the same engine).
-  **Next:** calendar Edge Function → Reasons Eliminator (last tool) →
-  admin/consultant data views (PARKED) → deploy. Keep frontend↔Supabase rules
-  in sync and give an end-of-session checklist.
+  **Google Calendar = DONE & WORKING (2026-06-11).** OAuth Client ID created
+  (in frontend/.env as VITE_GOOGLE_CLIENT_ID); Edge Function `gcal` DEPLOYED
+  (Verify JWT off; secrets GOOGLE_CLIENT_ID/SECRET in Supabase vault; tables
+  google_tokens + gcal_oauth_states; repo copy:
+  backend/supabase/functions/gcal/index.ts). Sign-in-ONCE works: token row
+  saved, silent exports + meeting Schedule confirmed, UPDATE-not-duplicate
+  confirmed. Meeting "Schedule" button: date+time modal, duration from q17
+  (boxes UI, no 0-duration), event "Meeting: <name>", per-meeting gcalEventId;
+  delete = manual calendar cleanup w/ link (auto later). ⚠️ PENDING (user,
+  tomorrow): RE-PASTE index.ts into the dashboard editor + Deploy to pick up 3
+  fixes (callback 302→calendar.google.com instead of raw-HTML page; account
+  chooser always; utf-8). Launch checklist: publish consent screen +
+  verification (removes 'do you trust supabase.co' warning), add live domain
+  origins. **Next:** Reasons Eliminator (LAST tool) → admin/consultant views
+  (PARKED) → deploy. Keep frontend↔Supabase in sync + end-of-session checklist.
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
 
