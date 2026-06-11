@@ -12,6 +12,8 @@ import ProductivityTrend from '@/components/charts/ProductivityTrend.jsx';
 import BarChartCard from '@/components/charts/BarChartCard.jsx';
 import DonutChart from '@/components/charts/DonutChart.jsx';
 import { buildAnalytics } from '@/data/analyticsMock';
+import { buildRealAnalytics, filterByRange } from '@/utils/taAnalytics';
+import { listAssessments } from '@/services/taService';
 import { useAuthContext } from '@/context/AuthContext.jsx';
 import { getClients, getConsultants, getConsultantOverview } from '@/services/adminService';
 import { formatMinutes } from '@/utils/format';
@@ -70,12 +72,40 @@ export default function Analytics() {
     return RANGES.find((r) => r.id === rangeId)?.days ?? 1;
   }, [rangeId, start, end]);
 
-  // Seed the analytics on the focused person so each user shows stable, distinct numbers.
-  // Without a focus (regular user or admin "org-wide") we leave the seed null so the data
-  // re-rolls per range change, preserving the existing demo feel.
-  const seed = isAdmin && focusedUser ? `${focusedUser.role}:${focusedUser.id}` : null;
-  const data = useMemo(() => buildAnalytics(days, seed), [days, seed]);
   const customActive = Boolean(start && end);
+
+  // ── CLIENT: real analytics from the user's own saved assessments ──────────
+  // (admin still uses the seeded demo generator until admin data-views are wired)
+  const [myAssessments, setMyAssessments] = useState(null); // null = loading
+  useEffect(() => {
+    if (isAdmin) return;
+    let active = true;
+    listAssessments()
+      .then((list) => active && setMyAssessments(list))
+      .catch(() => active && setMyAssessments([]));
+    return () => { active = false; };
+  }, [isAdmin]);
+
+  const seed = isAdmin && focusedUser ? `${focusedUser.role}:${focusedUser.id}` : null;
+  const data = useMemo(() => {
+    if (isAdmin) return buildAnalytics(days, seed);
+    const filtered = filterByRange(myAssessments || [], {
+      latestOnly: !customActive && rangeId === 'latest',
+      days,
+      start: customActive ? start : null,
+      end: customActive ? end : null,
+    });
+    return buildRealAnalytics(filtered);
+  }, [isAdmin, days, seed, myAssessments, rangeId, start, end, customActive]);
+
+  // Client still loading their data from the database.
+  if (!isAdmin && myAssessments === null) {
+    return (
+      <div className="grid h-[60vh] place-items-center">
+        <Spinner size={32} />
+      </div>
+    );
+  }
 
   const focusList = focusGroup === 'consultants' ? consultantsList : clientsList;
 
@@ -200,6 +230,16 @@ export default function Analytics() {
         </div>
       </Card>
 
+      {/* No data yet (client) — explain instead of showing empty charts. */}
+      {!isAdmin && data.count === 0 && (
+        <Card>
+          <p className="py-4 text-center text-sm text-ink-400">
+            No assessment data {myAssessments?.length ? 'in this range' : 'yet'} — complete a Time Auditor
+            assessment and your analytics will build from it automatically.
+          </p>
+        </Card>
+      )}
+
       {/* ---- SECTION 1: Top 3 Productive (moved up) ---------------------- */}
         <motion.section id="top3-productive" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="scroll-mt-24 space-y-5">
           <SectionHeader icon={FiAward} title="Top 3 Productive" subtitle="Highest-impact modules, sections and hours" />
@@ -237,9 +277,9 @@ export default function Analytics() {
           <SectionHeader icon={FiBarChart2} title="Complete Analysis" subtitle="Everything about how your time was spent" />
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            <StatCard icon={FiClock} label="Planned Hours" value={formatMinutes(data.plannedMin)} tone="info" delta="+4%" />
-            <StatCard icon={FiZap} label="Productive Hours" value={formatMinutes(data.productiveMin)} tone="success" delta="+8%" />
-            <StatCard icon={FiActivity} label="Unproductive Hours" value={formatMinutes(data.unproductiveMin)} tone="danger" delta="-3%" />
+            <StatCard icon={FiClock} label="Planned Hours" value={formatMinutes(data.plannedMin)} tone="info" />
+            <StatCard icon={FiZap} label="Productive Hours" value={formatMinutes(data.productiveMin)} tone="success" />
+            <StatCard icon={FiActivity} label="Unproductive Hours" value={formatMinutes(data.unproductiveMin)} tone="danger" />
           </div>
 
           <Card title="Productivity trend" subtitle="Daily productivity with average line">
