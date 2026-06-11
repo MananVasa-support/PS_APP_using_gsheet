@@ -15,14 +15,6 @@ function loadAll() {
   }
 }
 
-// Real productivity "rank" from the user's average — replaces the old fake level.
-function rankFor(pct) {
-  if (pct >= 80) return 'Elite';
-  if (pct >= 60) return 'Strong';
-  if (pct >= 40) return 'Building';
-  return 'Getting Started';
-}
-
 function StatBox({ icon: Icon, label, value }) {
   return (
     <div className="card flex items-center gap-4 p-5">
@@ -72,7 +64,7 @@ export default function FinalSummary() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatBox icon={FiClock} label="Hours logged" value={`${hours} h`} />
         <StatBox icon={FiTrendingUp} label="Avg. productivity" value={`${avgProd}%`} />
-        <StatBox icon={FiAward} label="Productivity rank" value={rankFor(avgProd)} />
+        <StatBox icon={FiAward} label="Current level" value={`Lvl ${count}`} />
       </div>
 
       <StageSummary
