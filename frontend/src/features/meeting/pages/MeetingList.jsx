@@ -94,14 +94,17 @@ export default function MeetingList() {
   const activeMeetings = meetings;
   const visibleMeetings = view === 'active' ? activeMeetings : archivedMeetings;
 
-  const handleDelete = (m) => {
-    const note = m.gcalEventId ? ' Its Google Calendar event will be removed too.' : '';
-    if (confirm(`Delete this meeting? This cannot be undone.${note}`)) {
-      // Best-effort calendar cleanup first (needs a Google token → may show a
-      // quick consent popup); the meeting is deleted regardless of the outcome.
-      if (m.gcalEventId) removeMeetingFromCalendar(m).catch(() => {});
-      deleteMeeting(m.id);
-    }
+  // Delete confirmation modal (custom — lets us add the Calendar note/link).
+  const [deleting, setDeleting] = useState(null); // the meeting pending deletion
+
+  const confirmDelete = () => {
+    const m = deleting;
+    if (!m) return;
+    // Best-effort calendar cleanup (needs a Google token → may show a quick
+    // consent popup). The meeting is deleted from the DATABASE regardless.
+    if (m.gcalEventId) removeMeetingFromCalendar(m).catch(() => {});
+    deleteMeeting(m.id);
+    setDeleting(null);
   };
 
   // Heavy export libs are code-split and loaded on demand.
@@ -232,7 +235,7 @@ export default function MeetingList() {
                 onSchedule={() => openSchedule(m)}
                 onEdit={() => navigate(`/meeting-framework/edit/${m.id}`)}
                 onDuplicate={() => duplicateMeeting(m.id)}
-                onDelete={() => handleDelete(m)}
+                onDelete={() => setDeleting(m)}
                 onArchive={() => archiveMeeting(m.id)}
                 onRestore={() => unarchiveMeeting(m.id)}
                 onExportExcel={() => handleExportExcel(m)}
@@ -242,6 +245,68 @@ export default function MeetingList() {
           </AnimatePresence>
         </motion.div>
       )}
+
+      {/* Delete confirmation (with Google Calendar note when scheduled) */}
+      <AnimatePresence>
+        {deleting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setDeleting(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.97 }}
+              className="w-full max-w-sm rounded-2xl bg-surface border border-line p-6 shadow-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-base font-bold text-mkink flex items-center gap-2">
+                <FiTrash2 className="text-brand-red" /> Delete this meeting?
+              </h3>
+              <p className="mt-2 text-xs text-muted break-words">
+                <span className="font-semibold text-mkink">{deleting.title}</span> will be permanently
+                deleted from your account. This cannot be undone.
+              </p>
+              {deleting.gcalEventId && (
+                <p className="mt-2 text-xs text-muted">
+                  This meeting is on your <span className="font-semibold text-mkink">Google Calendar</span> —
+                  we'll remove that event too (a quick Google permission popup may appear). You can also check
+                  your calendar yourself:
+                </p>
+              )}
+              {deleting.gcalEventId && (
+                <a
+                  href="https://calendar.google.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-brand-red hover:underline"
+                >
+                  <FiCalendar /> Open Google Calendar
+                </a>
+              )}
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleting(null)}
+                  className="rounded-lg border border-line px-4 py-2 text-xs font-bold text-mkink hover:bg-brand-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="rounded-lg bg-brand-red px-4 py-2 text-xs font-bold uppercase text-white hover:bg-brand-red-dark transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Schedule on Google Calendar */}
       <AnimatePresence>
