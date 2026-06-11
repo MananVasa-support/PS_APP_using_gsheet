@@ -4,6 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
 import { FiCopy, FiArchive, FiCornerUpLeft, FiDownload, FiFileText } from 'react-icons/fi';
 import { exportExcel, exportPdf } from '../utils/exportUtils.js';
+import {
+  listAssessments,
+  saveAssessment,
+  setArchived as setArchivedRow,
+  deleteAssessment,
+  clearAssessments,
+} from '@/services/tfService';
 
 const press = { whileHover: { scale: 1.03 }, whileTap: { scale: 0.97 } };
 
@@ -19,53 +26,46 @@ export default function PreviousAssessment() {
   const [showArchived, setShowArchived] = useState(false);
   const [filter, setFilter] = useState('');
 
+  // Load both buckets from the user's account (Supabase; localStorage in demo).
   useEffect(() => {
-    try {
-      setAssessments(JSON.parse(localStorage.getItem('assessments')) || []);
-    } catch {
-      setAssessments([]);
-    }
-    try {
-      setArchived(JSON.parse(localStorage.getItem('archivedAssessments')) || []);
-    } catch {
-      setArchived([]);
-    }
+    let active = true;
+    listAssessments()
+      .then(({ active: act, archived: arch }) => {
+        if (!active) return;
+        setAssessments(act);
+        setArchived(arch);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const persistActive = (list) => {
-    setAssessments(list);
-    localStorage.setItem('assessments', JSON.stringify(list));
-  };
-  const persistArchived = (list) => {
-    setArchived(list);
-    localStorage.setItem('archivedAssessments', JSON.stringify(list));
-  };
-
-  // Move between the two lists.
+  // Move between the two lists (optimistic UI + DB update).
   const handleArchive = (a) => {
-    persistActive(assessments.filter((x) => x.id !== a.id));
-    persistArchived([...archived, a]);
+    setAssessments((prev) => prev.filter((x) => x.id !== a.id));
+    setArchived((prev) => [{ ...a, archived: true }, ...prev]);
+    setArchivedRow(a.id, true).catch(() => {});
   };
   const handleUnarchive = (a) => {
-    persistArchived(archived.filter((x) => x.id !== a.id));
-    persistActive([...assessments, a]);
+    setArchived((prev) => prev.filter((x) => x.id !== a.id));
+    setAssessments((prev) => [{ ...a, archived: false }, ...prev]);
+    setArchivedRow(a.id, false).catch(() => {});
   };
 
   // Context-aware actions (operate on whichever list is shown).
   const handleDelete = (id, e) => {
     e.stopPropagation();
     if (!window.confirm('Are you sure you want to delete this assessment?')) return;
-    if (showArchived) persistArchived(archived.filter((a) => a.id !== id));
-    else persistActive(assessments.filter((a) => a.id !== id));
+    if (showArchived) setArchived((prev) => prev.filter((a) => a.id !== id));
+    else setAssessments((prev) => prev.filter((a) => a.id !== id));
+    deleteAssessment(id).catch(() => {});
   };
   const handleClearAll = () => {
-    if (showArchived) {
-      localStorage.removeItem('archivedAssessments');
-      setArchived([]);
-    } else {
-      localStorage.removeItem('assessments');
-      setAssessments([]);
-    }
+    if (!window.confirm(`Delete ALL ${showArchived ? 'archived' : 'previous'} assessments? This cannot be undone.`)) return;
+    if (showArchived) setArchived([]);
+    else setAssessments([]);
+    clearAssessments(showArchived).catch(() => {});
   };
   // Count existing copies of a base title in the list (returns next copy number).
   const getCopyCount = (base, list) => {
@@ -74,15 +74,23 @@ export default function PreviousAssessment() {
     return list.filter((x) => re.test(titleOf(x))).length + 1;
   };
 
-  const handleDuplicate = (a) => {
+  const handleDuplicate = async (a) => {
     const list = showArchived ? archived : assessments;
     const base = titleOf(a).replace(/\s*\(Copy.*\)$/, ''); // strip any existing "(Copy)" suffix
     const copyCount = getCopyCount(base, list);
     const newTitle = copyCount === 1 ? `${base} (Copy)` : `${base} (Copy ${copyCount})`;
-    // New object (spread, no mutation), new unique id + current timestamp, added at TOP.
-    const copy = { ...a, id: Date.now(), title: newTitle, createdAt: new Date().toISOString() };
-    if (showArchived) persistArchived([copy, ...archived]);
-    else persistActive([copy, ...assessments]);
+    // New content (no id — the database assigns one), current timestamp, added at TOP.
+    const { id: _oldId, archived: _arch, ...content } = a;
+    try {
+      const copy = await saveAssessment(
+        { ...content, title: newTitle, createdAt: new Date().toISOString() },
+        { archived: showArchived }
+      );
+      if (showArchived) setArchived((prev) => [copy, ...prev]);
+      else setAssessments((prev) => [copy, ...prev]);
+    } catch (err) {
+      alert(err?.message || 'Could not duplicate the assessment.');
+    }
   };
 
   const sourceList = showArchived ? archived : assessments;

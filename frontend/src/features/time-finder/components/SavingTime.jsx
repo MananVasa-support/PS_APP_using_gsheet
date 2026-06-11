@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaPen, FaTrash } from 'react-icons/fa';
+import { saveAssessment } from '@/services/tfService';
 
 const press = { whileHover: { scale: 1.03 }, whileTap: { scale: 0.97 } };
 
@@ -97,30 +98,30 @@ export default function SavingTime() {
   );
   const isExceeded = totalTimeMinutes > 1440;
 
-  // Save this assessment to localStorage, then show it in the history table.
-  const handleEnd = () => {
+  // Save this assessment to the user's account (Supabase), then show it in the
+  // history table. The working draft stays local until the save succeeds.
+  const [saving, setSaving] = useState(false);
+  const handleEnd = async () => {
     if (routinesData.length === 0) {
       alert('No routine data to save. Please complete an assessment first.');
       navigate('/time-finder/');
       return;
     }
-    if (isExceeded) return; // over the 24h daily limit — block submit
-    const newAssessment = {
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-      routines: routinesData,
-      totalTimeSaved: `${totalSavedHours}h ${totalSavedRemaining}m`,
-    };
-    let existing = [];
+    if (isExceeded || saving) return; // over the 24h daily limit — block submit
+    setSaving(true);
     try {
-      existing = JSON.parse(localStorage.getItem('assessments')) || [];
-    } catch {
-      existing = [];
+      await saveAssessment({
+        createdAt: new Date().toISOString(),
+        routines: routinesData,
+        totalTimeSaved: `${totalSavedHours}h ${totalSavedRemaining}m`,
+      });
+      localStorage.removeItem('currentAssessment'); // clear the working draft
+      navigate('/time-finder/previous-assessment'); // save, then show it in the history table
+    } catch (err) {
+      alert(err?.message || 'Could not save the assessment. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    // Insert newest at the beginning so it shows at the top of Previous Assessments.
-    localStorage.setItem('assessments', JSON.stringify([newAssessment, ...existing]));
-    localStorage.removeItem('currentAssessment'); // clear the working draft
-    navigate('/time-finder/previous-assessment'); // save, then show it in the history table
   };
 
   return (
@@ -150,7 +151,8 @@ export default function SavingTime() {
                 </thead>
                 <tbody>
                   {routinesData.map((item, index) => (
-                    <tr key={item.name} className="border-t align-top">
+                    // Keyed by name+index — two routines may share a name.
+                    <tr key={`${item.name}-${index}`} className="border-t align-top">
                       <td className="p-3">{index + 1}</td>
                       <td className="break-words p-3">{item.name}</td>
                       <td className="break-words p-3">
@@ -238,13 +240,13 @@ export default function SavingTime() {
             {...press}
             type="button"
             onClick={handleEnd}
-            disabled={isExceeded}
+            disabled={isExceeded || saving}
             className={
               'rounded-xl bg-red-500 px-7 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-red-600 ' +
-              (isExceeded ? 'cursor-not-allowed opacity-50' : '')
+              (isExceeded || saving ? 'cursor-not-allowed opacity-50' : '')
             }
           >
-            End
+            {saving ? 'Saving…' : 'End'}
           </motion.button>
           <motion.button
             {...press}

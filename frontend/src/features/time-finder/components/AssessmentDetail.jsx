@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaPen, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
+import { listAssessments, updateAssessment } from '@/services/tfService';
 
 const press = { whileHover: { scale: 1.03 }, whileTap: { scale: 0.97 } };
 
@@ -67,25 +68,27 @@ export default function AssessmentDetail() {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    let all = [];
-    try {
-      all = JSON.parse(localStorage.getItem('assessments')) || [];
-    } catch {
-      all = [];
-    }
-    setAssessment(all.find((a) => String(a.id) === String(id)) || null);
+    let active = true;
+    // Look in BOTH buckets so archived assessments open too.
+    listAssessments()
+      .then(({ active: act, archived: arch }) => {
+        if (!active) return;
+        setAssessment([...act, ...arch].find((a) => String(a.id) === String(id)) || null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [id]);
 
+  // Persist inline routine edits to the user's account.
   const persist = (routines) => {
-    let all = [];
-    try {
-      all = JSON.parse(localStorage.getItem('assessments')) || [];
-    } catch {
-      all = [];
-    }
-    const updatedAll = all.map((a) => (String(a.id) === String(id) ? { ...a, routines } : a));
-    localStorage.setItem('assessments', JSON.stringify(updatedAll));
-    setAssessment((prev) => ({ ...prev, routines }));
+    setAssessment((prev) => {
+      const next = { ...prev, routines };
+      const { id: _id, archived: _arch, ...content } = next;
+      updateAssessment(id, content).catch(() => {});
+      return next;
+    });
   };
 
   if (!assessment) {

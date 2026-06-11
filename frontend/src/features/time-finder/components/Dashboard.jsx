@@ -16,6 +16,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { listAssessments } from '@/services/tfService';
 
 const RED = '#ef4444';
 // Distinct, non-overlapping hues so slices/bars are easy to tell apart.
@@ -232,13 +233,13 @@ export default function Dashboard() {
   const [toDate, setToDate] = useState('');
 
   useEffect(() => {
-    let data = [];
-    try {
-      data = JSON.parse(localStorage.getItem('assessments')) || [];
-    } catch {
-      data = [];
-    }
-    setAssessmentsRaw(data);
+    let active = true;
+    listAssessments()
+      .then(({ active: act }) => active && setAssessmentsRaw(act))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   // From–To validation (derived → auto-clears when input becomes valid).
