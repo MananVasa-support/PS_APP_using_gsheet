@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FiClock, FiGrid, FiPieChart, FiAward, FiDownload, FiFileText,
+  FiClock, FiPieChart, FiAward, FiDownload, FiFileText,
   FiChevronsLeft, FiChevronsRight,
 } from 'react-icons/fi';
 import { cn } from '@/utils/cn';
@@ -39,7 +39,6 @@ export default function TimeAuditorSidebar({ onHome }) {
   }, [collapsed]);
 
   const items = [
-    { key: 'dashboard', label: 'Dashboard', icon: <FiGrid />, to: '/dashboard' },
     {
       key: 'time-auditor',
       label: 'Time Auditor',
@@ -58,7 +57,6 @@ export default function TimeAuditorSidebar({ onHome }) {
   const isActive = (item) => {
     const base = item.match || item.to;
     if (item.key === 'time-auditor') return pathname === '/time-auditor';
-    if (item.key === 'dashboard') return pathname === '/dashboard';
     return base ? pathname.startsWith(base) : false;
   };
 
@@ -72,7 +70,7 @@ export default function TimeAuditorSidebar({ onHome }) {
       initial={false}
       animate={{ width: collapsed ? 112 : 252 }}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-      className="sticky top-0 z-30 flex h-screen shrink-0 flex-col border-r border-ink-700 bg-ink-900"
+      className="sticky top-16 z-30 flex h-[calc(100vh-4rem)] shrink-0 flex-col border-r border-ink-700 bg-ink-900"
     >
       {/* Header: tool icon + title + collapse toggle */}
       <div className="flex h-16 items-center gap-2 border-b border-ink-800 px-3">
