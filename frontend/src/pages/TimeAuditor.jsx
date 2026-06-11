@@ -11,6 +11,7 @@ import { Button, Badge, Modal, BackButton } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { MANDATORY_MSG, isEmptyValue } from '@/utils/validation';
 import TimeAuditorSidebar from '@/components/layout/TimeAuditorSidebar.jsx';
+import { currentLevel, loadChallengeState } from '@/utils/level';
 import { cn } from '@/utils/cn';
 
 /**
@@ -219,7 +220,8 @@ export default function TimeAuditor() {
   );
 
   // Aggregate overview across all saved assessments — the 3 stat boxes shown on
-  // the home screen (Hours logged / Avg productivity / Current level).
+  // the home screen (Hours logged / Avg productivity / Current level). Level is
+  // tied to audits + Challenge participation (see utils/level.js).
   const overview = useMemo(() => {
     const list = assessments || [];
     const count = list.length;
@@ -227,7 +229,12 @@ export default function TimeAuditor() {
     const avgProd = count
       ? Math.round(list.reduce((s, a) => s + (a.stats?.productivityPct || 0), 0) / count)
       : 0;
-    return { count, hours: (totalMin / 60).toFixed(1), avgProd };
+    return {
+      count,
+      hours: (totalMin / 60).toFixed(1),
+      avgProd,
+      level: currentLevel(count, loadChallengeState()),
+    };
   }, [assessments]);
 
   // â”€â”€ Stage controls â”€â”€
@@ -746,7 +753,7 @@ function StageHome({ onStart, onPrevious, onBack, overview }) {
         <div className="grid gap-4 sm:grid-cols-3">
           <HomeStat icon={FiClock} label="Hours logged" value={`${overview.hours} h`} />
           <HomeStat icon={FiTrendingUp} label="Avg. productivity" value={`${overview.avgProd}%`} />
-          <HomeStat icon={FiAward} label="Current level" value={`Lvl ${overview.count}`} />
+          <HomeStat icon={FiAward} label="Current level" value={`Lvl ${overview.level}`} />
         </div>
       )}
 

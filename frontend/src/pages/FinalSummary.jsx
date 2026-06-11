@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { FiPlay, FiClock, FiTrendingUp, FiAward } from 'react-icons/fi';
 import { Button, PageHeader, BackButton } from '@/components/ui';
+import { currentLevel, loadChallengeState } from '@/utils/level';
 import { StageSummary } from './TimeAuditor.jsx';
 
 const STORAGE_KEY = 'ta_assessments_v2';
@@ -56,6 +57,7 @@ export default function FinalSummary() {
     ? Math.round(all.reduce((s, a) => s + (a.stats?.productivityPct || 0), 0) / count)
     : 0;
   const hours = (totalMin / 60).toFixed(1);
+  const level = currentLevel(count, loadChallengeState());
 
   return (
     <div className="space-y-6">
@@ -64,7 +66,7 @@ export default function FinalSummary() {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatBox icon={FiClock} label="Hours logged" value={`${hours} h`} />
         <StatBox icon={FiTrendingUp} label="Avg. productivity" value={`${avgProd}%`} />
-        <StatBox icon={FiAward} label="Current level" value={`Lvl ${count}`} />
+        <StatBox icon={FiAward} label="Current level" value={`Lvl ${level}`} />
       </div>
 
       <StageSummary
