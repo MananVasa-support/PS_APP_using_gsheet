@@ -40,7 +40,7 @@ import {
  */
 export const mainNav = [
   { label: 'Dashboard', to: '/dashboard', icon: FiGrid }, // back to the global tools hub
-  { label: 'Time Auditor', to: '/time-auditor', icon: FiClock },
+  { label: 'Assessment', to: '/time-auditor', icon: FiClock },
   { label: 'Analytics', to: '/analytics', icon: FiPieChart },
   { label: 'Challenges', to: '/level-2', icon: FiAward },
   { label: 'Export Reports', to: '/reports', icon: FiDownload },

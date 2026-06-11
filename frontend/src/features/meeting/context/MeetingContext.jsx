@@ -1,7 +1,16 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { makeId } from '../utils/id';
+import { isConfigured } from '@/lib/supabase';
+import { listMeetings, persistMeeting, deleteMeetingRow } from '@/services/meetingService';
 
 const MeetingContext = createContext(null);
+
+// Meeting ids double as the database row uuid when Supabase is connected
+// (generated client-side so addMeeting can stay synchronous for navigation).
+const newMeetingId = () =>
+  isConfigured && typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : makeId('meeting');
 
 export const useMeeting = () => {
   const context = useContext(MeetingContext);
@@ -125,15 +134,40 @@ const loadState = () => {
 export const MeetingProvider = ({ children }) => {
   const [formData, setFormData] = useState(initialFormState);
 
-  // Two completely independent collections. Parse storage exactly once.
+  // Two completely independent collections. In demo mode they come from
+  // localStorage (parsed exactly once); with Supabase connected they hydrate
+  // from the `meetings` table below.
   const initialRef = useRef(null);
-  if (initialRef.current === null) initialRef.current = loadState();
+  if (initialRef.current === null) {
+    initialRef.current = isConfigured ? { meetings: [], archivedMeetings: [] } : loadState();
+  }
 
   const [meetings, setMeetings] = useState(initialRef.current.meetings);
   const [archivedMeetings, setArchivedMeetings] = useState(initialRef.current.archivedMeetings);
 
-  // Persist both collections together. (Single writer, whole dataset.)
+  // Hydrate from the database (one row per meeting; `archived` lives in the
+  // jsonb). Each user only ever receives their own rows (RLS).
   useEffect(() => {
+    if (!isConfigured) return;
+    let active = true;
+    listMeetings()
+      .then((all) => {
+        if (!active || !all) return;
+        const seen = new Set();
+        setMeetings(normalizeList(all.filter((m) => !m.archived), seen));
+        setArchivedMeetings(normalizeList(all.filter((m) => m.archived), seen));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Demo mode only: persist both collections together to localStorage. With
+  // Supabase connected we DON'T mirror locally — two users sharing one device
+  // must never see each other's meetings.
+  useEffect(() => {
+    if (isConfigured) return;
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -153,7 +187,8 @@ export const MeetingProvider = ({ children }) => {
 
   // Update a meeting in whichever collection holds it. The collection that does
   // NOT contain the id returns its previous reference unchanged (`prev`), so it
-  // is never re-rendered or re-persisted — guaranteeing independence.
+  // is never re-rendered or re-persisted — guaranteeing independence. The
+  // updated record is also pushed to the database (fire-and-forget).
   const updateById = (id, updater) => {
     setMeetings((prev) =>
       prev.some((m) => m.id === id) ? prev.map((m) => (m.id === id ? updater(m) : m)) : prev
@@ -161,12 +196,18 @@ export const MeetingProvider = ({ children }) => {
     setArchivedMeetings((prev) =>
       prev.some((m) => m.id === id) ? prev.map((m) => (m.id === id ? updater(m) : m)) : prev
     );
+    // Persist: compute the same updated record from the current snapshot.
+    const inArchived = archivedMeetings.some((m) => m.id === id);
+    const source = inArchived
+      ? archivedMeetings.find((m) => m.id === id)
+      : meetings.find((m) => m.id === id);
+    if (source) persistMeeting(updater(source), inArchived).catch(() => {});
   };
 
   // ----- Create -----
   // `experience` (optional) = { awareness, confidence, success, realisation }.
   const addMeeting = (answers, experience = null) => {
-    const id = makeId('meeting');
+    const id = newMeetingId();
     const record = {
       id,
       answers: { ...answers },
@@ -178,6 +219,7 @@ export const MeetingProvider = ({ children }) => {
       notes: [],
     };
     setMeetings((prev) => [record, ...prev]); // new meetings are always active
+    persistMeeting(record, false).catch(() => {});
     return id;
   };
 
@@ -206,6 +248,7 @@ export const MeetingProvider = ({ children }) => {
     if (!found) return;
     setMeetings((prev) => prev.filter((m) => m.id !== id));
     setArchivedMeetings((prev) => (prev.some((m) => m.id === id) ? prev : [found, ...prev]));
+    persistMeeting(found, true).catch(() => {});
   };
 
   // Archived → Active. Removes from `archivedMeetings`, adds to `meetings`.
@@ -214,6 +257,7 @@ export const MeetingProvider = ({ children }) => {
     if (!found) return;
     setArchivedMeetings((prev) => prev.filter((m) => m.id !== id));
     setMeetings((prev) => (prev.some((m) => m.id === id) ? prev : [found, ...prev]));
+    persistMeeting(found, false).catch(() => {});
   };
 
   // ----- Duplicate -----
@@ -229,26 +273,27 @@ export const MeetingProvider = ({ children }) => {
 
     const base = baseMeetingName(original.answers?.q1 || original.title || 'Untitled Meeting');
     // Impure bits generated once, outside the updater (keeps the updater pure).
-    const newId = makeId('meeting');
+    const newId = newMeetingId();
     const createdDate = new Date().toISOString();
     const notes = (original.notes || []).map((n) => ({ ...n, id: makeId('note') }));
 
-    setMeetings((prev) => {
-      const existingNames = [...prev, ...archivedMeetings].map(
-        (m) => m.title || m.answers?.q1 || ''
-      );
-      const copiedName = nextCopyName(base, existingNames);
-      const copy = {
-        ...original,
-        id: newId,
-        isDuplicate: true,
-        title: copiedName,
-        createdDate,
-        answers: { ...original.answers, q1: copiedName },
-        notes,
-      };
-      return [copy, ...prev];
-    });
+    // Compute the copy ONCE from the current snapshot (keeps the updater pure —
+    // StrictMode double-invokes updaters, which would double-persist otherwise).
+    const existingNames = [...meetings, ...archivedMeetings].map(
+      (m) => m.title || m.answers?.q1 || ''
+    );
+    const copiedName = nextCopyName(base, existingNames);
+    const copy = {
+      ...original,
+      id: newId,
+      isDuplicate: true,
+      title: copiedName,
+      createdDate,
+      answers: { ...original.answers, q1: copiedName },
+      notes,
+    };
+    setMeetings((prev) => (prev.some((m) => m.id === newId) ? prev : [copy, ...prev]));
+    persistMeeting(copy, false).catch(() => {}); // copies are always active
     return newId;
   };
 
@@ -260,6 +305,7 @@ export const MeetingProvider = ({ children }) => {
     setArchivedMeetings((prev) =>
       prev.some((m) => m.id === id) ? prev.filter((m) => m.id !== id) : prev
     );
+    deleteMeetingRow(id).catch(() => {});
   };
 
   // ----- Editing (duplicates only) -----

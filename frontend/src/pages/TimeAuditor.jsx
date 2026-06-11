@@ -5,13 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiPlay, FiArchive, FiArrowLeft, FiArrowRight, FiCheckCircle, FiEdit2,
   FiTrash2, FiEye, FiHome, FiGrid, FiClock, FiCheck, FiX, FiMenu,
-  FiAlertTriangle, FiChevronDown, FiTrendingUp, FiAward,
+  FiAlertTriangle, FiChevronDown,
 } from 'react-icons/fi';
 import { Button, Badge, Modal, BackButton } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { MANDATORY_MSG, isEmptyValue } from '@/utils/validation';
 import TimeAuditorSidebar from '@/components/layout/TimeAuditorSidebar.jsx';
-import { currentLevel, loadChallengeState } from '@/utils/level';
 import {
   listAssessments,
   saveAssessment as saveAssessmentRow,
@@ -226,24 +225,6 @@ export default function TimeAuditor() {
     () => slots.filter((s) => s.classification === 'Productive'),
     [slots]
   );
-
-  // Aggregate overview across all saved assessments — the 3 stat boxes shown on
-  // the home screen (Hours logged / Avg productivity / Current level). Level is
-  // tied to audits + Challenge participation (see utils/level.js).
-  const overview = useMemo(() => {
-    const list = assessments || [];
-    const count = list.length;
-    const totalMin = list.reduce((s, a) => s + (a.stats?.totalMin || (a.slots?.length || 0) * 30), 0);
-    const avgProd = count
-      ? Math.round(list.reduce((s, a) => s + (a.stats?.productivityPct || 0), 0) / count)
-      : 0;
-    return {
-      count,
-      hours: (totalMin / 60).toFixed(1),
-      avgProd,
-      level: currentLevel(count, loadChallengeState()),
-    };
-  }, [assessments]);
 
   // â”€â”€ Stage controls â”€â”€
   function goHome() {
@@ -586,7 +567,6 @@ export default function TimeAuditor() {
           {stage === 'home' && (
             <StageHome
               key="home"
-              overview={overview}
               onStart={beginAssessment}
               onPrevious={() => setStage('previous')}
               onBack={() => navigate('/dashboard')}
@@ -752,7 +732,7 @@ function TopBar({ onHome, stage, onOpenMobileSidebar }) {
 
 // â”€â”€ Stage: Home â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function StageHome({ onStart, onPrevious, onBack, overview }) {
+function StageHome({ onStart, onPrevious, onBack }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -763,32 +743,9 @@ function StageHome({ onStart, onPrevious, onBack, overview }) {
     >
       <BackButton onClick={onBack} className="justify-self-start" />
 
-      {/* Overview stat boxes — once the user has at least one saved assessment. */}
-      {overview?.count > 0 && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <HomeStat icon={FiClock} label="Hours logged" value={`${overview.hours} h`} />
-          <HomeStat icon={FiTrendingUp} label="Avg. productivity" value={`${overview.avgProd}%`} />
-          <HomeStat icon={FiAward} label="Current level" value={`Lvl ${overview.level}`} />
-        </div>
-      )}
-
       <BigActionCard icon={FiPlay} title="Start New Assessment" desc="Begin a fresh time audit." onClick={onStart} />
       <BigActionCard icon={FiArchive} title="Previous Assessments" desc="View saved audits." onClick={onPrevious} />
     </motion.div>
-  );
-}
-
-function HomeStat({ icon: Icon, label, value }) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-ink-700 bg-ink-850 p-5">
-      <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="min-w-0">
-        <p className="truncate text-xl font-bold text-fg-strong">{value}</p>
-        <p className="text-sm text-ink-400">{label}</p>
-      </div>
-    </div>
   );
 }
 

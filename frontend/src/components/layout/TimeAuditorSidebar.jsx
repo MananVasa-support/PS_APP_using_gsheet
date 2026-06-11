@@ -41,7 +41,7 @@ export default function TimeAuditorSidebar({ onHome }) {
   const items = [
     {
       key: 'time-auditor',
-      label: 'Time Auditor',
+      label: 'Assessment',
       icon: <FiClock />,
       to: '/time-auditor',
       // Inside the tool, go back to the workflow home instead of re-navigating.
