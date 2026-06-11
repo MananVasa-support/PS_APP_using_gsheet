@@ -25,9 +25,19 @@ export function loadChallengeState() {
 export function currentLevel(assessmentsCount = 0, challenge = {}) {
   let lvl = 1;
   lvl += Math.min(assessmentsCount, 99); // each completed audit moves you up
-  if (challenge?.started) lvl += 1; // joined a challenge
-  if (challenge?.status === 'Completed Challenge') lvl += 2; // finished one
-  // Longer challenges (21/30 days) are worth a bit more once completed.
-  if (challenge?.status === 'Completed Challenge' && Number(challenge?.days) >= 21) lvl += 1;
+
+  // Challenge history (now DB-backed via level2_challenges → mirrored into
+  // ta_challenge): EVERY completed run counts, long runs (21+ days) extra.
+  const completed = Number(challenge?.completedCount) || 0;
+  const longCompleted = Number(challenge?.longCompletedCount) || 0;
+  lvl += completed * 2 + longCompleted;
+
+  if (challenge?.started) lvl += 1; // currently in an active challenge
+
+  // Back-compat for old local state that pre-dates completedCount.
+  if (!completed && challenge?.status === 'Completed Challenge') {
+    lvl += 2;
+    if (Number(challenge?.days) >= 21) lvl += 1;
+  }
   return lvl;
 }

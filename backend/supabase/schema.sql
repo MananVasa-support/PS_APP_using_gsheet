@@ -194,6 +194,20 @@ create table if not exists public.time_auditor_entries (
   created_at timestamptz not null default now()
 );
 
+-- Time Auditor Level-2 challenges — one row per challenge RUN (history kept;
+-- a user can do challenges any number of times). Status moves
+-- Active Challenge → Completed Challenge (or Abandoned on reset).
+create table if not exists public.level2_challenges (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  days int not null check (days > 0),
+  status text not null default 'Active Challenge'
+    check (status in ('Active Challenge','Completed Challenge','Abandoned')),
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 -- Shell flow tools (shapes to confirm when wired) -----------------------------
 create table if not exists public.personal_space_entries (
   id uuid primary key default gen_random_uuid(),
@@ -224,8 +238,8 @@ begin
   foreach t in array array[
     'power_planner_weeks','reasons_sessions','reasons_grip_tests',
     'reasons_grip_history','meetings','time_finder_assessments',
-    'time_auditor_entries','personal_space_entries','totality_entries',
-    'sales_cultivator_entries'
+    'time_auditor_entries','level2_challenges','personal_space_entries',
+    'totality_entries','sales_cultivator_entries'
   ] loop
     execute format('create index if not exists idx_%1$s_user on public.%1$I (user_id);', t);
   end loop;
@@ -271,8 +285,8 @@ begin
   foreach t in array array[
     'power_planner_weeks','power_planner_settings','reasons_sessions',
     'reasons_grip_tests','reasons_grip_history','meetings',
-    'time_finder_assessments','time_auditor_entries','personal_space_entries',
-    'totality_entries','sales_cultivator_entries'
+    'time_finder_assessments','time_auditor_entries','level2_challenges',
+    'personal_space_entries','totality_entries','sales_cultivator_entries'
   ] loop
     execute format('alter table public.%I enable row level security;', t);
 
