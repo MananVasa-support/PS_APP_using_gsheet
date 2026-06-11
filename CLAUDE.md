@@ -42,19 +42,19 @@ backend planned but not started.
   Confirm-signup + Reset-password templates use `{{ .Token }}`. SMS/phone reset
   **declined** (paid). See `documentation/06-Backend-Setup.md` for the full
   Supabase-settings checklist + the "+alias" testing gotcha.
-  **Tool data wiring (2026-06-11): TIME AUDITOR SUITE = DONE.** Assessments →
-  `time_auditor_entries` (one row per assessment, `entry` jsonb, infinite
-  re-takes) via `services/taService.js`; Level-2 challenge runs →
-  `level2_challenges` (one row per run; Active→Completed/Abandoned) via
-  `services/level2Service.js` + ChallengeContext (DB-hydrated, mirrored to
-  localStorage for sync readers). Analytics/Reports/Final Summary all compute
-  from REAL assessments (`utils/taAnalytics.js`); Reports does real CSV/PDF
-  exports. "Current level" = audits + completed challenge runs
-  (`utils/level.js`); a true cross-user rank still needs admin-phase work.
-  ⚠️ User must re-run schema.sql (adds level2_challenges).
-  **Next:** remaining tools one at a time (Meeting → Time Finder → Reasons →
-  Power Planner last — see the Power Planner data-mapping discussion in
-  memory), then admin/consultant data views, then deploy. Keep
+  **Tool data wiring (2026-06-11): Time Auditor suite + Time Finder + Meeting
+  = DONE.** Time Auditor: assessments → `time_auditor_entries` (taService),
+  challenge runs → `level2_challenges` (level2Service + DB-hydrated
+  ChallengeContext); Analytics/Reports/Final Summary compute from REAL
+  assessments (`utils/taAnalytics.js`); **cross-user leaderboard** via
+  SECURITY-DEFINER RPC `challenge_leaderboard()` (score = 50% daily-audit
+  consistency + 50% avg productivity; only real participants; same list for
+  all). Time Finder: → `time_finder_assessments` rows (tfService; archived
+  column; draft `currentAssessment` stays local). Meeting: → `meetings` rows
+  (meetingService; MeetingContext hydrates + persists every mutation; meeting
+  id = row uuid; localStorage only in demo mode). All required SQL is run.
+  **Next:** Reasons Eliminator → Power Planner last (data mapping in memory),
+  then admin/consultant data views (PARKED on user request), then deploy. Keep
   frontend↔Supabase rules in sync and give an end-of-session checklist.
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
