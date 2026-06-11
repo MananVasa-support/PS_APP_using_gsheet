@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
         `<html><body style="font-family:sans-serif;text-align:center;padding:48px">
            <h2>Connection failed</h2><p>${msg}</p><p>You can close this window.</p>
          </body></html>`,
-        { status: 400, headers: { "Content-Type": "text/html" } },
+        { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } },
       );
     if (!code || !state) return fail("Missing code/state.");
 
@@ -134,14 +134,14 @@ Deno.serve(async (req) => {
 
     return new Response(
       `<html><body style="font-family:sans-serif;text-align:center;padding:48px">
-         <h2>✅ Google Calendar connected</h2>
+         <h2>Google Calendar connected</h2>
          <p>You can close this window and return to Productivity Shastra.</p>
          <script>
            try { window.opener && window.opener.postMessage('gcal-connected', '*'); } catch (e) {}
            setTimeout(() => window.close(), 1200);
          </script>
        </body></html>`,
-      { headers: { "Content-Type": "text/html" } },
+      { headers: { "Content-Type": "text/html; charset=utf-8" } },
     );
   }
 
