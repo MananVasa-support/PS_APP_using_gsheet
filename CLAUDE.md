@@ -53,9 +53,20 @@ backend planned but not started.
   column; draft `currentAssessment` stays local). Meeting: → `meetings` rows
   (meetingService; MeetingContext hydrates + persists every mutation; meeting
   id = row uuid; localStorage only in demo mode). All required SQL is run.
-  **Next:** Reasons Eliminator → Power Planner last (data mapping in memory),
-  then admin/consultant data views (PARKED on user request), then deploy. Keep
-  frontend↔Supabase rules in sync and give an end-of-session checklist.
+  **Power Planner WIRED too (2026-06-11):** weeks → `power_planner_weeks` (one
+  row per user-week, full plan jsonb), NEW `power_planner_reviews` (auto-computed
+  scoreboard: completion %, productivity score, totals in real columns —
+  recomputed on every sync by `services/ppService.js`, debounced + diffed),
+  settings + NEW `gcal_event_ids` column → `power_planner_settings`.
+  Carry-forward = flagged rows, no table. usePowerPlanner hydrates from DB;
+  localStorage demo-only. ⚠️ schema.sql must be re-run (adds reviews + column).
+  **Google Calendar:** event map now per-user in DB; user wants sign-in ONCE →
+  silent exports = Edge Function with refresh tokens (NEXT STEP — user is
+  creating the Google OAuth Client ID first; then VITE_GOOGLE_CLIENT_ID in
+  frontend/.env; Meeting's schedule button reuses the same engine).
+  **Next:** calendar Edge Function → Reasons Eliminator (last tool) →
+  admin/consultant data views (PARKED) → deploy. Keep frontend↔Supabase rules
+  in sync and give an end-of-session checklist.
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
 
