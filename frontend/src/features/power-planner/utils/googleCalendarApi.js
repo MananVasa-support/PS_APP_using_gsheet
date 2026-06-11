@@ -12,7 +12,7 @@
 import { addDaysISO } from "./weekDates";
 import { addDurationToStartTime } from "./powerPlannerUtils";
 import { browserTimeZone } from "./googleCalendar";
-import { isConfigured } from "@/lib/supabase";
+import { isConfigured, supabase } from "@/lib/supabase";
 import { loadGcalEventIds, saveGcalEventIds } from "@/services/ppService";
 
 const GOOGLE_CLIENT_ID =
@@ -40,8 +40,101 @@ const loadGis = () => {
   return gisPromise;
 };
 
-// Pop the Google consent/sign-in and resolve with a short-lived access token.
+// ── "Sign in once" server tokens (Supabase Edge Function `gcal`) ────────────
+// The user consents to Google ONE time; the refresh token lives server-side
+// and every later export gets a fresh access token here silently — no popup,
+// any device. Falls back to the classic GIS popup if the function isn't
+// deployed/reachable.
+const FN_BASE = `${import.meta.env?.VITE_SUPABASE_URL || ""}/functions/v1/gcal`;
+
+const fnAuthHeader = async () => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
+};
+
+// Silent token from the stored refresh token. null = not connected / no function.
+const serverToken = async () => {
+  try {
+    const headers = await fnAuthHeader();
+    if (!headers) return null;
+    const res = await fetch(`${FN_BASE}/token`, { method: "POST", headers });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.access_token || null;
+  } catch {
+    return null;
+  }
+};
+
+// One-time connect: opens the Google consent window; resolves when the
+// callback page reports success (or the window closes).
+const connectViaServer = async () => {
+  const headers = await fnAuthHeader();
+  if (!headers) throw new Error("Not signed in.");
+  const res = await fetch(`${FN_BASE}/authorize`, { method: "POST", headers });
+  if (!res.ok) throw new Error("__fn_unavailable__");
+  const { url } = await res.json();
+  return new Promise((resolve, reject) => {
+    const win = window.open(url, "gcal-connect", "width=520,height=680");
+    if (!win) {
+      reject(new Error("Popup blocked — allow popups to connect Google Calendar."));
+      return;
+    }
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("message", onMsg);
+      clearInterval(timer);
+      resolve();
+    };
+    const onMsg = (e) => {
+      if (e.data === "gcal-connected") finish();
+    };
+    const timer = setInterval(() => {
+      if (win.closed) finish(); // closed manually → we just retry /token below
+    }, 700);
+    window.addEventListener("message", onMsg);
+  });
+};
+
+/** Forget the Google connection (lets the user switch accounts). */
+export const disconnectGoogleCalendar = async () => {
+  const headers = await fnAuthHeader();
+  if (!headers) return { ok: false };
+  try {
+    const res = await fetch(`${FN_BASE}/disconnect`, { method: "POST", headers });
+    return { ok: res.ok };
+  } catch {
+    return { ok: false };
+  }
+};
+
+// Get a Calendar access token. Order: silent server token → one-time server
+// connect (single consent, then silent forever) → classic GIS popup fallback.
 export const requestCalendarToken = async () => {
+  if (isConfigured) {
+    let token = await serverToken();
+    if (token) return token;
+    try {
+      await connectViaServer();
+      token = await serverToken();
+      if (token) return token;
+    } catch (e) {
+      if (e?.message && e.message !== "__fn_unavailable__" && !/unavailable/i.test(e.message)) {
+        // Real user-facing problem (e.g. popup blocked) — surface it.
+        if (/popup/i.test(e.message)) throw e;
+      }
+      // Function not deployed yet → fall through to the GIS popup.
+    }
+  }
+  return requestCalendarTokenViaPopup();
+};
+
+// Classic popup flow (Google Identity Services) — fallback / demo mode.
+const requestCalendarTokenViaPopup = async () => {
   if (!GOOGLE_CLIENT_ID) throw new Error("Google Client ID not set.");
   await loadGis();
   return new Promise((resolve, reject) => {

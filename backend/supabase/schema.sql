@@ -293,6 +293,27 @@ language sql stable security definer set search_path = public as $$
 $$;
 grant execute on function public.challenge_leaderboard() to authenticated;
 
+-- ----------------------------------------------------------------------------
+-- Google Calendar "sign in once" — server-held refresh tokens (Edge Function).
+-- RLS is enabled with NO client policies on purpose: ONLY the gcal Edge
+-- Function (service role) can read/write tokens. The browser never sees them.
+-- ----------------------------------------------------------------------------
+create table if not exists public.google_tokens (
+  user_id       uuid primary key references public.profiles (id) on delete cascade,
+  refresh_token text not null,
+  updated_at    timestamptz not null default now()
+);
+alter table public.google_tokens enable row level security;
+
+-- Short-lived state nonces for the OAuth redirect (ties the Google callback
+-- back to the signed-in user). Service-role only, same as above.
+create table if not exists public.gcal_oauth_states (
+  state      uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.gcal_oauth_states enable row level security;
+
 -- Shell flow tools (shapes to confirm when wired) -----------------------------
 create table if not exists public.personal_space_entries (
   id uuid primary key default gen_random_uuid(),
