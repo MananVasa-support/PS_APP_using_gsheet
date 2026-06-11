@@ -29,6 +29,12 @@ import {
   weekStartForDate,
 } from "../utils/weekSchedule";
 import { reconcileRecurrence, isRecurring } from "../utils/recurrence";
+import { isConfigured } from "@/lib/supabase";
+import {
+  loadPlanner,
+  queueWeeksSync,
+  queueSettingsSync,
+} from "@/services/ppService";
 
 // Weeks are date-anchored now. Each week is stored under the ISO date of its
 // FIRST day ("YYYY-MM-DD"); the user picks one start date and every week rolls
@@ -68,6 +74,7 @@ const performOneTimeReset = () => {
 const CUSTOM_OPTIONS_KEY = "power-planner-custom-options-v1";
 const emptyCustomOptions = () => ({ category: [], purpose: [], delegate: [] });
 const loadCustomOptions = () => {
+  if (isConfigured) return emptyCustomOptions(); // hydrated from the DB after mount
   if (typeof window === "undefined") return emptyCustomOptions();
   try {
     const raw = window.localStorage.getItem(CUSTOM_OPTIONS_KEY);
@@ -83,6 +90,10 @@ const loadCustomOptions = () => {
   }
 };
 const persistCustomOptions = (o) => {
+  if (isConfigured) {
+    queueSettingsSync({ custom_options: o });
+    return;
+  }
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(CUSTOM_OPTIONS_KEY, JSON.stringify(o));
@@ -156,7 +167,14 @@ const normalizeWeeksMap = (raw) => {
   return out;
 };
 
+// With Supabase connected, weeks/settings persist to the user's account
+// (debounced + diffed in ppService); localStorage is the demo-only fallback so
+// two users on one device never see each other's plan.
 const persistWeeks = (map) => {
+  if (isConfigured) {
+    queueWeeksSync(map);
+    return;
+  }
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
@@ -166,6 +184,10 @@ const persistWeeks = (map) => {
 };
 
 const persistStartDate = (iso) => {
+  if (isConfigured) {
+    queueSettingsSync({ start_date: iso || null });
+    return;
+  }
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(START_DATE_KEY, iso);
@@ -175,6 +197,7 @@ const persistStartDate = (iso) => {
 };
 
 const loadStartDate = () => {
+  if (isConfigured) return ""; // hydrated from the DB after mount
   if (typeof window === "undefined") return "";
   try {
     performOneTimeReset();
@@ -186,6 +209,10 @@ const loadStartDate = () => {
 };
 
 const persistSchedule = (schedule) => {
+  if (isConfigured) {
+    queueSettingsSync({ schedule });
+    return;
+  }
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
@@ -200,6 +227,7 @@ const persistSchedule = (schedule) => {
 const loadSchedule = () => {
   const start = loadStartDate();
   const fallback = scheduleFromStart(start);
+  if (isConfigured) return fallback; // hydrated from the DB after mount
   if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(SCHEDULE_KEY);
@@ -213,6 +241,7 @@ const loadSchedule = () => {
 };
 
 const loadWeeksMap = () => {
+  if (isConfigured) return {}; // hydrated from the DB after mount
   if (typeof window === "undefined") return {};
   try {
     performOneTimeReset();
@@ -337,6 +366,41 @@ const usePowerPlanner = () => {
 
   // User-remembered "Other" names for the dropdowns (see CUSTOM_OPTIONS_KEY).
   const [customOptions, setCustomOptions] = useState(loadCustomOptions);
+
+  // Hydrate the signed-in user's plan from Supabase (weeks + settings). The
+  // local initializers above start empty when configured, so nothing from a
+  // previous user on this device ever shows.
+  useEffect(() => {
+    if (!isConfigured) return;
+    let active = true;
+    loadPlanner()
+      .then((db) => {
+        if (!active || !db) return;
+        const sched =
+          isValidSchedule(db.schedule) ? db.schedule
+          : isValidISO(db.startDate) ? scheduleFromStart(db.startDate)
+          : null;
+        if (sched) {
+          setSchedule(sched);
+          setSelectedWeek(weekStartForDate(sched, todayISO()));
+        }
+        const weeks = normalizeWeeksMap(db.weeks || {});
+        setWeeksData(weeks);
+        setSavedWeeksData(weeks);
+        if (db.customOptions) {
+          setCustomOptions({
+            category: db.customOptions.category || [],
+            purpose: db.customOptions.purpose || [],
+            delegate: db.customOptions.delegate || [],
+          });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // After a save, learn any new "Other" names the user typed so they appear in
   // the dropdowns from now on.

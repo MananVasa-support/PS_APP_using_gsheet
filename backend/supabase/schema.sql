@@ -145,7 +145,29 @@ create table if not exists public.power_planner_settings (
   start_date     date,
   schedule       jsonb,
   custom_options jsonb,
+  gcal_event_ids jsonb not null default '{}',  -- planner row id → Google Calendar event id (cross-device de-dupe)
   updated_at     timestamptz not null default now()
+);
+-- (added 2026-06-11 — safe when the table already exists)
+alter table public.power_planner_settings
+  add column if not exists gcal_event_ids jsonb not null default '{}';
+
+-- Weekly REVIEW scoreboard — auto-computed projection of each week's plan.
+-- Numbers live in real columns so admin/consultant/analytics can query
+-- "completion % for all clients last week" without parsing the plan jsonb.
+-- The full plan stays in power_planner_weeks (source of truth).
+create table if not exists public.power_planner_reviews (
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid not null references public.profiles (id) on delete cascade,
+  week_start         date not null,
+  completion_pct     int not null default 0,
+  productivity_score int not null default 0,
+  total_commitments  int not null default 0,
+  planned_hours      numeric not null default 0,
+  delegated_count    int not null default 0,
+  insights           jsonb not null default '{}',  -- the A/C/D/E learning blocks
+  updated_at         timestamptz not null default now(),
+  unique (user_id, week_start)              -- one scoreboard per user-week
 );
 
 -- Reasons Eliminator ----------------------------------------------------------
@@ -299,10 +321,10 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'power_planner_weeks','reasons_sessions','reasons_grip_tests',
-    'reasons_grip_history','meetings','time_finder_assessments',
-    'time_auditor_entries','level2_challenges','personal_space_entries',
-    'totality_entries','sales_cultivator_entries'
+    'power_planner_weeks','power_planner_reviews','reasons_sessions',
+    'reasons_grip_tests','reasons_grip_history','meetings',
+    'time_finder_assessments','time_auditor_entries','level2_challenges',
+    'personal_space_entries','totality_entries','sales_cultivator_entries'
   ] loop
     execute format('create index if not exists idx_%1$s_user on public.%1$I (user_id);', t);
   end loop;
@@ -346,8 +368,8 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'power_planner_weeks','power_planner_settings','reasons_sessions',
-    'reasons_grip_tests','reasons_grip_history','meetings',
+    'power_planner_weeks','power_planner_settings','power_planner_reviews',
+    'reasons_sessions','reasons_grip_tests','reasons_grip_history','meetings',
     'time_finder_assessments','time_auditor_entries','level2_challenges',
     'personal_space_entries','totality_entries','sales_cultivator_entries'
   ] loop
