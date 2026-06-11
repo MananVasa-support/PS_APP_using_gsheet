@@ -238,8 +238,9 @@ export async function requestEmailChange(newEmail) {
 /** Confirm the email change with the 6-digit code sent to the new address. */
 export async function verifyEmailChange(newEmail, code) {
   if (!isConfigured) return { ok: true };
+  const clean = (newEmail || '').trim();
   const { error } = await supabase.auth.verifyOtp({
-    email: (newEmail || '').trim(),
+    email: clean,
     token: (code || '').trim(),
     type: 'email_change',
   });
@@ -249,6 +250,18 @@ export async function verifyEmailChange(newEmail, code) {
       mapped.message = 'That code is invalid or has expired. Try changing your email again.';
     }
     throw mapped;
+  }
+  // auth.users.email is now updated, but the signup trigger only ever set
+  // profiles.email at INSERT — so sync it here, otherwise the app would keep
+  // showing the old email (and dup-checks would still see the old one).
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const uid = session?.user?.id;
+    if (uid) await supabase.from('profiles').update({ email: clean }).eq('id', uid);
+  } catch {
+    /* non-fatal: auth email already changed; the profile row can be re-synced */
   }
   return { ok: true };
 }
