@@ -687,38 +687,9 @@ function QuestionField({
       )}
 
       {question.type === 'duration' && (
-        <div className="space-y-2">
-          <input
-            id={`input-${question.id}`}
-            aria-label={question.label}
-            type="text"
-            inputMode="numeric"
-            placeholder="Example: 03/30 (3 Hours 30 Minutes)"
-            value={value || ''}
-            onChange={(e) => {
-              // Allow digits and a single slash only
-              const raw = e.target.value.replace(/[^\d/]/g, '');
-              // Prevent more than one slash
-              const parts = raw.split('/');
-              if (parts.length > 2) return;
-              onChange(raw);
-            }}
-            onBlur={() => {
-              // Auto-format: pad hours to 2 digits on blur
-              if (value && durationRegex && durationRegex.test(value)) {
-                const [h, m] = value.split('/');
-                const formatted = `${h.padStart(2, '0')}/${m}`;
-                if (formatted !== value) onChange(formatted);
-              }
-            }}
-            className={clsx(inputBase, borderClass)}
-          />
-          <p className="text-xs text-muted leading-relaxed">
-            Enter duration in Hours/Minutes format (<span className="font-semibold text-mkink">HH/MM</span>)
-            <br />
-            Example: <span className="font-semibold text-mkink">01/30</span> = 1 Hour 30 Minutes
-          </p>
-        </div>
+        /* Hours / minutes steppers (same pattern as Power Planner) — stored as
+           "HH/MM" so validation, calendar duration and exports are unchanged. */
+        <DurationBoxes id={`input-${question.id}`} value={value} onChange={onChange} borderClass={borderClass} />
       )}
 
       {question.type === 'radio' && (
@@ -780,6 +751,71 @@ function QuestionField({
           <FiAlertCircle /> {otherError}
         </span>
       )}
+    </div>
+  );
+}
+
+// ---------- Duration input: hours/minutes steppers (Power Planner style) ----
+// Reads/writes the existing "HH/MM" string so validation, the calendar
+// duration (q17/q3) and the exports stay untouched.
+function DurationBoxes({ id, value, onChange, borderClass }) {
+  const [h = '', m = ''] = String(value || '').split('/');
+  const hours = h === '' ? '' : String(parseInt(h, 10) || 0);
+  const minutes = m === '' ? '' : String(parseInt(m, 10) || 0);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const emit = (nextH, nextM) => {
+    const hh = parseInt(nextH, 10);
+    const mm = parseInt(nextM, 10);
+    const hasH = !Number.isNaN(hh);
+    const hasM = !Number.isNaN(mm);
+    if (!hasH && !hasM) {
+      onChange('');
+      return;
+    }
+    const safeH = hasH ? Math.max(0, hh) : 0;
+    const safeM = hasM ? Math.min(59, Math.max(0, mm)) : 0;
+    onChange(`${pad(safeH)}/${pad(safeM)}`);
+  };
+
+  const boxClass = clsx(
+    'w-20 rounded-lg border bg-white px-3 py-2.5 text-sm text-mkink text-center focus:border-brand-red focus:outline-none',
+    borderClass
+  );
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <input
+          id={id}
+          type="number"
+          min="0"
+          step="1"
+          inputMode="numeric"
+          placeholder="0"
+          value={hours}
+          onChange={(e) => emit(e.target.value, minutes)}
+          onWheel={(e) => e.currentTarget.blur()}
+          className={boxClass}
+          aria-label="Hours"
+        />
+        <span className="text-xs font-semibold text-muted">hours</span>
+        <input
+          type="number"
+          min="0"
+          max="59"
+          step="1"
+          inputMode="numeric"
+          placeholder="0"
+          value={minutes}
+          onChange={(e) => emit(hours, e.target.value)}
+          onWheel={(e) => e.currentTarget.blur()}
+          className={boxClass}
+          aria-label="Minutes"
+        />
+        <span className="text-xs font-semibold text-muted">minutes</span>
+      </div>
+      <p className="text-xs text-muted">Use the boxes (or arrows) — e.g. 1 hour 30 minutes.</p>
     </div>
   );
 }
