@@ -14,7 +14,11 @@ export const isConfigured = Boolean(url && anonKey);
 export const supabase = isConfigured
   ? createClient(url, anonKey, {
       auth: {
-        persistSession: true,
+        // Auto-login OFF: the session is kept in memory only (not saved to the
+        // browser), so every fresh launch / reload / dev re-run starts at the
+        // login page instead of jumping straight to the dashboard. Set back to
+        // `true` to restore "stay logged in across restarts".
+        persistSession: false,
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
