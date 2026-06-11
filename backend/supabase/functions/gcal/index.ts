@@ -132,17 +132,12 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     });
 
-    return new Response(
-      `<html><body style="font-family:sans-serif;text-align:center;padding:48px">
-         <h2>Google Calendar connected</h2>
-         <p>You can close this window and return to Productivity Shastra.</p>
-         <script>
-           try { window.opener && window.opener.postMessage('gcal-connected', '*'); } catch (e) {}
-           setTimeout(() => window.close(), 1200);
-         </script>
-       </body></html>`,
-      { headers: { "Content-Type": "text/html; charset=utf-8" } },
-    );
+    // Land the user straight on their Google Calendar (no intermediate page).
+    // The app's main tab detects the completed connection by polling /token.
+    return new Response(null, {
+      status: 302,
+      headers: { Location: "https://calendar.google.com" },
+    });
   }
 
   // ── POST /token — silent access token from the stored refresh token ────────

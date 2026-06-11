@@ -68,36 +68,30 @@ const serverToken = async () => {
   }
 };
 
-// One-time connect: opens the Google consent window; resolves when the
-// callback page reports success (or the window closes).
+// One-time connect: opens the Google consent window. After Allow, that window
+// lands directly on Google Calendar (nice for the user); the app detects the
+// completed connection by POLLING /token until it succeeds (or the window is
+// closed / ~2 minutes pass).
 const connectViaServer = async () => {
   const headers = await fnAuthHeader();
   if (!headers) throw new Error("Not signed in.");
   const res = await fetch(`${FN_BASE}/authorize`, { method: "POST", headers });
   if (!res.ok) throw new Error("__fn_unavailable__");
   const { url } = await res.json();
-  return new Promise((resolve, reject) => {
-    const win = window.open(url, "gcal-connect", "width=520,height=680");
-    if (!win) {
-      reject(new Error("Popup blocked — allow popups to connect Google Calendar."));
-      return;
-    }
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      window.removeEventListener("message", onMsg);
-      clearInterval(timer);
-      resolve();
-    };
-    const onMsg = (e) => {
-      if (e.data === "gcal-connected") finish();
-    };
-    const timer = setInterval(() => {
-      if (win.closed) finish(); // closed manually → we just retry /token below
-    }, 700);
-    window.addEventListener("message", onMsg);
-  });
+  const win = window.open(url, "gcal-connect", "width=560,height=720");
+  if (!win) {
+    throw new Error("Popup blocked — allow popups to connect Google Calendar.");
+  }
+  const started = Date.now();
+  // Poll until the refresh token is stored server-side.
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const token = await serverToken();
+    if (token) return token; // connected — leave the Calendar tab open for the user
+    if (win.closed) return null; // user closed it — requestCalendarToken retries once anyway
+    if (Date.now() - started > 120000) return null; // give up after 2 min
+  }
 };
 
 /** Forget the Google connection (lets the user switch accounts). */
@@ -119,7 +113,8 @@ export const requestCalendarToken = async () => {
     let token = await serverToken();
     if (token) return token;
     try {
-      await connectViaServer();
+      token = await connectViaServer();
+      if (token) return token;
       token = await serverToken();
       if (token) return token;
     } catch (e) {
