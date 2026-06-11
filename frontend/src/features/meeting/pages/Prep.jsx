@@ -818,7 +818,6 @@ function DurationBoxes({ id, value, onChange, borderClass }) {
         />
         <span className="text-xs font-semibold text-muted">minutes</span>
       </div>
-      <p className="text-xs text-muted">Use the boxes (or arrows) — e.g. 1 hour 30 minutes.</p>
     </div>
   );
 }
