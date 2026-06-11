@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
-  FiUser, FiSliders, FiBell, FiDatabase, FiRefreshCw, FiSave, FiKey,
+  FiUser, FiSliders, FiBell, FiDatabase, FiRefreshCw, FiSave, FiKey, FiEdit2,
+  FiMail, FiPhone, FiMapPin,
   FiDownload, FiFileText, FiActivity, FiCamera, FiPauseCircle,
 } from 'react-icons/fi';
 import {
@@ -44,11 +45,18 @@ export default function Settings() {
   const [pError, setPError] = useState('');
   const [emailChange, setEmailChange] = useState(null); // { newEmail } while awaiting the code
   const [emailCode, setEmailCode] = useState('');
+  const [pEditing, setPEditing] = useState(false); // view by default; Edit unlocks the inputs
 
   const setP = (e) => {
     const { name, value } = e.target;
     setPform((f) => ({ ...f, [name]: name === 'name' ? titleCaseName(value) : value }));
   };
+
+  function cancelEdit() {
+    setPform({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '' });
+    setPError('');
+    setPEditing(false);
+  }
 
   async function saveProfile() {
     setPError('');
@@ -68,6 +76,7 @@ export default function Settings() {
         toast.info(`Enter the code we sent to ${newEmail}.`);
       } else {
         toast.success('Profile saved');
+        setPEditing(false);
       }
     } catch (err) {
       setPError(err?.message || 'Could not save your changes.');
@@ -85,6 +94,7 @@ export default function Settings() {
       setUser((u) => ({ ...u, email: emailChange.newEmail }));
       setEmailChange(null);
       setEmailCode('');
+      setPEditing(false);
       toast.success('Email updated.');
     } catch (err) {
       setPError(err?.message || 'Invalid or expired code.');
@@ -180,12 +190,13 @@ export default function Settings() {
                 </Button>
               </div>
             </form>
-          ) : (
+          ) : pEditing ? (
+            /* Edit mode — unlocked only after clicking Edit */
             <>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <Input label="Display name" name="name" value={pform.name} onChange={setP} />
                 <Input label="Email" type="email" name="email" value={pform.email} onChange={setP} autoComplete="off" />
-                <Input label="Phone" name="phone" value={pform.phone} onChange={setP} />
+                <Input label="Phone" name="phone" value={pform.phone} onChange={setP} placeholder="+91XXXXXXXXXX" />
                 <Input
                   label="Country"
                   value={countryFromPhone(pform.phone || user?.phone) || 'Not set'}
@@ -193,9 +204,39 @@ export default function Settings() {
                   hint="From your phone's country code."
                 />
               </div>
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end gap-2">
+                <Button variant="ghost" onClick={cancelEdit}>
+                  Cancel
+                </Button>
                 <Button icon={FiSave} loading={pSaving} onClick={saveProfile}>
                   Save changes
+                </Button>
+              </div>
+            </>
+          ) : (
+            /* View mode (default) — read-only until Edit is clicked */
+            <>
+              <dl className="mt-6 grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                {[
+                  { icon: FiUser, label: 'Display name', value: user?.name || '—' },
+                  { icon: FiMail, label: 'Email', value: user?.email || '—' },
+                  { icon: FiPhone, label: 'Phone', value: user?.phone || 'Not set' },
+                  { icon: FiMapPin, label: 'Country', value: countryFromPhone(user?.phone) || 'Not set' },
+                ].map((d) => (
+                  <div key={d.label} className="flex items-start gap-3">
+                    <span className="mt-0.5 grid h-9 w-9 place-items-center rounded-lg bg-ink-800 text-ink-400">
+                      <d.icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <dt className="text-xs text-ink-500">{d.label}</dt>
+                      <dd className="text-fg">{d.value}</dd>
+                    </div>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-6 flex justify-end">
+                <Button variant="outline" icon={FiEdit2} onClick={() => setPEditing(true)}>
+                  Edit
                 </Button>
               </div>
             </>
