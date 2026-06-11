@@ -12,6 +12,8 @@
 import { addDaysISO } from "./weekDates";
 import { addDurationToStartTime } from "./powerPlannerUtils";
 import { browserTimeZone } from "./googleCalendar";
+import { isConfigured } from "@/lib/supabase";
+import { loadGcalEventIds, saveGcalEventIds } from "@/services/ppService";
 
 const GOOGLE_CLIENT_ID =
   import.meta.env?.VITE_GOOGLE_CLIENT_ID ||
@@ -80,11 +82,28 @@ const eventToApiBody = (ev, tz) => {
 };
 
 // Remembers which Google event each planner task created, so re-exporting
-// UPDATES the same event instead of adding a duplicate. Keyed by the task id;
-// stored per-browser (moves to the backend later). Identity-based — changing a
-// task's name / category / time still updates its one event.
+// UPDATES the same event instead of adding a duplicate. Keyed by the task id.
+// With Supabase connected the map lives in power_planner_settings
+// (gcal_event_ids) — per-user and cross-device, so exporting from a second
+// device updates the SAME events instead of duplicating them. Demo mode keeps
+// the original per-browser localStorage. Identity-based — changing a task's
+// name / category / time still updates its one event.
 const EVENT_ID_KEY = "power-planner-gcal-event-ids";
+let memMap = null; // configured-mode cache (hydrated from the DB)
+
+/** Pull the latest map from the user's account (call before an export). */
+export const hydrateEventIdMap = async () => {
+  if (!isConfigured) return loadEventIdMap();
+  try {
+    memMap = (await loadGcalEventIds()) || {};
+  } catch {
+    memMap = memMap || {};
+  }
+  return memMap;
+};
+
 export const loadEventIdMap = () => {
+  if (isConfigured) return memMap || {};
   if (typeof window === "undefined") return {};
   try {
     return JSON.parse(window.localStorage.getItem(EVENT_ID_KEY) || "{}") || {};
@@ -93,6 +112,11 @@ export const loadEventIdMap = () => {
   }
 };
 const saveEventIdMap = (map) => {
+  if (isConfigured) {
+    memMap = map;
+    saveGcalEventIds(map); // debounced upsert into power_planner_settings
+    return;
+  }
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(EVENT_ID_KEY, JSON.stringify(map));
@@ -124,7 +148,7 @@ export const pushEventsToCalendar = async (
   tz = browserTimeZone(),
   opts = {}
 ) => {
-  const idMap = loadEventIdMap();
+  const idMap = { ...(await hydrateEventIdMap()) };
   let created = 0;
   let updated = 0;
   let removed = 0;

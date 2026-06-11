@@ -20,6 +20,7 @@ import {
   requestCalendarToken,
   pushEventsToCalendar,
   loadEventIdMap,
+  hydrateEventIdMap,
 } from "../../utils/googleCalendarApi";
 import usePowerPlanner from "../../hooks/usePowerPlanner";
 import { computeScheduleConflicts } from "../../utils/powerPlannerUtils";
@@ -288,6 +289,8 @@ const PowerPlannerHome = () => {
     const events = buildSelfEvents();
     const configured = isGoogleConfigured();
     // Stale events to prune (only meaningful on the API path, which can delete).
+    // Pull the latest event map from the user's account first (cross-device).
+    if (configured) await hydrateEventIdMap();
     const keepRowIds = configured ? exportableRowIds() : null;
     const staleCount = configured
       ? Object.keys(loadEventIdMap()).filter((id) => !keepRowIds.has(id)).length
