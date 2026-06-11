@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDate, statusBadgeStyles } from '../utils/meetingFormat';
 import {
   scheduleMeetingOnCalendar,
-  removeMeetingFromCalendar,
   durationToMinutes,
   isGoogleConfigured,
 } from '../utils/calendar';
@@ -100,10 +99,10 @@ export default function MeetingList() {
   const confirmDelete = () => {
     const m = deleting;
     if (!m) return;
-    // Best-effort calendar cleanup (needs a Google token → may show a quick
-    // consent popup). The meeting is deleted from the DATABASE regardless.
-    if (m.gcalEventId) removeMeetingFromCalendar(m).catch(() => {});
-    deleteMeeting(m.id);
+    // Calendar cleanup is MANUAL for now (no surprise Google permission popup
+    // during a delete) — the modal links straight to Google Calendar. Once the
+    // silent-token backend lands, this can become automatic with no popup.
+    deleteMeeting(m.id); // always removed from the database
     setDeleting(null);
   };
 
@@ -273,8 +272,7 @@ export default function MeetingList() {
               {deleting.gcalEventId && (
                 <p className="mt-2 text-xs text-muted">
                   This meeting is on your <span className="font-semibold text-mkink">Google Calendar</span> —
-                  we'll remove that event too (a quick Google permission popup may appear). You can also check
-                  your calendar yourself:
+                  you will have to delete that event manually:
                 </p>
               )}
               {deleting.gcalEventId && (
