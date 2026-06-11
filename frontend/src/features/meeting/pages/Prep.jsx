@@ -102,13 +102,16 @@ export default function Prep() {
       } else if (q.type === 'duration') {
         const val = String(formData[q.id] || '').trim();
         if (!val) {
-          newErrors[q.id] = 'Answer is required. Type "NA" if not applicable.';
+          newErrors[q.id] = 'Please enter the meeting duration.';
         } else if (val.toLowerCase() !== 'na' && !DURATION_RE.test(val)) {
           newErrors[q.id] = 'Please enter time in HH/MM format. Example: 03/30';
         } else if (DURATION_RE.test(val)) {
-          const mins = parseInt(val.split('/')[1], 10);
+          const [hrs, mins] = val.split('/').map((n) => parseInt(n, 10) || 0);
           if (mins > 59) {
             newErrors[q.id] = 'Minutes must be between 00 and 59.';
+          } else if (hrs === 0 && mins === 0) {
+            // A meeting can't take zero time — block Next/Save.
+            newErrors[q.id] = 'Duration cannot be 0 — enter at least 1 minute.';
           }
         }
       } else {
