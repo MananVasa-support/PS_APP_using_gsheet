@@ -1,20 +1,10 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiPlay, FiClock, FiTrendingUp, FiAward } from 'react-icons/fi';
-import { Button, PageHeader, BackButton } from '@/components/ui';
+import { Button, PageHeader, BackButton, Spinner } from '@/components/ui';
 import { currentLevel, loadChallengeState } from '@/utils/level';
+import { listAssessments } from '@/services/taService';
 import { StageSummary } from './TimeAuditor.jsx';
-
-const STORAGE_KEY = 'ta_assessments_v2';
-
-function loadAll() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
-  } catch {
-    return [];
-  }
-}
 
 function StatBox({ icon: Icon, label, value }) {
   return (
@@ -32,7 +22,26 @@ function StatBox({ icon: Icon, label, value }) {
 
 export default function FinalSummary() {
   const navigate = useNavigate();
-  const all = loadAll();
+  const [all, setAll] = useState(null); // null = loading
+
+  useEffect(() => {
+    let active = true;
+    listAssessments()
+      .then((list) => active && setAll(list))
+      .catch(() => active && setAll([]));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (all === null) {
+    return (
+      <div className="grid h-[60vh] place-items-center">
+        <Spinner size={32} />
+      </div>
+    );
+  }
+
   const latest = all.length ? all[0] : null;
 
   if (!latest) {

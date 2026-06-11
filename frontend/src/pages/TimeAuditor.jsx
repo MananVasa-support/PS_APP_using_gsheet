@@ -12,6 +12,11 @@ import { useToast } from '@/context/ToastContext.jsx';
 import { MANDATORY_MSG, isEmptyValue } from '@/utils/validation';
 import TimeAuditorSidebar from '@/components/layout/TimeAuditorSidebar.jsx';
 import { currentLevel, loadChallengeState } from '@/utils/level';
+import {
+  listAssessments,
+  saveAssessment as saveAssessmentRow,
+  deleteAssessment as deleteAssessmentRow,
+} from '@/services/taService';
 import { cn } from '@/utils/cn';
 
 /**
@@ -35,8 +40,6 @@ import { cn } from '@/utils/cn';
  * navigates back to /dashboard.
  */
 
-const STORAGE_KEY = 'ta_assessments_v2';
-
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
 const MINUTE_OPTIONS = ['00', '15', '30', '45'];
 const AMPM_OPTIONS = ['AM', 'PM'];
@@ -54,20 +57,9 @@ const ACTIVITY_CATEGORIES = [
   'Add your own',
 ];
 
-// â”€â”€ Storage helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function loadAssessments() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveAssessments(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
+// Storage is handled by services/taService.js — every assessment is a row in
+// Supabase `time_auditor_entries` tagged with the signed-in user's id (RLS), so
+// each user's history follows them and admins/consultants can view it.
 
 // â”€â”€ Time helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -199,7 +191,19 @@ export default function TimeAuditor() {
   // that client's dashboard.
 
   const [stage, setStage] = useState('home'); // see top-of-file enum
-  const [assessments, setAssessments] = useState(loadAssessments);
+  const [assessments, setAssessments] = useState([]);
+
+  // Load this user's saved assessments from the database on mount.
+  useEffect(() => {
+    let active = true;
+    listAssessments()
+      .then((list) => active && setAssessments(list))
+      .catch(() => active && toast.error('Could not load your saved assessments.'));
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Active assessment in progress
   const [start, setStart] = useState({ hour: '06', minute: '00', ampm: 'AM' });
@@ -491,7 +495,9 @@ export default function TimeAuditor() {
   }, [stage, savedAssessmentId]);
 
   // Save & exit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  function saveCurrentAssessment() {
+  async function saveCurrentAssessment() {
+    if (savedAssessmentId) return; // already saved this run
+    setSavedAssessmentId('saving'); // guard against the effect re-firing
     const payload = {
       date: new Date().toISOString(),
       startTime: start,
@@ -500,19 +506,15 @@ export default function TimeAuditor() {
       stats: computeStats(slots, topInputs),
       active: true,
     };
-    let next;
-    if (savedAssessmentId) {
-      next = assessments.map((a) =>
-        a.id === savedAssessmentId ? { ...a, ...payload } : a
-      );
-    } else {
-      const id = `asmt_${Date.now()}`;
-      next = [{ id, ...payload }, ...assessments];
-      setSavedAssessmentId(id);
+    try {
+      const saved = await saveAssessmentRow(payload); // → row in time_auditor_entries
+      setSavedAssessmentId(saved.id);
+      setAssessments((list) => [saved, ...list]);
+      toast.success('Saved to your account — visible in Previous Assessments.');
+    } catch (err) {
+      setSavedAssessmentId(null); // allow retry
+      toast.error(err?.message || 'Could not save the assessment.');
     }
-    setAssessments(next);
-    saveAssessments(next);
-    toast.success('Auto-saved to Previous Assessments.');
   }
 
   // Previous assessments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -540,17 +542,21 @@ export default function TimeAuditor() {
     );
     setEditingId(null);
     setStage('review');
-    // Remove old record so save creates a fresh one (avoids dupes).
-    const next = assessments.filter((x) => x.id !== id);
-    setAssessments(next);
-    saveAssessments(next);
+    // Remove the old record (DB + local list) so finishing the edit saves a
+    // fresh row — same "edit = redo from review" behavior as before.
+    setAssessments((list) => list.filter((x) => x.id !== id));
+    deleteAssessmentRow(id).catch(() => toast.error('Could not remove the old copy — you may see a duplicate.'));
   }
 
-  function deleteAssessment(id) {
-    const next = assessments.filter((a) => a.id !== id);
-    setAssessments(next);
-    saveAssessments(next);
-    toast.success('Assessment deleted.');
+  async function deleteAssessment(id) {
+    setAssessments((list) => list.filter((a) => a.id !== id));
+    try {
+      await deleteAssessmentRow(id);
+      toast.success('Assessment deleted.');
+    } catch (err) {
+      toast.error(err?.message || 'Could not delete the assessment.');
+      listAssessments().then(setAssessments).catch(() => {});
+    }
   }
 
   // â”€â”€ Render â”€â”€
