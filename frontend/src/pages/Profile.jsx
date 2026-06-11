@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FiMail, FiPhone, FiMapPin, FiBriefcase, FiCalendar, FiEdit2, FiSave, FiAward, FiClock, FiTrendingUp, FiHash,
+  FiMail, FiPhone, FiMapPin, FiBriefcase, FiCalendar, FiEdit2, FiSave, FiAward, FiClock, FiTrendingUp, FiHash, FiSettings,
 } from 'react-icons/fi';
 import { Card, Avatar, Badge, Button, Input, PageHeader, BackButton } from '@/components/ui';
 import { updateProfile } from '@/services/userService';
@@ -75,14 +76,19 @@ export default function Profile() {
               </div>
             </div>
           </div>
-          <Button
-            variant={editing ? 'primary' : 'outline'}
-            icon={editing ? FiSave : FiEdit2}
-            loading={saving}
-            onClick={() => (editing ? save() : setEditing(true))}
-          >
-            {editing ? 'Save changes' : 'Edit profile'}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button as={Link} to="/settings" variant="ghost" icon={FiSettings}>
+              Settings
+            </Button>
+            <Button
+              variant={editing ? 'primary' : 'outline'}
+              icon={editing ? FiSave : FiEdit2}
+              loading={saving}
+              onClick={() => (editing ? save() : setEditing(true))}
+            >
+              {editing ? 'Save changes' : 'Edit profile'}
+            </Button>
+          </div>
         </div>
       </Card>
 
