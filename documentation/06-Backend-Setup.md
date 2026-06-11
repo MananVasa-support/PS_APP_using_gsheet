@@ -114,6 +114,7 @@ Full table list + the runnable SQL: [`../backend/supabase/schema.sql`](../backen
 | Post-signup | return to **login** page; do NOT auto-log-in | none in dashboard — handled in code (`register()` signs out the session that confirm-email-off creates) | ✅ done 2026-06-10 |
 | Password reset (email, **code-based**) | Forgot Password → enter email (says **"No account exists with this email"** if unknown) → type the **6-digit code** → `/reset-password` sets a new password | **Reset Password** template uses `{{ .Token }}`; **OTP length 6**, expiry 3600; Redirect URL `http://localhost:3000/reset-password` (live URL later). | ✅ done 2026-06-10 (reset OTP working) |
 | Password reset (SMS/phone) | **not wanted** — user declined (it's paid: Twilio + India DLT) | Auth → Providers → **Phone: keep OFF permanently** | ⛔ off — **declined 2026-06-10, email reset only** |
+| **Time Auditor data (FIRST TOOL WIRED)** | assessments + challenges save per-user to the DB; Analytics/Reports/Final Summary read them | **Run the `level2_challenges` SQL** (in schema.sql §4 — or paste just that table + its RLS trio; safe to re-run whole file). View data: **Table Editor → `time_auditor_entries`** (one row per assessment; `entry` jsonb holds slots/top3/stats) and **`level2_challenges`** (one row per challenge run). Filter by `user_id` to see one person; Export → CSV for Excel. | ⚠️ **run schema.sql once more** (adds level2_challenges) |
 
 Add a row here whenever a new validation rule or auth/setting is introduced on
 either side, so the two never drift.

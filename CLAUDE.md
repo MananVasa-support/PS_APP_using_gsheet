@@ -42,10 +42,20 @@ backend planned but not started.
   Confirm-signup + Reset-password templates use `{{ .Token }}`. SMS/phone reset
   **declined** (paid). See `documentation/06-Backend-Setup.md` for the full
   Supabase-settings checklist + the "+alias" testing gotcha.
-  **Next:** wire tool DATA to Supabase one tool at a time (Meeting first, Power
-  Planner last; tools still use localStorage until migrated), then dashboards/admin
-  views, then deploy. Keep frontend↔Supabase rules in sync and give an
-  end-of-session Supabase-settings checklist.
+  **Tool data wiring (2026-06-11): TIME AUDITOR SUITE = DONE.** Assessments →
+  `time_auditor_entries` (one row per assessment, `entry` jsonb, infinite
+  re-takes) via `services/taService.js`; Level-2 challenge runs →
+  `level2_challenges` (one row per run; Active→Completed/Abandoned) via
+  `services/level2Service.js` + ChallengeContext (DB-hydrated, mirrored to
+  localStorage for sync readers). Analytics/Reports/Final Summary all compute
+  from REAL assessments (`utils/taAnalytics.js`); Reports does real CSV/PDF
+  exports. "Current level" = audits + completed challenge runs
+  (`utils/level.js`); a true cross-user rank still needs admin-phase work.
+  ⚠️ User must re-run schema.sql (adds level2_challenges).
+  **Next:** remaining tools one at a time (Meeting → Time Finder → Reasons →
+  Power Planner last — see the Power Planner data-mapping discussion in
+  memory), then admin/consultant data views, then deploy. Keep
+  frontend↔Supabase rules in sync and give an end-of-session checklist.
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
 
