@@ -7,8 +7,10 @@ import BarChartCard from '@/components/charts/BarChartCard.jsx';
 import { useChallenge } from '@/context/ChallengeContext.jsx';
 import { useToast } from '@/context/ToastContext.jsx';
 import { useAuthContext } from '@/context/AuthContext.jsx';
-import { rankings, weeklyProductivity } from '@/data/rankingsMock';
+import { rankings, weeklyProductivity } from '@/data/rankingsMock'; // admin overview only (parked)
 import { formatNumber } from '@/utils/format';
+import { listAssessments } from '@/services/taService';
+import { buildRealAnalytics, filterByRange } from '@/utils/taAnalytics';
 
 const DAY_OPTIONS = [
   { days: 1, label: 'Latest' },
@@ -29,14 +31,30 @@ export default function Level2() {
 }
 
 function Level2Client() {
-  const { unlocked, participating, started, days, startDate, setParticipating, setDays, startChallenge, resetChallenge, enterLevel2 } =
-    useChallenge();
+  const {
+    unlocked, participating, started, days, startDate, completedCount,
+    setParticipating, setDays, startChallenge, resetChallenge, enterLevel2,
+  } = useChallenge();
   const toast = useToast();
 
   // Entering this page unlocks the Level 2 ranking links in the sidebar.
   useEffect(() => {
     if (!unlocked) enterLevel2();
   }, [unlocked, enterLevel2]);
+
+  // Real audit data — the challenge charts are computed from the user's actual
+  // Time Auditor assessments during the challenge window (no demo numbers).
+  const [assessments, setAssessments] = useState([]);
+  useEffect(() => {
+    if (!started) return;
+    let active = true;
+    listAssessments()
+      .then((list) => active && setAssessments(list))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [started]);
 
   // Local UI state for the selection flow (committed to context on Start).
   const [selecting, setSelecting] = useState(false);
@@ -68,10 +86,29 @@ function Level2Client() {
       : 1;
     const completion = Math.min(100, Math.round((elapsedDays / days) * 100));
     const streak = elapsedDays;
-    const dailyProgress = Array.from({ length: Math.min(days, 7) }).map((_, i) => ({
-      label: `Day ${i + 1}`,
-      value: i < elapsedDays ? 60 + Math.round(Math.random() * 40) : 0,
-    }));
+
+    // REAL daily progress: average productivity of the user's audits on each
+    // challenge day (0 = no audit done that day).
+    const sameDay = (a, d) => {
+      const x = new Date(a.date);
+      return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth() && x.getDate() === d.getDate();
+    };
+    const dailyProgress = Array.from({ length: Math.min(days, 14) }).map((_, i) => {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const todays = assessments.filter((a) => sameDay(a, d));
+      return {
+        label: `Day ${i + 1}`,
+        value: todays.length
+          ? Math.round(todays.reduce((s, a) => s + (a.stats?.productivityPct || 0), 0) / todays.length)
+          : 0,
+      };
+    });
+
+    // Weekly productivity from real audits inside the challenge window.
+    const challengeAnalytics = buildRealAnalytics(
+      filterByRange(assessments, { start: startDate, end: new Date().toISOString() })
+    );
 
     return (
       <div className="space-y-6">
@@ -97,49 +134,28 @@ function Level2Client() {
             <span className="text-4xl font-extrabold text-fg-strong">{elapsedDays}<span className="text-ink-500">/{days}</span></span>
             <p className="mt-2 text-sm text-ink-400">days completed</p>
           </Card>
-          <Card title="Your rank" className="flex flex-col items-center justify-center">
+          <Card title="Challenges completed" className="flex flex-col items-center justify-center">
             <div className="flex items-center gap-3">
               <FaTrophy className="h-9 w-9 text-amber-400" />
-              <span className="text-4xl font-extrabold text-fg-strong">#{rankings.find((r) => r.isMe)?.rank ?? '—'}</span>
+              <span className="text-4xl font-extrabold text-fg-strong">{completedCount || 0}</span>
             </div>
-            <p className="mt-2 text-sm text-ink-400">on the ranking board</p>
+            <p className="mt-2 text-sm text-ink-400">finished so far</p>
           </Card>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-3">
-          {/* Daily progress + productivity analysis */}
-          <div className="space-y-5 lg:col-span-2">
-            <Card title="Daily progress" subtitle="% of daily goal reached">
-              <BarChartCard data={dailyProgress} color="#f93b48" unit="%" height={220} xLabel="Day" yLabel="Progress (%)" />
-            </Card>
-            <Card title="Productivity analysis" subtitle="Your productivity this week">
-              <BarChartCard data={weeklyProductivity} color="#f93b48" unit="%" average height={220} xLabel="Week" yLabel="Productivity (%)" />
-            </Card>
-          </div>
-
-          {/* Ranking board */}
-          <Card title="Ranking board" subtitle="Top performers" bodyClassName="space-y-1">
-            {rankings.map((u) => (
-              <div
-                key={u.rank}
-                className={`flex items-center gap-3 rounded-xl px-2 py-2 ${u.isMe ? 'bg-brand-500/10 ring-1 ring-brand-500/30' : ''}`}
-              >
-                <span
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold"
-                  style={u.rank <= 3 ? { background: medal[u.rank - 1], color: '#0b0e16' } : { background: '#202637', color: '#94a3b8' }}
-                >
-                  {u.rank}
-                </span>
-                <Avatar name={u.name} size={32} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-fg">
-                    {u.name} {u.isMe && <span className="text-brand-400">(You)</span>}
-                  </p>
-                  <p className="truncate text-xs text-ink-500">{u.dept}</p>
-                </div>
-                <span className="text-sm font-semibold text-fg-strong">{formatNumber(u.points)}</span>
-              </div>
-            ))}
+        {/* Charts — built from the user's REAL audits during the challenge. */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Card title="Daily progress" subtitle="Avg productivity of your audits each challenge day">
+            <BarChartCard data={dailyProgress} color="#f93b48" unit="%" height={220} xLabel="Day" yLabel="Productivity (%)" />
+          </Card>
+          <Card title="Productivity analysis" subtitle="Weekly average during this challenge">
+            {challengeAnalytics.weekly.length ? (
+              <BarChartCard data={challengeAnalytics.weekly} color="#f93b48" unit="%" average height={220} xLabel="Week" yLabel="Productivity (%)" />
+            ) : (
+              <p className="grid h-[220px] place-items-center text-sm text-ink-400">
+                Complete a Time Auditor assessment during the challenge to see your productivity here.
+              </p>
+            )}
           </Card>
         </div>
       </div>

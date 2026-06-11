@@ -1283,9 +1283,12 @@ function StageTop3Review({ slots, onSet, onSubmit, onBack }) {
                     onClick={() => onSet(s.id, false)}
                     className={cn(
                       'rounded-lg border px-3 py-1.5 text-sm font-medium transition',
+                      // Selected NO must be as clearly visible as the red YES —
+                      // solid light chip with dark text (literal hex: the ink
+                      // greys are too close to the card background).
                       s.isTop3 === false
-                        ? 'border-transparent bg-ink-700 text-fg-strong'
-                        : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-ink-600'
+                        ? 'border-transparent bg-[#e4e4e7] font-semibold text-[#18181b] shadow-sm'
+                        : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-ink-500 hover:text-fg-strong'
                     )}
                   >
                     NO
