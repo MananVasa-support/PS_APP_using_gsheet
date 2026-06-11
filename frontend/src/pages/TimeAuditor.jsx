@@ -700,7 +700,6 @@ export default function TimeAuditor() {
               key="summary"
               slots={slots}
               top3={topInputs}
-              onGoDashboard={() => navigate('/dashboard')}
             />
           )}
         </AnimatePresence>
@@ -1308,7 +1307,7 @@ function StageTop3Review({ slots, onSet, onSubmit, onBack }) {
 
 // â”€â”€ Stage: Final Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export function StageSummary({ slots, top3, onGoDashboard }) {
+export function StageSummary({ slots, top3 }) {
   const stats = useMemo(() => computeStats(slots, top3), [slots, top3]);
 
   return (
@@ -1390,9 +1389,6 @@ export function StageSummary({ slots, top3, onGoDashboard }) {
         </InsightBlock>
       </div>
 
-      <div className="flex justify-end pt-2">
-        <Button size="lg" icon={FiGrid} onClick={onGoDashboard}>GO TO DASHBOARD</Button>
-      </div>
     </motion.div>
   );
 }
@@ -1458,7 +1454,7 @@ function StagePrevious({ assessments, onBack, onView, onEdit, onDelete, viewingI
         className="space-y-5"
       >
         <Button variant="ghost" icon={FiArrowLeft} onClick={onCloseView}>Back to list</Button>
-        <StageSummary slots={viewing.slots} top3={viewing.top3} onGoDashboard={onCloseView} />
+        <StageSummary slots={viewing.slots} top3={viewing.top3} />
       </motion.div>
     );
   }

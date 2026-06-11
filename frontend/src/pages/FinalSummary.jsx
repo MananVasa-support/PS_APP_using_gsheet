@@ -78,11 +78,7 @@ export default function FinalSummary() {
         <StatBox icon={FiAward} label="Current level" value={`Lvl ${level}`} />
       </div>
 
-      <StageSummary
-        slots={latest.slots}
-        top3={latest.top3}
-        onGoDashboard={() => navigate('/dashboard')}
-      />
+      <StageSummary slots={latest.slots} top3={latest.top3} />
     </div>
   );
 }
