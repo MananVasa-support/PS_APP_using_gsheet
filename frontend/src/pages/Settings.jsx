@@ -49,7 +49,15 @@ export default function Settings() {
 
   const setP = (e) => {
     const { name, value } = e.target;
-    setPform((f) => ({ ...f, [name]: name === 'name' ? titleCaseName(value) : value }));
+    let next = value;
+    if (name === 'name') {
+      next = titleCaseName(value);
+    } else if (name === 'phone') {
+      // "+" then at most 12 digits (e.g. +91 country code + 10-digit number).
+      const digits = value.replace(/\D/g, '').slice(0, 12);
+      next = digits ? `+${digits}` : '';
+    }
+    setPform((f) => ({ ...f, [name]: next }));
   };
 
   function cancelEdit() {
@@ -196,7 +204,7 @@ export default function Settings() {
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <Input label="Display name" name="name" value={pform.name} onChange={setP} />
                 <Input label="Email" type="email" name="email" value={pform.email} onChange={setP} autoComplete="off" />
-                <Input label="Phone" name="phone" value={pform.phone} onChange={setP} placeholder="+91XXXXXXXXXX" />
+                <Input label="Phone" name="phone" value={pform.phone} onChange={setP} placeholder="+91XXXXXXXXXX" inputMode="tel" maxLength={13} />
                 <Input
                   label="Country"
                   value={countryFromPhone(pform.phone || user?.phone) || 'Not set'}
