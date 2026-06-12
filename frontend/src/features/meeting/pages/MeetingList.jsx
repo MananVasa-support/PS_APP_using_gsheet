@@ -34,6 +34,13 @@ export default function MeetingList() {
   const [schedTime, setSchedTime] = useState('10:00');
   const [schedBusy, setSchedBusy] = useState(false);
   const [schedError, setSchedError] = useState('');
+  // Success toast after a calendar add/update (mirrors Power Planner's export feedback).
+  const [schedToast, setSchedToast] = useState('');
+  useEffect(() => {
+    if (!schedToast) return undefined;
+    const timer = setTimeout(() => setSchedToast(''), 4000);
+    return () => clearTimeout(timer);
+  }, [schedToast]);
 
   const openSchedule = (m) => {
     if (!isGoogleConfigured()) {
@@ -62,6 +69,7 @@ export default function MeetingList() {
     setSchedError('');
     try {
       const { eventId } = await scheduleMeetingOnCalendar(scheduling, schedDate, schedTime);
+      const wasUpdate = Boolean(scheduling.gcalEventId);
       // Remember the event + chosen time on the meeting (persists to the DB),
       // so re-scheduling UPDATES the same calendar event.
       patchMeeting(scheduling.id, {
@@ -69,6 +77,11 @@ export default function MeetingList() {
         scheduledFor: `${schedDate}T${schedTime}:00`,
       });
       setScheduling(null);
+      setSchedToast(
+        wasUpdate
+          ? 'Calendar event updated successfully.'
+          : 'Meeting added to Google Calendar successfully.'
+      );
     } catch (e) {
       setSchedError(e?.message || 'Could not add the meeting to Google Calendar.');
     } finally {
@@ -139,6 +152,31 @@ export default function MeetingList() {
             </span>
             <button
               onClick={() => setShowSaved(false)}
+              aria-label="Dismiss"
+              className="p-1 text-emerald-600 hover:text-emerald-800 transition-colors"
+            >
+              <FiX />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success toast (after a Google Calendar add/update) */}
+      <AnimatePresence>
+        {schedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl shadow-card"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold">
+              <FiCheckCircle className="text-lg shrink-0" />
+              {schedToast}
+            </span>
+            <button
+              onClick={() => setSchedToast('')}
               aria-label="Dismiss"
               className="p-1 text-emerald-600 hover:text-emerald-800 transition-colors"
             >
