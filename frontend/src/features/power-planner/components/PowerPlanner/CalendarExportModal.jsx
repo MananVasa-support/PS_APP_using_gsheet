@@ -112,12 +112,9 @@ const CalendarExportModal = ({
               </p>
             ) : (
               <p className="text-sm text-black">
-                <span className="font-semibold">
-                  Results aren&apos;t added to Google Calendar — only Actions are.
-                </span>{" "}
-                Add an action with a <span className="font-semibold">date</span>{" "}
-                and <span className="font-semibold">Delegate&nbsp;To: Self</span>,
-                then export.
+                Only actions delegated to{" "}
+                <span className="font-semibold">Self</span> are added to the
+                calendar.
               </p>
             )}
             <button
