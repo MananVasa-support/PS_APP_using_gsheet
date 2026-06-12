@@ -8,7 +8,7 @@ import { extractKeywords } from '../utils/keywords';
 import {
   FiCalendar, FiClock, FiCheckCircle, FiXCircle, FiTrendingUp,
   FiZap, FiActivity, FiTarget, FiBarChart2, FiPlusCircle,
-  FiArrowDownRight, FiArrowUpRight, FiChevronDown, FiInfo, FiAward, FiAlertTriangle,
+  FiArrowDownRight, FiArrowUpRight, FiChevronDown, FiInfo, FiAlertTriangle,
 } from 'react-icons/fi';
 import {
   PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
@@ -23,7 +23,6 @@ const INK = '#111827';
 
 const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
 const nums = (arr) => arr.filter((n) => typeof n === 'number' && !Number.isNaN(n));
-const fmtScore = (v) => (v == null ? '—' : `${v.toFixed(1)}/5`);
 
 // ---- Time-range filtering -------------------------------------------------
 const TIME_FILTERS = [
@@ -602,24 +601,15 @@ function AllMeetingsView({ meetings }) {
         </div>
       </Section>
 
-      {/* Actual vs Planned */}
-      <Section title="Actual vs Planned Meeting" icon={FiTarget}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <MiniMetric label="Avg Planning Experience" value={fmtScore(d.avgPlanning)} />
-          <MiniMetric label="Avg Success Score" value={fmtScore(d.avgSuccess)} />
-          <MiniMetric label="Avg Confidence Score" value={fmtScore(d.avgConfidence)} />
-          <MiniMetric label="Avg Awareness Score" value={fmtScore(d.avgAwareness)} />
-        </div>
-      </Section>
-
-      {/* Clarity of Time */}
-      <Section title="Clarity of Time" icon={FiClock}>
+      {/* Planned vs final duration */}
+      <Section title="Planned vs Final Duration" icon={FiTarget}>
         <p className="text-xs text-muted mb-4">
-          Average time estimate before planning (Q3) vs after planning (Q17), across all meetings.
+          How long you first thought meetings would take vs your final estimate after planning
+          them — averaged across these meetings.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <TimeStat label="Before Meeting" value={minutesToLabel(d.avgBefore)} tone="muted" />
-          <TimeStat label="After Meeting" value={minutesToLabel(d.avgAfter)} tone="muted" />
+          <TimeStat label="First Estimate" value={minutesToLabel(d.avgBefore)} tone="muted" />
+          <TimeStat label="Final Estimate" value={minutesToLabel(d.avgAfter)} tone="muted" />
           <TimeStat
             label="Difference"
             value={d.avgDiff == null ? '—' : minutesToLabel(d.avgDiff)}
@@ -629,32 +619,11 @@ function AllMeetingsView({ meetings }) {
         </div>
       </Section>
 
-      {/* Before vs After */}
-      <Section title="Before Meeting vs After Meeting" icon={FiActivity}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700">Before Meeting</h4>
-            <BarRow label="Awareness Rating" value={d.avgAwareness} />
-            <BarRow label="Confidence Rating" value={d.avgConfidence} />
-            <BarRow label="Success Rating" value={d.avgSuccess} />
-          </div>
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700">After Meeting</h4>
-            <BarRow label="Planning Experience" value={d.avgPlanning} />
-            <div className="pt-1">
-              <p className="text-xs font-semibold text-mkink mb-2">Your Learnings: Planned Meeting vs Actual Meeting</p>
-              {d.learningKeywords.length ? (
-                <ChipList items={d.learningKeywords} tone="green" />
-              ) : (
-                <p className="text-xs text-muted italic">No learnings recorded yet.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </Section>
-
-      {/* AI Insights */}
-      <Section title="AI Insights" icon={FiZap}>
+      {/* Key themes from the free-text answers */}
+      <Section title="Key Themes" icon={FiZap}>
+        <p className="text-xs text-muted mb-4">
+          The words you use most in your realisations and learnings.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Realisations</p>
@@ -689,13 +658,6 @@ function SingleMeetingView({ meeting }) {
 
   const realisationKeywords = extractKeywords([exp.realisation].filter(Boolean));
   const learningKeywords = extractKeywords([refl.learnings].filter(Boolean));
-
-  const scoreData = [
-    { name: 'Awareness', value: typeof exp.awareness === 'number' ? exp.awareness : 0 },
-    { name: 'Confidence', value: typeof exp.confidence === 'number' ? exp.confidence : 0 },
-    { name: 'Success', value: typeof exp.success === 'number' ? exp.success : 0 },
-    { name: 'Planning', value: typeof refl.planningHelpfulness === 'number' ? refl.planningHelpfulness : 0 },
-  ];
 
   return (
     <div className="space-y-8">
@@ -755,14 +717,15 @@ function SingleMeetingView({ meeting }) {
         </Section>
       </div>
 
-      {/* Actual vs Planned (time) */}
-      <Section title="Actual vs Planned Meeting" icon={FiTarget}>
+      {/* Planned vs final duration */}
+      <Section title="Planned vs Final Duration" icon={FiTarget}>
         <p className="text-xs text-muted mb-4">
-          Initial time estimate (Q3) vs final time estimate (Q17).
+          How long you first thought this meeting would take vs your final estimate after
+          planning it.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <TimeStat label="Before (Initial)" value={minutesToLabel(before)} tone="muted" />
-          <TimeStat label="After (Final)" value={minutesToLabel(after)} tone="muted" />
+          <TimeStat label="First Estimate" value={minutesToLabel(before)} tone="muted" />
+          <TimeStat label="Final Estimate" value={minutesToLabel(after)} tone="muted" />
           <TimeStat
             label="Difference"
             value={diff == null ? '—' : minutesToLabel(diff)}
@@ -772,29 +735,8 @@ function SingleMeetingView({ meeting }) {
         </div>
       </Section>
 
-      {/* Meeting Score Summary (chart + cards) */}
-      <Section title="Meeting Score Summary" icon={FiAward}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <MiniMetric label="Awareness Score" value={fmtScore(typeof exp.awareness === 'number' ? exp.awareness : null)} />
-          <MiniMetric label="Confidence Score" value={fmtScore(typeof exp.confidence === 'number' ? exp.confidence : null)} />
-          <MiniMetric label="Success Score" value={fmtScore(typeof exp.success === 'number' ? exp.success : null)} />
-          <MiniMetric label="Planning Experience" value={fmtScore(typeof refl.planningHelpfulness === 'number' ? refl.planningHelpfulness : null)} />
-        </div>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={scoreData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 5]} tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: '#FEF2F2' }} />
-              <Bar dataKey="value" fill={RED} radius={[6, 6, 0, 0]} maxBarSize={56} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </Section>
-
-      {/* AI Insights for this meeting */}
-      <Section title="AI Insights" icon={FiZap}>
+      {/* Key themes for this meeting */}
+      <Section title="Key Themes" icon={FiZap}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Realisations</p>
@@ -875,15 +817,6 @@ function InfoItem({ label, value }) {
     <div className="bg-surface-alt border border-line rounded-xl p-4">
       <p className="text-[11px] font-bold uppercase tracking-wider text-muted mb-1.5">{label}</p>
       <p className="text-sm font-bold text-mkink break-words">{value}</p>
-    </div>
-  );
-}
-
-function MiniMetric({ label, value }) {
-  return (
-    <div className="bg-surface-alt border border-line rounded-xl p-4 text-center">
-      <p className="text-xl font-extrabold text-brand-red">{value}</p>
-      <p className="text-[11px] text-muted mt-1 leading-tight">{label}</p>
     </div>
   );
 }

@@ -158,29 +158,12 @@ const computeMetrics = (rows, numberOfDays) => {
   // Time usage % of available time, always clamped to 0–100.
   const usagePct = Math.min(100, Math.max(0, Math.round((totalTime / maxTime) * 100)));
 
-  // Efficiency score — only meaningful when the range actually has data.
-  // With no rows (no date range selected, or range has no data) the score is
-  // null so the UI can show "--" instead of a misleading default.
-  let score = null;
-  if (rows.length > 0) {
-    // Based on per-day average within the range.
-    const avgPerDay = totalTime / days;
-    const wastePerDay = (byCategory.find((c) => /waste/i.test(c.name))?.time || 0) / days;
-    const hasFitness = byCategory.some((c) => /fitness/i.test(c.name));
-    score = 100;
-    if (avgPerDay > 720) score -= 30; // >12h/day on average
-    if (wastePerDay > 240) score -= 20; // >4h/day on "waste"
-    if (!hasFitness) score -= 10;
-    score = Math.max(0, score);
-  }
-
   return {
     totalTime: Math.round(totalTime),
     totalSaving: Math.round(totalSaving),
     routineCount,
     byCategory,
     totalCat,
-    score,
     usagePct,
     numberOfDays: days,
   };
@@ -458,17 +441,14 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Stats */}
-        <section className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        {/* Stats — the "Efficiency Score" was removed: its formula was arbitrary
+            and a user couldn't tell what the number meant. The four stats left
+            are all directly explainable from the data. */}
+        <section className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label={`Total Time (${rangeName})`} value={fmtMins(metrics.totalTime)} />
           <Stat label="Total Possible Saving" value={fmtMins(metrics.totalSaving)} accent />
           <Stat label="Number of Routines" value={metrics.routineCount} />
           <Stat label="Time Usage %" value={`${metrics.usagePct}%`} />
-          <Stat
-            label="Efficiency Score"
-            value={metrics.score === null ? '--' : `${metrics.score}/100`}
-            accent
-          />
         </section>
 
         {/* Smart Insights — max 2 lines */}
