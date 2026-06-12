@@ -2,14 +2,26 @@
 // brand-new, dated record here — earlier records are NEVER overwritten. An
 // in-progress "draft" is also kept so a review can be left and resumed.
 //
-// This lives in its OWN localStorage key, completely independent of the
-// per-reason latest-score store (gripTestService). Existing grip data and its
-// structure are left untouched.
+// With Supabase connected each completed run is one row in
+// `reasons_grip_history` (per-user via RLS): reads come from the in-memory
+// cache hydrated when the tool opens, writes update the cache + fire-and-
+// forget the row upsert/delete. The draft stays local (it is transient).
+// Demo mode keeps the original localStorage behavior.
 import { gripStatus } from './gripTestService.js';
+import { isConfigured } from '@/lib/supabase';
+import {
+  reasonsCache,
+  persistRunRow,
+  deleteRunRow,
+  clearRunRows,
+} from '@/services/reService';
 
 const KEY = 'altus.reasonEliminator.gripHistory.v1';
 
 function read() {
+  if (isConfigured) {
+    return { runs: reasonsCache.runs, draft: reasonsCache.draft };
+  }
   if (typeof window === 'undefined') return { runs: [], draft: null };
   try {
     const parsed = JSON.parse(window.localStorage.getItem(KEY));
@@ -24,6 +36,11 @@ function read() {
 }
 
 function write(state) {
+  if (isConfigured) {
+    reasonsCache.runs = state.runs || [];
+    reasonsCache.draft = state.draft ?? null;
+    return;
+  }
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(KEY, JSON.stringify(state));
 }
@@ -34,6 +51,9 @@ function genId() {
   }
   return `grip-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+// Find one run in a runs array (used to persist the updated row after edits).
+const runById = (runs, runId) => runs.find((r) => r.id === runId) || null;
 
 export const gripHistoryService = {
   // All completed runs, newest first.
@@ -61,8 +81,8 @@ export const gripHistoryService = {
         status: gripStatus(e.score),
       })),
     };
-    state.runs.push(run);
-    write(state);
+    write({ ...state, runs: [...state.runs, run] });
+    persistRunRow(run); // no-op in demo mode
     return run;
   },
 
@@ -87,6 +107,7 @@ export const gripHistoryService = {
       return updated;
     });
     write({ ...state, runs });
+    if (updated) persistRunRow(updated); // no-op in demo mode
     return updated;
   },
 
@@ -108,12 +129,15 @@ export const gripHistoryService = {
         : run
     );
     write({ ...state, runs });
+    const updated = runById(runs, runId);
+    if (updated) persistRunRow(updated);
   },
 
   // Remove a single completed run by id. Other runs and the draft are untouched.
   deleteRun(runId) {
     const state = read();
     write({ ...state, runs: state.runs.filter((r) => r.id !== runId) });
+    deleteRunRow(runId); // no-op in demo mode
   },
 
   // Remove a single reason entry from within a run (used by the per-reason
@@ -132,6 +156,8 @@ export const gripHistoryService = {
         : run
     );
     write({ ...state, runs });
+    const updated = runById(runs, runId);
+    if (updated) persistRunRow(updated);
   },
 
   // Archive / unarchive a single run (additive flag). Existing runs without the
@@ -142,6 +168,8 @@ export const gripHistoryService = {
       run.id === runId ? { ...run, archived: !!archived } : run
     );
     write({ ...state, runs });
+    const updated = runById(runs, runId);
+    if (updated) persistRunRow(updated);
   },
 
   // Update a single entry's reason text within a run (used by the Grip Test
@@ -159,10 +187,13 @@ export const gripHistoryService = {
         : run
     );
     write({ ...state, runs });
+    const updated = runById(runs, runId);
+    if (updated) persistRunRow(updated);
   },
 
   // In-progress review (scores entered so far + the selected range), so leaving
-  // and returning resumes from where the user left off.
+  // and returning resumes from where the user left off. Transient — kept in
+  // memory (configured) / localStorage (demo), never sent to the database.
   getDraft() {
     return read().draft;
   },
@@ -183,6 +214,7 @@ export const gripHistoryService = {
   // "Reset All Data" action on the Home screen.
   clearAll() {
     write({ runs: [], draft: null });
+    clearRunRows(); // no-op in demo mode
   },
 };
 

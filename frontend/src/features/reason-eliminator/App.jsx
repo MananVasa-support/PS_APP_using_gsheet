@@ -9,6 +9,8 @@ import reasonEliminatorService from './features/reason-eliminator/services/reaso
 import Modal from './components/common/Modal.jsx';
 import Button from './components/common/Button.jsx';
 import { setNavGuard } from '@/lib/navGuard';
+import { isConfigured } from '@/lib/supabase';
+import { hydrateReasons } from '@/services/reService';
 import reasonEliminatorRoutes from './features/reason-eliminator/routes.jsx';
 import GuidelinesPage from './features/guidelines/GuidelinesPage.jsx';
 
@@ -107,6 +109,32 @@ function AssessmentLeaveGuard() {
 
 export default function App() {
   const location = useLocation();
+
+  // With Supabase connected, the tool's pages read their stores synchronously
+  // (sessions, grip scores, runs) — so hold rendering until the one-time
+  // hydration from the database finishes. On a hydration failure the tool
+  // still opens (empty until the next visit retries). Demo mode skips this.
+  const [ready, setReady] = useState(!isConfigured);
+  useEffect(() => {
+    if (!isConfigured) return;
+    let active = true;
+    hydrateReasons()
+      .catch(() => {})
+      .finally(() => active && setReady(true));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!ready) {
+    return (
+      <div className="grid min-h-[70vh] place-items-center bg-white">
+        <p className="text-sm font-semibold text-brand-gray-900 animate-pulse">
+          Loading your assessments…
+        </p>
+      </div>
+    );
+  }
 
   // Each page animates itself in via <PageTransition> (its mount animation).
   // We intentionally do NOT wrap the routes in <AnimatePresence mode="wait">:

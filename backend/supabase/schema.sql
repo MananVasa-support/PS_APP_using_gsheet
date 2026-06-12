@@ -171,23 +171,65 @@ create table if not exists public.power_planner_reviews (
 );
 
 -- Reasons Eliminator ----------------------------------------------------------
+-- One-time migration: the original placeholder tables used a generic
+-- `payload jsonb` shape and were never written to. If that old shape is still
+-- present (a `payload` column exists), drop all three so the real shapes
+-- below are created fresh. Future re-runs skip this (no `payload` column).
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'reasons_sessions'
+      and column_name = 'payload'
+  ) then
+    drop table if exists public.reasons_sessions cascade;
+    drop table if exists public.reasons_grip_tests cascade;
+    drop table if exists public.reasons_grip_history cascade;
+  end if;
+end $$;
+
+-- One row per ASSESSMENT SESSION. `id` is the client-generated id (text — the
+-- Power Planner review sync uses 'pp:<weekStart>'); the (user_id, id) key makes
+-- every save an in-place upsert. `reasons` holds the session's reasons array
+-- (text, categories, subcategories/details, powerWord, archived flag, …).
 create table if not exists public.reasons_sessions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles (id) on delete cascade,
-  payload jsonb not null default '{}',
-  created_at timestamptz not null default now()
+  user_id    uuid not null references public.profiles (id) on delete cascade,
+  id         text not null,
+  status     text not null default 'draft',     -- draft | assessed | completed
+  source     text,                              -- null = typed in the tool; 'power-planner' = synced from a weekly review
+  week_start date,                              -- set on power-planner sessions
+  reasons    jsonb not null default '[]',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, id)
 );
+
+-- One row per reason's LATEST grip score (0–5). `score`/`status` are real
+-- columns so admin/consultant views can query and chart them directly.
 create table if not exists public.reasons_grip_tests (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles (id) on delete cascade,
-  payload jsonb not null default '{}',
-  created_at timestamptz not null default now()
+  user_id     uuid not null references public.profiles (id) on delete cascade,
+  reason_id   text not null,
+  session_id  text,
+  seq         int,
+  reason_text text,
+  reason_date timestamptz,
+  score       int,                              -- 0..5
+  status      text,                             -- 'No Grip' … 'Too Much Grip'
+  updated_at  timestamptz not null default now(),
+  primary key (user_id, reason_id)
 );
+
+-- One row per completed GRIP TEST RUN (append-only history; re-ending the
+-- same visit updates its run, a new visit adds a new run).
 create table if not exists public.reasons_grip_history (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles (id) on delete cascade,
-  payload jsonb not null default '{}',
-  created_at timestamptz not null default now()
+  user_id    uuid not null references public.profiles (id) on delete cascade,
+  id         text not null,
+  run_date   timestamptz not null default now(),
+  month      text,                              -- 'YYYY-MM' the run covered
+  archived   boolean not null default false,
+  entries    jsonb not null default '[]',       -- [{reasonId, seq, text, score, status}]
+  updated_at timestamptz not null default now(),
+  primary key (user_id, id)
 );
 
 -- Meeting Success Maximizer ---------------------------------------------------

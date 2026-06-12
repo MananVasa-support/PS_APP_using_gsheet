@@ -1,6 +1,18 @@
-// Isolated storage for the Grip Test. Kept in its own localStorage key so it is
+// Isolated storage for the Grip Test. Kept in its own store so it is
 // completely independent of the assessment session store — adding grip data
 // never touches existing reasons, categories, power words, or resume state.
+// With Supabase connected each reason's LATEST grip score is one row in
+// `reasons_grip_tests` (real score/status columns, per-user via RLS): reads
+// come from the in-memory cache hydrated when the tool opens, writes update
+// the cache + fire-and-forget the row. Demo mode keeps localStorage.
+import { isConfigured } from '@/lib/supabase';
+import {
+  reasonsCache,
+  persistGripRow,
+  deleteGripRow,
+  clearGripRows,
+} from '@/services/reService';
+
 const GRIP_STORAGE_KEY = 'altus.reasonEliminator.gripTest.v1';
 
 // Score (0-5) -> grip status label.
@@ -25,12 +37,17 @@ function safeParse(raw) {
 }
 
 function readAll() {
+  if (isConfigured) return reasonsCache.grip;
   if (typeof window === 'undefined') return {};
   const raw = window.localStorage.getItem(GRIP_STORAGE_KEY);
   return raw ? safeParse(raw) : {};
 }
 
 function writeAll(map) {
+  if (isConfigured) {
+    reasonsCache.grip = map;
+    return;
+  }
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(GRIP_STORAGE_KEY, JSON.stringify(map));
 }
@@ -49,7 +66,7 @@ export const gripTestService = {
 
   // Save (or update) the grip record for one reason.
   saveRecord({ reasonId, sessionId, seq, text, score, date }) {
-    const all = readAll();
+    const all = { ...readAll() };
     all[reasonId] = {
       reasonId,
       sessionId,
@@ -61,6 +78,7 @@ export const gripTestService = {
       updatedAt: new Date().toISOString(),
     };
     writeAll(all);
+    persistGripRow(all[reasonId]); // no-op in demo mode
     return all[reasonId];
   },
 
@@ -68,10 +86,11 @@ export const gripTestService = {
   // deleted, so no orphaned grip data is left behind. Additive: it only removes
   // the one reason's record and leaves every other untouched.
   removeForReason(reasonId) {
-    const all = readAll();
+    const all = { ...readAll() };
     if (all[reasonId]) {
       delete all[reasonId];
       writeAll(all);
+      deleteGripRow(reasonId); // no-op in demo mode
     }
   },
 
@@ -79,6 +98,7 @@ export const gripTestService = {
   // Data" action on the Home screen.
   clearAll() {
     writeAll({});
+    clearGripRows(); // no-op in demo mode
   },
 };
 

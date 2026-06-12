@@ -1,5 +1,31 @@
+// Assessment-session store. With Supabase connected the sessions live as rows
+// in `reasons_sessions` (one per session, per-user via RLS): reads come from
+// the in-memory cache hydrated when the tool opens (see services/reService.js)
+// and every write updates the cache instantly + fire-and-forgets the row
+// upsert/delete. Demo mode keeps the original localStorage behavior.
 import { STORAGE_KEY, SESSION_STATUS } from '../constants.js';
 import { generateId } from '../utils/formatters.js';
+import { isConfigured } from '@/lib/supabase';
+import {
+  reasonsCache,
+  persistSessionRow,
+  deleteSessionRow,
+  clearSessionRows,
+} from '@/services/reService';
+
+// Fired after every write so live UI (e.g. the sidebar's "Power Word Missing"
+// badge) can refresh immediately — assigning a Power Word anywhere (the
+// exercise, Previous Assessments, the Power Word Missing page) updates the
+// count without needing a navigation.
+export const RE_DATA_CHANGED = 're:data-changed';
+const emitChange = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(new Event(RE_DATA_CHANGED));
+  } catch {
+    // ignore
+  }
+};
 
 function safeParse(raw) {
   try {
@@ -38,27 +64,19 @@ function normalizeSession(s) {
 }
 
 function readAll() {
+  if (isConfigured) return reasonsCache.sessions.map(normalizeSession);
   if (typeof window === 'undefined') return [];
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) return [];
   return safeParse(raw).map(normalizeSession);
 }
 
-// Fired after every write so live UI (e.g. the sidebar's "Power Word Missing"
-// badge) can refresh immediately — assigning a Power Word anywhere (the
-// exercise, Previous Assessments, the Power Word Missing page) updates the
-// count without needing a navigation.
-export const RE_DATA_CHANGED = 're:data-changed';
-const emitChange = () => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.dispatchEvent(new Event(RE_DATA_CHANGED));
-  } catch {
-    // ignore
-  }
-};
-
 function writeAll(sessions) {
+  if (isConfigured) {
+    reasonsCache.sessions = sessions;
+    emitChange();
+    return;
+  }
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
   emitChange();
@@ -93,6 +111,7 @@ export const reasonEliminatorService = {
     };
     const next = [session, ...readAll()];
     writeAll(next);
+    persistSessionRow(session); // no-op in demo mode
     return session;
   },
 
@@ -109,16 +128,19 @@ export const reasonEliminatorService = {
       all[idx] = next;
     }
     writeAll(all);
+    persistSessionRow(next); // no-op in demo mode
     return next;
   },
 
   deleteSession(id) {
     const next = readAll().filter((s) => s.id !== id);
     writeAll(next);
+    deleteSessionRow(id); // no-op in demo mode
   },
 
   clearAll() {
     writeAll([]);
+    clearSessionRows(); // no-op in demo mode
   },
 };
 

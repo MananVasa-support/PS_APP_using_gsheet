@@ -29,6 +29,7 @@ import {
   SESSION_STATUS,
 } from '@/features/reason-eliminator/features/reason-eliminator/constants.js';
 import { GAP_REASON_SUBCATEGORIES } from '@/features/power-planner/data/powerPlannerConstants.js';
+import { ensureReasonsHydrated } from '@/services/reService';
 
 export const PP_SOURCE = 'power-planner';
 
@@ -49,15 +50,19 @@ const taskName = (row) => (row.description || row.result || '').trim();
 
 /**
  * Mirror one planner week's review reasons into the Reasons Eliminator.
- * Called after every successful "Save Weekly Review". Never throws — a bridge
- * hiccup must not break the planner save.
+ * Called after every successful "Save Weekly Review" (fire-and-forget).
+ * Never throws — a bridge hiccup must not break the planner save.
  */
-export function syncWeekReviewToReasons(
+export async function syncWeekReviewToReasons(
   weekStart,
   { commitments = [], actions = [], otherCommitments = [] } = {}
 ) {
   try {
     if (!weekStart) return;
+    // The Reasons Eliminator may not have been opened this session — load its
+    // stored sessions first, otherwise an existing week-session (with user-
+    // assigned Power Words) would be invisible here and get overwritten.
+    await ensureReasonsHydrated();
     const rows = [...commitments, ...actions, ...otherCommitments];
 
     // A row qualifies only when the user WROTE the reason ("what got in the

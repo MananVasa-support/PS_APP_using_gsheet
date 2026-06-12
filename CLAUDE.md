@@ -73,8 +73,27 @@ backend planned but not started.
   fixes (callback 302→calendar.google.com instead of raw-HTML page; account
   chooser always; utf-8). Launch checklist: publish consent screen +
   verification (removes 'do you trust supabase.co' warning), add live domain
-  origins. **Next:** Reasons Eliminator (LAST tool) → admin/consultant views
-  (PARKED) → deploy. Keep frontend↔Supabase in sync + end-of-session checklist.
+  origins.
+  **REASONS ELIMINATOR WIRED (2026-06-12) — ALL 5 TOOLS NOW HAVE BACKEND.**
+  Three redesigned tables (schema.sql has a safe one-time migration off the
+  old `payload` placeholders): `reasons_sessions` (1 row/session, (user_id,id)
+  text PK — fits the `pp:<week>` bridge ids; reasons jsonb + status/source/
+  week_start), `reasons_grip_tests` (1 row per reason's LATEST grip score —
+  real score/status columns for admin queries), `reasons_grip_history` (1 row
+  per completed run, append-only). Pattern: RE pages read SYNCHRONOUSLY, so
+  `services/reService.js` holds an in-memory cache hydrated once when the
+  tool opens (RE App gates rendering with a loader); every write updates the
+  cache + fire-and-forgets the row upsert/delete; cache resets on auth change;
+  localStorage demo-only. PP→RE bridge awaits `ensureReasonsHydrated()` so a
+  review save never overwrites unseen Power Words. ⚠️ schema.sql must be
+  RE-RUN once (drops empty placeholder tables, creates real shapes).
+  Same week also shipped: PP review TFCR compulsory (+sub each), only TYPED
+  reasons flow to RE (badge 'From Power Planner'), RE discard/continue guard +
+  pre-PowerWord visibility + live badge, unsaved-changes guard across ALL
+  tools' shell exits (lib/navGuard.js), MSM schedule toast, dashboard audit
+  (MSM dedup, TF Efficiency Score removed).
+  **Next:** admin/consultant data views (UNPARK when user says) → deploy.
+  Keep frontend↔Supabase in sync + end-of-session checklist.
 - **Browser QA still pending** — the build is green but the merged app hasn't been
   click-tested in a browser yet.
 
