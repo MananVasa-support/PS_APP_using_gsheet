@@ -172,6 +172,15 @@ async function flushSettings() {
   }
 }
 
+// Push everything still sitting in the debounce queues RIGHT NOW. Called before
+// logout — once the session is gone, a queued upsert would fail RLS silently.
+export async function flushPendingSyncs() {
+  if (!isConfigured) return;
+  clearTimeout(weekTimer);
+  clearTimeout(settingsTimer);
+  await Promise.all([flushWeeks(), flushSettings()]);
+}
+
 // ── Google Calendar event-id map (cross-device de-dupe) ─────────────────────
 export async function loadGcalEventIds() {
   if (!isConfigured) return null;

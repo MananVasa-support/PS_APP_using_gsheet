@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { setNavGuard } from "@/lib/navGuard";
 import { FiCalendar, FiEdit2 } from "react-icons/fi";
 import {
   CalendarExportModal,
@@ -188,6 +189,14 @@ const PowerPlannerHome = () => {
     if (isDirty) setPendingNav(() => fn);
     else fn();
   };
+
+  // Register the SAME ask with the global guard, so leaving the tool entirely
+  // (PS logo, Back button, navbar Settings, logout) also goes through the
+  // Save / Discard dialog — not just in-tool tab/week switches. The ref keeps
+  // the registered callback reading the CURRENT isDirty on every trigger.
+  const shellGuardRef = useRef(guardedNav);
+  shellGuardRef.current = guardedNav;
+  useEffect(() => setNavGuard((proceed) => shellGuardRef.current(proceed)), []);
 
   // Cancelling an edit discards unsaved changes — so ask first when there are
   // any. With nothing changed, just exit edit mode silently.

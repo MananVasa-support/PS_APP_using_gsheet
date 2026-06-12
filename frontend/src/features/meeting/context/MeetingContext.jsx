@@ -183,7 +183,17 @@ export const MeetingProvider = ({ children }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const resetPlanning = () => setFormData(initialFormState);
+  // Baseline = the form's last "clean" state (empty, or the edited meeting's
+  // answers right after entering edit mode). The leave guard compares the live
+  // form against this: any difference is unsaved questionnaire work.
+  const formBaselineRef = useRef(initialFormState);
+  const isPlanningDirty =
+    JSON.stringify(formData) !== JSON.stringify(formBaselineRef.current);
+
+  const resetPlanning = () => {
+    formBaselineRef.current = initialFormState;
+    setFormData(initialFormState);
+  };
 
   // Update a meeting in whichever collection holds it. The collection that does
   // NOT contain the id returns its previous reference unchanged (`prev`), so it
@@ -314,7 +324,9 @@ export const MeetingProvider = ({ children }) => {
 
   // ----- Editing (duplicates only) -----
   const startEditMeeting = (meeting) => {
-    setFormData({ ...initialFormState, ...meeting.answers });
+    const next = { ...initialFormState, ...meeting.answers };
+    formBaselineRef.current = next; // opening an edit is "clean" until a change
+    setFormData(next);
   };
 
   const updateMeeting = (id, answers, notes) =>
@@ -350,6 +362,7 @@ export const MeetingProvider = ({ children }) => {
         formData,
         updateFormField,
         resetPlanning,
+        isPlanningDirty,
         meetings,
         archivedMeetings,
         addMeeting,

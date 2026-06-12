@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logoUrl from '@/assets/logo.png';
 import { cn } from '@/utils/cn';
+import { guardNav } from '@/lib/navGuard';
 
 /**
  * Productivity Shastra logo — brand mark image in a rounded tile + wordmark.
@@ -11,6 +12,7 @@ import { cn } from '@/utils/cn';
  *                           brand always returns the user to the dashboard hub).
  */
 export default function Logo({ compact = false, height = 40, className, to }) {
+  const navigate = useNavigate();
   const inner = (
     <div className={cn('flex items-center gap-2.5', className)}>
       <span
@@ -30,7 +32,17 @@ export default function Logo({ compact = false, height = 40, className, to }) {
 
   if (to) {
     return (
-      <Link to={to} aria-label="Go to dashboard" className="rounded-xl transition-opacity hover:opacity-90">
+      <Link
+        to={to}
+        aria-label="Go to dashboard"
+        className="rounded-xl transition-opacity hover:opacity-90"
+        onClick={(e) => {
+          // Route through the navigation guard so a tool with unsaved edits
+          // can ask Save / Discard before the user leaves via the logo.
+          e.preventDefault();
+          guardNav(() => navigate(to));
+        }}
+      >
         {inner}
       </Link>
     );

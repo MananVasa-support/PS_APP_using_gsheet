@@ -6,6 +6,7 @@ import {
   FiChevronsLeft, FiChevronsRight,
 } from 'react-icons/fi';
 import { cn } from '@/utils/cn';
+import { guardNav } from '@/lib/navGuard';
 
 /**
  * Time Auditor's own tool sidebar — same interaction design as the other merged
@@ -61,8 +62,13 @@ export default function TimeAuditorSidebar({ onHome }) {
   };
 
   const handleClick = (item) => {
-    if (item.onClick) item.onClick();
-    else navigate(item.to);
+    // Every sidebar jump (route change OR the in-tool "back to home" reset)
+    // runs through the guard, so a mid-assessment user is asked before their
+    // unsaved progress is discarded.
+    guardNav(() => {
+      if (item.onClick) item.onClick();
+      else navigate(item.to);
+    });
   };
 
   return (

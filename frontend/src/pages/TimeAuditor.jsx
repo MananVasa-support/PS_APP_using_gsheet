@@ -1,5 +1,6 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setNavGuard } from '@/lib/navGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -224,6 +225,27 @@ export default function TimeAuditor() {
   const productiveSlots = useMemo(
     () => slots.filter((s) => s.classification === 'Productive'),
     [slots]
+  );
+
+  // ── Leave guard ──
+  // An assessment only reaches the database on the final summary — everything
+  // before that is unsaved. If the user tries to leave mid-run (sidebar item,
+  // PS logo, Back button, navbar, logout), hold the navigation and ask first.
+  // 'setup' with nothing typed, 'home', 'previous' and the (auto-saved)
+  // 'summary' are safe; a filled slot anywhere else means real unsaved work.
+  const WORKING_STAGES = ['setup', 'collect', 'review', 'classify', 'productive', 'top3', 'top3summary', 'top3review'];
+  const hasUnsavedRun =
+    WORKING_STAGES.includes(stage) && slots.some((s) => !isEmptyValue(s.activity));
+  const [pendingLeave, setPendingLeave] = useState(null); // held navigation
+  const dirtyRef = useRef(hasUnsavedRun);
+  dirtyRef.current = hasUnsavedRun;
+  useEffect(
+    () =>
+      setNavGuard((proceed) => {
+        if (dirtyRef.current) setPendingLeave(() => proceed);
+        else proceed();
+      }),
+    []
   );
 
   // â”€â”€ Stage controls â”€â”€
@@ -695,6 +717,42 @@ export default function TimeAuditor() {
         </AnimatePresence>
       </main>
       </div>
+
+      {/* Leave guard — shown when navigating away mid-assessment. The run only
+          saves on the final summary, so leaving now discards it. */}
+      {pendingLeave && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-ink-700 bg-ink-900 p-6 shadow-card">
+            <h3 className="text-lg font-bold text-fg-strong">Leave this assessment?</h3>
+            <p className="mt-2 text-sm text-ink-300">
+              Your assessment in progress isn&apos;t saved yet — it saves only when you
+              reach the final summary. If you leave now, everything you&apos;ve entered
+              will be discarded.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingLeave(null)}
+                className="w-full rounded-xl border border-ink-600 bg-ink-800 px-4 py-2.5 text-sm font-bold text-fg-strong transition-colors hover:bg-ink-700"
+              >
+                Stay on the assessment
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const go = pendingLeave;
+                  setPendingLeave(null);
+                  resetSession();
+                  go();
+                }}
+                className="w-full rounded-xl border border-red-600 bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700"
+              >
+                Leave &amp; discard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

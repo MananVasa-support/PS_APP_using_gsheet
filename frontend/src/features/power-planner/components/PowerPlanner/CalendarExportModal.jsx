@@ -112,7 +112,7 @@ const CalendarExportModal = ({
               </p>
             ) : (
               <p className="text-sm text-black">
-                Only actions delegated to{" "}
+                Nothing to export — Only actions delegated to{" "}
                 <span className="font-semibold">Self</span> are added to the
                 calendar.
               </p>

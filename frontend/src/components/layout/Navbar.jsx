@@ -7,6 +7,8 @@ import Avatar from '@/components/ui/Avatar.jsx';
 import { useAuth } from '@/hooks/useAuth';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { formatDate } from '@/utils/format';
+import { guardNav } from '@/lib/navGuard';
+import { flushPendingSyncs } from '@/services/ppService';
 
 /**
  * Top navigation bar: optional menu button / leading slot, search, date,
@@ -42,13 +44,24 @@ export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  async function handleLogout() {
+  // Logout runs through the navigation guard (a tool with unsaved edits asks
+  // Save / Discard first), then pushes any still-debounced Power Planner sync
+  // BEFORE the session is destroyed — otherwise a save queued in the last
+  // second would hit the database with a dead session and be lost.
+  function handleLogout() {
     setMenuOpen(false);
-    try {
-      await logout();
-    } finally {
-      navigate('/login', { replace: true });
-    }
+    guardNav(async () => {
+      try {
+        await flushPendingSyncs();
+      } catch {
+        /* best effort */
+      }
+      try {
+        await logout();
+      } finally {
+        navigate('/login', { replace: true });
+      }
+    });
   }
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -182,7 +195,15 @@ export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
                 transition={{ duration: 0.15 }}
                 className="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-ink-700 bg-ink-850 py-1 shadow-card"
               >
-                <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-fg hover:bg-ink-800">
+                <Link
+                  to="/settings"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    guardNav(() => navigate('/settings'));
+                  }}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-fg hover:bg-ink-800"
+                >
                   <FiSettings className="h-4 w-4 text-ink-400" /> Settings
                 </Link>
                 <button
