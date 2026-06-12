@@ -46,6 +46,22 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
 
 // ── Schema: logical table → { tool spreadsheet, tab, headers, keys } ─────────
 // keys = the columns an upsert matches on. idCol = what deleteRows ids mean.
+//
+// Each row keeps the COMPLETE record in its JSON column (entry / assessment /
+// meeting / data / reasons — same as Supabase's jsonb columns, nothing is
+// lost) PLUS human-readable summary columns (title, date, status, counts…)
+// that are auto-derived from the JSON on every save, so the spreadsheet is
+// pleasant to read. `derived` lists those columns; `derive(row)` fills them.
+const txt = (v) => (v == null ? null : typeof v === 'string' ? v : String(v));
+const count = (v) => (Array.isArray(v) ? v.length : 0);
+const top3Text = (list) =>
+  Array.isArray(list)
+    ? list
+        .map((t) => (typeof t === 'string' ? t : t?.task || t?.title || t?.text || ''))
+        .filter(Boolean)
+        .join(' | ') || null
+    : null;
+
 export const SHEET_DEFS = {
   // _System spreadsheet (shared registry)
   users: {
@@ -54,16 +70,70 @@ export const SHEET_DEFS = {
   },
   _meta: { system: true, tab: '_meta', keys: ['key'], idCol: 'key', headers: ['key', 'value'] },
   // Per-user tool spreadsheets
-  ta_entries: { file: 'Time Auditor', tab: 'entries', keys: ['id'], idCol: 'id', headers: ['id', 'entry', 'created_at'] },
+  ta_entries: {
+    file: 'Time Auditor', tab: 'entries', keys: ['id'], idCol: 'id',
+    headers: ['id', 'date', 'start_time', 'slots_count', 'productivity_pct', 'top3', 'entry', 'created_at'],
+    derived: ['date', 'start_time', 'slots_count', 'productivity_pct', 'top3'],
+    derive: (r) => ({
+      date: txt(r.entry?.date),
+      start_time: txt(r.entry?.startTime),
+      slots_count: count(r.entry?.slots),
+      productivity_pct: r.entry?.stats?.productivityPct ?? null,
+      top3: top3Text(r.entry?.top3),
+    }),
+  },
   ta_challenges: { file: 'Time Auditor', tab: 'challenges', keys: ['id'], idCol: 'id', headers: ['id', 'days', 'status', 'started_at', 'completed_at', 'created_at'] },
-  tf_assessments: { file: 'Time Finder', tab: 'assessments', keys: ['id'], idCol: 'id', headers: ['id', 'assessment', 'archived', 'created_at'] },
-  meetings: { file: 'Meeting', tab: 'meetings', keys: ['id'], idCol: 'id', headers: ['id', 'meeting', 'created_at', 'updated_at'] },
-  pp_weeks: { file: 'Power Planner', tab: 'weeks', keys: ['week_start'], idCol: 'week_start', headers: ['week_start', 'data', 'updated_at'] },
+  tf_assessments: {
+    file: 'Time Finder', tab: 'assessments', keys: ['id'], idCol: 'id',
+    headers: ['id', 'title', 'routines_count', 'total_time_saved', 'archived', 'assessment', 'created_at'],
+    derived: ['title', 'routines_count', 'total_time_saved'],
+    derive: (r) => ({
+      title: txt(r.assessment?.title),
+      routines_count: count(r.assessment?.routines),
+      total_time_saved: r.assessment?.totalTimeSaved ?? null,
+    }),
+  },
+  meetings: {
+    file: 'Meeting', tab: 'meetings', keys: ['id'], idCol: 'id',
+    headers: ['id', 'title', 'status', 'est_time', 'experience', 'archived', 'meeting', 'created_at', 'updated_at'],
+    derived: ['title', 'status', 'est_time', 'experience', 'archived'],
+    derive: (r) => ({
+      title: txt(r.meeting?.title),
+      status: txt(r.meeting?.status),
+      est_time: r.meeting?.estTime ?? null,
+      experience: r.meeting?.experience ?? null,
+      archived: !!r.meeting?.archived,
+    }),
+  },
+  pp_weeks: {
+    file: 'Power Planner', tab: 'weeks', keys: ['week_start'], idCol: 'week_start',
+    headers: ['week_start', 'commitments_count', 'actions_count', 'data', 'updated_at'],
+    derived: ['commitments_count', 'actions_count'],
+    derive: (r) => ({
+      commitments_count: count(r.data?.commitments),
+      actions_count: count(r.data?.actions),
+    }),
+  },
   pp_reviews: { file: 'Power Planner', tab: 'reviews', keys: ['week_start'], idCol: 'week_start', headers: ['week_start', 'completion_pct', 'productivity_score', 'total_commitments', 'planned_hours', 'delegated_count', 'insights', 'updated_at'] },
   pp_settings: { file: 'Power Planner', tab: 'settings', keys: ['id'], idCol: 'id', headers: ['id', 'start_date', 'schedule', 'custom_options', 'gcal_event_ids', 'updated_at'] },
-  re_sessions: { file: 'Reasons Eliminator', tab: 'sessions', keys: ['id'], idCol: 'id', headers: ['id', 'status', 'source', 'week_start', 'reasons', 'created_at', 'updated_at'] },
+  re_sessions: {
+    file: 'Reasons Eliminator', tab: 'sessions', keys: ['id'], idCol: 'id',
+    headers: ['id', 'status', 'source', 'week_start', 'reasons_count', 'reasons_preview', 'reasons', 'created_at', 'updated_at'],
+    derived: ['reasons_count', 'reasons_preview'],
+    derive: (r) => ({
+      reasons_count: count(r.reasons),
+      reasons_preview: Array.isArray(r.reasons)
+        ? r.reasons.slice(0, 3).map((x) => txt(x?.text) || '').filter(Boolean).join(' | ') || null
+        : null,
+    }),
+  },
   re_grip_tests: { file: 'Reasons Eliminator', tab: 'grip_tests', keys: ['reason_id'], idCol: 'reason_id', headers: ['reason_id', 'session_id', 'seq', 'reason_text', 'reason_date', 'score', 'status', 'updated_at'] },
-  re_grip_history: { file: 'Reasons Eliminator', tab: 'grip_history', keys: ['id'], idCol: 'id', headers: ['id', 'run_date', 'month', 'archived', 'entries', 'updated_at'] },
+  re_grip_history: {
+    file: 'Reasons Eliminator', tab: 'grip_history', keys: ['id'], idCol: 'id',
+    headers: ['id', 'run_date', 'month', 'entries_count', 'archived', 'entries', 'updated_at'],
+    derived: ['entries_count'],
+    derive: (r) => ({ entries_count: count(r.entries) }),
+  },
 };
 
 // Tool spreadsheet name → its tabs (so a tool file is created whole).
@@ -319,8 +389,23 @@ async function driveCreate(name, mimeType, parentId, opts) {
 
 const esc = (s) => String(s).replace(/'/g, "\\'");
 
+// Does this Drive id still exist (and isn't in the trash)? Lets the bootstrap
+// self-heal when the user deletes Productivity-Shastra-Data to start fresh.
+async function driveAlive(id, opts) {
+  try {
+    const res = await gfetch('drive verify', `${DRIVE_API}/${id}?fields=trashed`, opts);
+    return res?.trashed !== true;
+  } catch {
+    return false;
+  }
+}
+
 // ── Cell encode/decode: every data cell is JSON so types round-trip ─────────
 const enc = (v) => (v === undefined || v === null ? '' : JSON.stringify(v));
+
+// Derived (display-only) string columns are written WITHOUT JSON quotes so the
+// spreadsheet reads naturally; decode falls back to the raw string anyway.
+const encFor = (def, h, v) => (def.derived?.includes(h) && typeof v === 'string' ? v : enc(v));
 const dec = (v) => {
   if (v === '' || v === null || v === undefined) return null;
   try {
@@ -418,7 +503,11 @@ async function ensureRoot(opts) {
   if (!rootP) {
     rootP = (async () => {
       const cached = localStorage.getItem('gs.rootId');
-      if (cached) return cached;
+      if (cached && (await driveAlive(cached, opts))) return cached;
+      // Cached folder was deleted (fresh-start reset) — drop ALL cached ids,
+      // everything under it is gone too.
+      localStorage.removeItem('gs.rootId');
+      localStorage.removeItem('gs.systemId');
       let id = await driveFind(`name='${esc(ROOT_NAME)}' and mimeType='${FOLDER_MIME}' and trashed=false`, opts);
       if (!id) id = await driveCreate(ROOT_NAME, FOLDER_MIME, null, opts);
       localStorage.setItem('gs.rootId', id);
@@ -434,9 +523,10 @@ async function ensureRoot(opts) {
 async function ensureSystem(opts) {
   if (!systemP) {
     systemP = (async () => {
+      const rootId = await ensureRoot(opts); // also invalidates a stale system id
       const cached = localStorage.getItem('gs.systemId');
-      if (cached) return cached;
-      const rootId = await ensureRoot(opts);
+      if (cached && (await driveAlive(cached, opts))) return cached;
+      localStorage.removeItem('gs.systemId');
       let id = await driveFind(
         `name='${esc(SYSTEM_NAME)}' and '${rootId}' in parents and mimeType='${SHEET_MIME}' and trashed=false`,
         opts
@@ -591,7 +681,8 @@ export async function upsertRows(name, rows) {
       def.headers.forEach((h) => {
         merged[h] = row[h] !== undefined ? row[h] : hit[h];
       });
-      updates.push({ range: `'${def.tab}'!A${hit._row}:${last}${hit._row}`, values: [def.headers.map((h) => enc(merged[h]))] });
+      if (def.derive) Object.assign(merged, def.derive(merged)); // keep summary columns in sync with the JSON
+      updates.push({ range: `'${def.tab}'!A${hit._row}:${last}${hit._row}`, values: [def.headers.map((h) => encFor(def, h, merged[h]))] });
       results.push(merged);
     } else {
       const fresh = {};
@@ -600,7 +691,8 @@ export async function upsertRows(name, rows) {
         else if (h === 'created_at' || h === 'updated_at') fresh[h] = now;
         else fresh[h] = null;
       });
-      appends.push(def.headers.map((h) => enc(fresh[h])));
+      if (def.derive) Object.assign(fresh, def.derive(fresh));
+      appends.push(def.headers.map((h) => encFor(def, h, fresh[h])));
       results.push(fresh);
     }
   });
