@@ -1,3 +1,6 @@
+// @ts-nocheck — this file runs on Supabase's DENO runtime (not Node): VS Code's
+// TypeScript checker doesn't know `Deno` or `npm:` imports and shows fake
+// errors. Deno ignores this line; the function deploys and runs unchanged.
 // Supabase Edge Function: "gcal" — Google Calendar sign-in-once token service.
 //
 // Routes (mounted at  {SUPABASE_URL}/functions/v1/gcal/… ):
