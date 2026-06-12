@@ -6,7 +6,6 @@ import {
   FiLayers,
   FiChevronDown,
   FiPlus,
-  FiZap,
 } from 'react-icons/fi';
 import clsx from 'clsx';
 import PageTransition from '@/features/reason-eliminator/components/layout/PageTransition.jsx';
@@ -14,7 +13,6 @@ import Button from '@/features/reason-eliminator/components/common/Button.jsx';
 import Modal from '@/features/reason-eliminator/components/common/Modal.jsx';
 import { normalizeText } from '../utils/validators.js';
 import { useAssessmentFlow } from '../context/AssessmentFlowContext.jsx';
-import { previousReasonsMissingPowerWord } from '../utils/reasonVisibility.js';
 
 // Dropdown choices. `count` is how many reason boxes to show on the page.
 // "Customize Range" lets the user type their own number.
@@ -31,18 +29,13 @@ const MAX_CUSTOM = 20;
 
 export default function NewAssessmentPage() {
   const navigate = useNavigate();
-  const { reasons, addReason, startSession, hasActiveSession, sessionId } =
+  const { reasons, addReason, startSession, hasActiveSession } =
     useAssessmentFlow();
 
-  // Reasons from a PREVIOUS assessment that still have no Power Word. A Power
-  // Word is mandatory, so a new assessment can't move forward until these are
-  // filled in (over in Previous Assessments). Re-derived on each render — it
-  // clears the moment the user comes back from filling them in.
-  const prevMissing = previousReasonsMissingPowerWord(sessionId);
-  const hasPrevMissing = prevMissing.length > 0;
-  // Send the user to Previous Assessments, where the mandatory "Power Word
-  // required" popup lets them assign the missing Power Words.
-  const goToPrevious = () => navigate('/reason-eliminator/previous');
+  // Reasons missing a Power Word (including ones synced from the Power Planner
+  // review) no longer BLOCK a new assessment — the sidebar's "Power Word
+  // Missing" badge counts them and the user fills them in on that page (or in
+  // Previous Assessments) whenever they want.
 
   // Reasons-per-page selection + the custom count when "Customize Range" is on.
   const [perPage, setPerPage] = useState(PER_PAGE_OPTIONS[0]);
@@ -60,23 +53,12 @@ export default function NewAssessmentPage() {
 
   // One draft string per visible box. Kept in sync when the count changes.
   const [drafts, setDrafts] = useState(() => Array(boxCount).fill(''));
-  // Which confirmation popup is open:
-  // null | 'incomplete' | 'choose' | 'prev-start' | 'prev-block'.
+  // Which confirmation popup is open: null | 'incomplete' | 'choose'.
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
     if (!hasActiveSession) startSession();
   }, [hasActiveSession, startSession]);
-
-  // On arrival, if a previous assessment still needs a Power Word, remind the
-  // user once. This reminder is dismissible — they can ignore it and keep
-  // typing — but End/Next will then block until those Power Words are filled in.
-  useEffect(() => {
-    if (previousReasonsMissingPowerWord(sessionId).length > 0) {
-      setModal('prev-start');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Resize the drafts array when the box count changes, preserving any text the
   // user already typed in the boxes that remain.
@@ -127,12 +109,6 @@ export default function NewAssessmentPage() {
   // Next: block until the whole selected range is filled, then ask whether to
   // end here or keep adding more reasons.
   const handleNext = () => {
-    // A previous assessment's Power Word is still missing — block here and send
-    // the user to fill it. The flow can't move forward until it's filled in.
-    if (hasPrevMissing) {
-      setModal('prev-block');
-      return;
-    }
     if (!allFilled) {
       setModal('incomplete');
       return;
@@ -157,12 +133,6 @@ export default function NewAssessmentPage() {
   // End: works even with a partly-filled range — it saves whatever reasons are
   // filled (at least one) and moves on. Only blocks when nothing is filled.
   const handleEnd = () => {
-    // Same gate as Next: a previous assessment still needs a Power Word, so the
-    // flow can't end/continue until it's filled in.
-    if (hasPrevMissing) {
-      setModal('prev-block');
-      return;
-    }
     if (!anyFilled) {
       setModal('incomplete');
       return;
@@ -372,59 +342,6 @@ export default function NewAssessmentPage() {
           }
         />
 
-        {/* On-arrival reminder — a previous assessment still needs a Power Word.
-            Dismissible: the user may ignore it and keep typing, but End/Next
-            will block until those Power Words are filled in. */}
-        <Modal
-          open={modal === 'prev-start'}
-          onClose={() => setModal(null)}
-          title="Power Word needed for your previous assessment"
-          description={`A previous assessment still has ${prevMissing.length} reason${
-            prevMissing.length === 1 ? '' : 's'
-          } without a Power Word. Please go to Previous Assessments and give them a Power Word.`}
-          size="sm"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setModal(null)}>
-                Later
-              </Button>
-              <Button onClick={goToPrevious} leftIcon={<FiZap />}>
-                Go to Previous Assessment
-              </Button>
-            </>
-          }
-        />
-
-        {/* Blocking popup on End/Next — the flow cannot move forward while a
-            previous assessment's Power Word is missing. The user either goes to
-            fill it, or ends (closes) here; nothing advances until it's filled. */}
-        <Modal
-          open={modal === 'prev-block'}
-          onClose={() => setModal(null)}
-          title="Please give a Power Word to your previous assessment"
-          description={`You can't continue until every previous reason has a Power Word. ${
-            prevMissing.length
-          } reason${
-            prevMissing.length === 1 ? '' : 's'
-          } still need one — add ${
-            prevMissing.length === 1 ? 'it' : 'them'
-          } in Previous Assessments.`}
-          size="sm"
-          footer={
-            <>
-              <Button
-                variant="secondary"
-                onClick={() => setModal(null)}
-                leftIcon={<FiStopCircle />}
-              >
-                End
-              </Button>
-              <Button onClick={goToPrevious} leftIcon={<FiZap />}>
-                Go to Previous Assessment
-              </Button>
-            </>
-          }
-        />
       </div>
     </PageTransition>
   );

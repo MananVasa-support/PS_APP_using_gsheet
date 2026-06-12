@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { setNavGuard } from "@/lib/navGuard";
+import { syncWeekReviewToReasons } from "@/utils/ppToReasons";
 import { FiCalendar, FiEdit2 } from "react-icons/fi";
 import {
   CalendarExportModal,
@@ -413,7 +414,18 @@ const PowerPlannerHome = () => {
     // (schedule, name, details), so there's no "this one vs all" question.
     return savePlannerData({ includeCarryForward: false });
   };
-  const handleSaveReview = () => savePlannerData({ includeCarryForward: true });
+  const handleSaveReview = () => {
+    const res = savePlannerData({ includeCarryForward: true });
+    // Mirror this week's TFCR reasons into the Reasons Eliminator (one session
+    // per week, marked "From Power Planner") so the user assigns Power Words
+    // there. Power Words already assigned survive re-saves.
+    syncWeekReviewToReasons(selectedWeek, {
+      commitments,
+      actions,
+      otherCommitments,
+    });
+    return res;
+  };
 
   // Series-aware deletes. A generated repeat is removed on its own (and won't
   // come back); deleting a recurring original asks whether to drop its repeats.

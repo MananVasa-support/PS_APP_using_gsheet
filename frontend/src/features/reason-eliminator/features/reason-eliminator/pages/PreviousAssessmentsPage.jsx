@@ -183,8 +183,13 @@ export default function PreviousAssessmentsPage() {
   // category, subcategory and power word. The Grip Test is not required, so a
   // session appears here (updating the Current/Previous sections) as soon as the
   // Power Word step is complete, even before the Grip Test is done.
+  // Sessions synced FROM THE POWER PLANNER review are the exception: they show
+  // immediately (their Power Words are assigned HERE later, not in a flow).
   const sessions = useMemo(
-    () => allSessions.filter(isSessionAssessed),
+    () =>
+      allSessions.filter(
+        (s) => isSessionAssessed(s) || s.source === 'power-planner'
+      ),
     [allSessions]
   );
 
@@ -297,14 +302,12 @@ export default function PreviousAssessmentsPage() {
     return m;
   }, [sessions]);
 
-  // Whether the user manually opened the Missing Power Word popup (it always
-  // opens on its own when any Power Word is still missing).
+  // The Missing Power Word popup opens ONLY when the user clicks the header
+  // button — it never traps them. (The forced auto-open was removed: missing
+  // Power Words are surfaced by the sidebar's "Power Word Missing" badge and
+  // page instead, where the user fills them in at their own pace.)
   const [missingManual, setMissingManual] = useState(false);
-
-  // The Missing Power Word popup is open automatically whenever some Power Word
-  // is missing (mandatory), or when the user opened it from the header button.
-  const missingOpen = missingReasons.length > 0 || missingManual;
-  const mustFix = missingReasons.length > 0;
+  const missingOpen = missingManual;
 
   // Set / change a reason's Power Word (used by the Missing Power Word popup).
   const setPowerWordFor = (id, word) => {
@@ -633,6 +636,11 @@ export default function PreviousAssessmentsPage() {
                     <div>
                       <p className="text-base font-bold text-brand-black">
                         Assessment {assessmentNumberById[s.id]}
+                        {s.source === 'power-planner' ? (
+                          <span className="ml-2 inline-flex items-center rounded-md bg-brand-red-soft px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-red align-middle">
+                            From Power Planner
+                          </span>
+                        ) : null}
                       </p>
                       <p className="text-sm text-brand-gray-900">
                         Date: {formatDate(s.createdAt)}
@@ -698,28 +706,21 @@ export default function PreviousAssessmentsPage() {
         </>
       )}
 
-      {/* Missing Power Word popup — mandatory while any reason has no Power Word
-          (non-dismissible), and also openable from the header for review. */}
+      {/* Missing Power Word popup — opened from the header button only; fully
+          dismissible. Lists every reason still needing a Power Word (including
+          ones synced from the Power Planner review). */}
       <Modal
         open={missingOpen}
-        onClose={() => {
-          if (!mustFix) setMissingManual(false);
-        }}
-        title="Power Word required"
+        onClose={() => setMissingManual(false)}
+        title="Missing Power Words"
         description={
-          mustFix
-            ? 'Every reason must have a Power Word. Please assign one to each reason below to continue.'
+          missingReasons.length > 0
+            ? 'Assign a Power Word to each reason below — you can also do this anytime on the Power Word Missing page.'
             : 'All reasons already have a Power Word.'
         }
         size="xl"
-        hideClose={mustFix}
-        closeOnBackdrop={!mustFix}
         footer={
-          <Button
-            variant="primary"
-            disabled={mustFix}
-            onClick={() => setMissingManual(false)}
-          >
+          <Button variant="primary" onClick={() => setMissingManual(false)}>
             Done
           </Button>
         }
@@ -744,7 +745,14 @@ export default function PreviousAssessmentsPage() {
                     <TD className="text-brand-gray-900 whitespace-nowrap">
                       {formatDate(r.createdAt)}
                     </TD>
-                    <TD className="text-brand-ink">{r.text}</TD>
+                    <TD className="text-brand-ink">
+                      {r.text}
+                      {r.source === 'power-planner' ? (
+                        <span className="ml-2 inline-flex items-center rounded-md bg-brand-red-soft px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-red align-middle">
+                          Power Planner
+                        </span>
+                      ) : null}
+                    </TD>
                     <TD>
                       <PowerWordPicker
                         options={powerWordOptions}

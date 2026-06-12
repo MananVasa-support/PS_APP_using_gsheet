@@ -189,7 +189,14 @@ export default function PowerWordMissingPage() {
                       <TD className="text-brand-gray-900 whitespace-nowrap">
                         {formatDate(r.createdAt)}
                       </TD>
-                      <TD className="text-brand-ink">{r.text}</TD>
+                      <TD className="text-brand-ink">
+                        {r.text}
+                        {r.source === 'power-planner' ? (
+                          <span className="ml-2 inline-flex items-center rounded-md bg-brand-red-soft px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-red align-middle">
+                            Power Planner
+                          </span>
+                        ) : null}
+                      </TD>
                       <TD>
                         <PowerWordPicker
                           options={powerWordOptions}
