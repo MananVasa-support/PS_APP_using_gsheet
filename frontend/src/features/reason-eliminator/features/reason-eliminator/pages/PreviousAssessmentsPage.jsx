@@ -29,7 +29,7 @@ import gripTestService from '../services/gripTestService.js';
 import { formatDate } from '../utils/formatters.js';
 import { filterRecent } from '../utils/recentFilter.js';
 import {
-  isSessionAssessed,
+  isSessionCategorized,
   visibleAssessmentReasons,
 } from '../utils/reasonVisibility.js';
 import { CATEGORY_BY_ID, CATEGORY_DETAILS, POWER_WORDS } from '../constants.js';
@@ -179,16 +179,15 @@ export default function PreviousAssessmentsPage() {
     win.print();
   };
 
-  // Show sessions whose assessment is finished — every active reason has a
-  // category, subcategory and power word. The Grip Test is not required, so a
-  // session appears here (updating the Current/Previous sections) as soon as the
-  // Power Word step is complete, even before the Grip Test is done.
-  // Sessions synced FROM THE POWER PLANNER review are the exception: they show
-  // immediately (their Power Words are assigned HERE later, not in a flow).
+  // Show sessions whose TCFR assessment is finished — every active reason has
+  // a category and subcategory. Power Words are NOT required to appear here:
+  // a session left after the assessment shows immediately, and the user adds
+  // its missing Power Words here / on the Power Word Missing page later.
+  // Sessions synced from the Power Planner review always show.
   const sessions = useMemo(
     () =>
       allSessions.filter(
-        (s) => isSessionAssessed(s) || s.source === 'power-planner'
+        (s) => isSessionCategorized(s) || s.source === 'power-planner'
       ),
     [allSessions]
   );

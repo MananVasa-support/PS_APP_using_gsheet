@@ -44,9 +44,24 @@ function readAll() {
   return safeParse(raw).map(normalizeSession);
 }
 
+// Fired after every write so live UI (e.g. the sidebar's "Power Word Missing"
+// badge) can refresh immediately — assigning a Power Word anywhere (the
+// exercise, Previous Assessments, the Power Word Missing page) updates the
+// count without needing a navigation.
+export const RE_DATA_CHANGED = 're:data-changed';
+const emitChange = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(new Event(RE_DATA_CHANGED));
+  } catch {
+    // ignore
+  }
+};
+
 function writeAll(sessions) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+  emitChange();
 }
 
 export const reasonEliminatorService = {

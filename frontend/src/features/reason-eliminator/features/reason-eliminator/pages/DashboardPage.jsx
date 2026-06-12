@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
@@ -28,7 +28,6 @@ import {
   FiActivity,
   FiTarget,
   FiRefreshCw,
-  FiChevronDown,
   FiGrid,
 } from 'react-icons/fi';
 import PageHeader from '@/features/reason-eliminator/components/common/PageHeader.jsx';
@@ -163,24 +162,8 @@ export default function DashboardPage() {
   // Which dashboard is shown. Defaults to the Overall Assessment Dashboard.
   // Switching only changes which existing sections render — no data changes.
   const [dashboardView, setDashboardView] = useState('overall');
-  const [viewDdOpen, setViewDdOpen] = useState(false);
-  const viewDdRef = useRef(null);
-  const activeView =
-    DASHBOARD_VIEWS.find((v) => v.value === dashboardView) || DASHBOARD_VIEWS[0];
   const isOverall = dashboardView === 'overall';
   const isGrip = dashboardView === 'grip';
-
-  // Close the dashboard selector on an outside click.
-  useEffect(() => {
-    if (!viewDdOpen) return undefined;
-    const onDown = (e) => {
-      if (viewDdRef.current && !viewDdRef.current.contains(e.target)) {
-        setViewDdOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [viewDdOpen]);
 
   // Read everything once from the stores the app already maintains. Read-only —
   // nothing here writes back.
@@ -303,57 +286,27 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div ref={viewDdRef} className="relative w-full sm:w-72 shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewDdOpen((o) => !o)}
-              aria-haspopup="listbox"
-              aria-expanded={viewDdOpen}
-              className={clsx(
-                'w-full h-11 px-4 flex items-center justify-between gap-2 rounded-xl bg-white text-sm font-semibold text-brand-black border transition-colors',
-                viewDdOpen
-                  ? 'border-brand-red ring-2 ring-brand-red/15'
-                  : 'border-brand-gray-200 hover:border-brand-gray-300'
-              )}
-            >
-              <span className="truncate">{activeView.label}</span>
-              <FiChevronDown
-                className={clsx(
-                  'shrink-0 transition-transform',
-                  viewDdOpen && 'rotate-180'
-                )}
-              />
-            </button>
-
-            {viewDdOpen ? (
-              <ul
-                role="listbox"
-                className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl bg-white border border-brand-gray-200 shadow-modal py-1"
-              >
-                {DASHBOARD_VIEWS.map((opt) => {
-                  const active = opt.value === dashboardView;
-                  return (
-                    <li key={opt.value} role="option" aria-selected={active}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDashboardView(opt.value);
-                          setViewDdOpen(false);
-                        }}
-                        className={clsx(
-                          'w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors',
-                          active
-                            ? 'bg-brand-red text-white'
-                            : 'text-brand-black hover:bg-brand-gray-100'
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
+          {/* Two direct buttons (no dropdown) — one click switches the view. */}
+          <div className="flex flex-wrap items-center gap-2">
+            {DASHBOARD_VIEWS.map((opt) => {
+              const active = opt.value === dashboardView;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setDashboardView(opt.value)}
+                  aria-pressed={active}
+                  className={clsx(
+                    'h-11 px-4 rounded-xl text-sm font-semibold border transition-colors',
+                    active
+                      ? 'bg-brand-red text-white border-brand-red shadow-sm'
+                      : 'bg-white text-brand-black border-brand-gray-200 hover:border-brand-gray-300 hover:bg-brand-gray-100'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </Card>

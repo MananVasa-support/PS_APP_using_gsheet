@@ -17,9 +17,12 @@ import {
 } from 'react-icons/fi';
 import clsx from 'clsx';
 import { useAssessmentFlow } from '@/features/reason-eliminator/features/reason-eliminator/context/AssessmentFlowContext.jsx';
-import reasonEliminatorService from '@/features/reason-eliminator/features/reason-eliminator/services/reasonEliminatorService.js';
+import reasonEliminatorService, {
+  RE_DATA_CHANGED,
+} from '@/features/reason-eliminator/features/reason-eliminator/services/reasonEliminatorService.js';
 import gripTestService from '@/features/reason-eliminator/features/reason-eliminator/services/gripTestService.js';
 import gripHistoryService from '@/features/reason-eliminator/features/reason-eliminator/services/gripHistoryService.js';
+import { guardNav } from '@/lib/navGuard';
 
 // Sidebar is navigation chrome only. The two actions below reuse the EXISTING
 // flow handlers (start a session, global reset) exactly as the Home screen did —
@@ -30,10 +33,20 @@ export default function Sidebar() {
   const { startSession, reset } = useAssessmentFlow();
   const [collapsed, setCollapsed] = useState(false);
 
+  // Re-render whenever the stored sessions change (a Power Word assigned in
+  // the exercise, Previous Assessments, or the Power Word Missing page) so the
+  // badge below updates LIVE — no navigation needed.
+  const [, setDataVersion] = useState(0);
+  useEffect(() => {
+    const onChange = () => setDataVersion((v) => v + 1);
+    window.addEventListener(RE_DATA_CHANGED, onChange);
+    return () => window.removeEventListener(RE_DATA_CHANGED, onChange);
+  }, []);
+
   // Count of reasons still missing a Power Word — exactly what the Power Word
   // Missing page lists (active, non-archived reasons with no Power Word, across
-  // all saved sessions). Read-only; recomputed each render (and on navigation,
-  // via pathname) so the badge stays in sync. Nothing stored is changed.
+  // all saved sessions). Read-only; recomputed each render (and live via the
+  // data-changed event above). Nothing stored is changed.
   const missingPowerWordCount = reasonEliminatorService
     .listSessions()
     .flatMap((s) =>
@@ -139,8 +152,13 @@ export default function Sidebar() {
   };
 
   const handleClick = (item) => {
-    if (item.onClick) item.onClick();
-    else navigate(item.to);
+    // Every sidebar jump runs through the guard: with an assessment in
+    // progress (reasons added, TCFR not finished) the user is asked to
+    // discard or continue before leaving the flow.
+    guardNav(() => {
+      if (item.onClick) item.onClick();
+      else navigate(item.to);
+    });
   };
 
   const renderItem = (item) => {

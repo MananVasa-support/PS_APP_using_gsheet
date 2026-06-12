@@ -120,6 +120,16 @@ export default function PowerWordPage() {
     return true;
   };
 
+  // persist() reads context state, which hasn't applied a just-dispatched
+  // Power Word yet — pass the fresh list explicitly, so storage (and the
+  // sidebar's "Power Word Missing" badge) updates word by word, live.
+  const reasonsWithCurrentDraft = () => {
+    if (!current || !valid || !draft.trim()) return rawReasons;
+    return rawReasons.map((r) =>
+      r.id === current.id ? { ...r, powerWord: normalizeText(draft) } : r
+    );
+  };
+
   const handleNext = () => {
     if (!commitCurrent()) {
       // Block and surface the required-power-word validation message.
@@ -129,14 +139,14 @@ export default function PowerWordPage() {
     setAttempted(false);
     if (isLast) {
       setStatus(SESSION_STATUS.COMPLETED);
-      persist({ status: SESSION_STATUS.COMPLETED });
+      persist({ status: SESSION_STATUS.COMPLETED, reasons: reasonsWithCurrentDraft() });
       // Last power word done — offer to add another reason or End to the Grip
       // Test.
       setShowNextPrompt(true);
       return;
     }
     // Save progress after every power word so nothing is lost on reload.
-    persist();
+    persist({ reasons: reasonsWithCurrentDraft() });
     setCursor((c) => c + 1);
   };
 
@@ -166,7 +176,7 @@ export default function PowerWordPage() {
       });
       return;
     }
-    persist();
+    persist({ reasons: reasonsWithCurrentDraft() });
     // Every reason now has a power word — continue to the Full Assessment.
     navigate('/reason-eliminator/summary');
   };
@@ -184,7 +194,7 @@ export default function PowerWordPage() {
   const handlePrevious = () => {
     if (draft.trim() && !valid) return;
     if (draft.trim()) commitCurrent();
-    persist();
+    persist({ reasons: reasonsWithCurrentDraft() });
     if (cursor > 0) {
       setCursor((c) => c - 1);
       return;

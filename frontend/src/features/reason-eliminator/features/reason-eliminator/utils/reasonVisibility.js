@@ -83,3 +83,23 @@ export function isSessionAssessed(session) {
   const active = reasons.filter((r) => !r.archived);
   return active.length > 0 && active.every(isReasonAssessed);
 }
+
+// A session is CATEGORIZED once the TCFR assessment is finished — every active
+// reason has at least one category AND one subcategory. Power Words may still
+// be missing. Previous Assessments lists these immediately, so the user can
+// add the missing Power Words there later (the sidebar's "Power Word Missing"
+// badge counts them until they do).
+export function isSessionCategorized(session) {
+  const reasons = Array.isArray(session?.reasons) ? session.reasons : [];
+  const active = reasons.filter((r) => !r.archived);
+  return (
+    active.length > 0 &&
+    active.every(
+      (r) =>
+        Array.isArray(r.categories) &&
+        r.categories.length > 0 &&
+        Array.isArray(r.details) &&
+        r.details.length > 0
+    )
+  );
+}
