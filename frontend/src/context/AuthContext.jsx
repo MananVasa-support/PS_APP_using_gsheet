@@ -75,16 +75,25 @@ export function AuthProvider({ children }) {
           .getCurrentUser()
           .then((profile) => {
             if (!mountedRef.current) return;
-            if (profile) setUser(profile);
+            if (profile) {
+              setUser(profile);
+            } else {
+              // Account row no longer exists in the users sheet — sign out
+              // instead of stranding a broken dashboard.
+              clearSession();
+              setSession(null);
+              setUser(null);
+            }
           })
           .catch((err) => {
             if (!mountedRef.current) return;
             if (err?.code === 'AUTH_INVALID') {
-              // gsApi already cleared the stored session; reflect it here.
               setSession(null);
               setUser(null);
             }
-            // Network hiccups keep the optimistic session — same UX as before.
+            // GOOGLE_TOKEN (expired Google session, no popup allowed at boot)
+            // and network hiccups keep the optimistic session — the next
+            // clicked action re-opens the consent popup.
           });
       } finally {
         if (mountedRef.current) setLoading(false);

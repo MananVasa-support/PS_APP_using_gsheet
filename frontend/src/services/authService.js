@@ -1,31 +1,37 @@
-import { call, getSession, setSession, clearSession, isConfigured } from '@/lib/gsApi';
+import {
+  isConfigured,
+  ensureReady,
+  provisionUserDrive,
+  listRows,
+  upsertRows,
+  getSession,
+  setSession,
+  clearSession,
+  patchSessionUser,
+  newId,
+  sha256,
+} from '@/lib/gsApi';
 import { mapProfile } from '@/utils/mappers';
 import { normalizeRole } from '@/utils/roles';
 import { demoUser } from '@/data/mockData';
 
 /**
- * Auth service backed by the Google Apps Script web app (users/sessions sheets
- * in the _System spreadsheet — see backend/gsheets/Code.gs).
+ * Auth service backed DIRECTLY by the `users` tab of the _System spreadsheet
+ * in Google Drive (no server — see lib/gsApi.js). DEMO-GRADE: the password
+ * check runs in the browser; anyone with Drive access can read every row.
+ * Passwords are still stored as SHA-256(salt+password), never plain.
  *
- * Public surface (kept IDENTICAL to the Supabase branch so no page changes):
- *   login({ email, password, role }) -> { token, user }
- *   register({ name, email, phone, password }) -> { token, user, pending, needsEmailConfirmation }
- *   requestPasswordResetCode(email)  -> { exists, message? }
- *   verifyPasswordResetCode(email,code) -> { ok, session }
- *   updatePassword(newPassword)      -> { message }
- *   getCurrentUser()                 -> profile | null
- *   logout()
+ * Signup also PROVISIONS the user's Drive structure right away: a folder named
+ * "<Name> — <email>" with the five tool spreadsheets inside — so you can watch
+ * it appear in Drive the moment an account is created.
  *
- * Differences vs Supabase (deliberate, this branch is an experiment):
- *   - signup email-OTP confirmation is SKIPPED (register returns
- *     needsEmailConfirmation:false, so Register.jsx goes straight to /login).
- *     verifySignupCode/resendSignupCode stay exported as no-ops.
- *   - password reset still uses an emailed 6-digit code (MailApp, ~100
- *     emails/day quota). The "recovery session" is a one-time reset token kept
- *     in sessionStorage until the new password is saved.
+ * Public surface kept IDENTICAL to the previous branches so no page changes.
+ * Flows that need an email server are stubbed with a clear message:
+ * password reset and email change.
  *
- * When VITE_API_BASE_URL is missing we fall back to the same demo responses
- * as before so the UI stays explorable offline.
+ * The FIRST login/register of a session opens the Google consent popup
+ * (Sheets + Drive scopes; the same OAuth client as the Calendar export);
+ * after that it's silent for about an hour at a time.
  */
 
 const ROLE_MISMATCH = "This account isn't a {role}. Please pick the correct role and try again.";
@@ -33,31 +39,15 @@ const ROLE_MISMATCH = "This account isn't a {role}. Please pick the correct role
 const DEMO_ADMIN_EMAILS = ['admin@unleashed.in', 'alex.morgan@unleashed.in'];
 const DEMO_CONSULTANT_EMAILS = ['consultant@unleashed.in', 'priya.nair@unleashed.in'];
 
-// "Recovery session": proof that the user typed a valid reset code, pending
-// the new password. sessionStorage (like the auth session) — survives F5 only.
-const RECOVERY_KEY = 'gs.recovery';
+const NO_SERVER_MSG =
+  'Not available in the Sheets demo (it needs an email server). Create a new account instead.';
 
-const readRecovery = () => {
-  try {
-    return JSON.parse(sessionStorage.getItem(RECOVERY_KEY)) || null;
-  } catch {
-    return null;
-  }
-};
-
-/** Is a password reset mid-flight? (ResetPassword.jsx gates on this.) */
-export function hasRecoverySession() {
-  return Boolean(readRecovery()?.resetToken);
-}
-
-/** Abandon the in-progress reset (leaving the page, Back to login, …). */
-export function clearRecoverySession() {
-  sessionStorage.removeItem(RECOVERY_KEY);
-}
+const cleanEmail = (e) => (e || '').trim();
+const sameEmail = (a, b) => String(a || '').toLowerCase() === String(b || '').toLowerCase();
 
 export async function login({ email, password, role }) {
   if (!isConfigured) {
-    const e = (email || '').trim().toLowerCase();
+    const e = cleanEmail(email).toLowerCase();
     let resolved = role || 'client';
     if (DEMO_ADMIN_EMAILS.includes(e)) resolved = 'admin';
     else if (DEMO_CONSULTANT_EMAILS.includes(e)) resolved = 'consultant';
@@ -67,30 +57,33 @@ export async function login({ email, password, role }) {
     };
   }
 
-  const data = await call('/login', { email: (email || '').trim(), password }, { auth: false });
-  const profile = mapProfile(data.user);
+  await ensureReady(); // Google popup on first use, then silent
+  const users = await listRows('users');
+  const row = users.find((u) => sameEmail(u.email, email));
+  if (!row) throw new Error('Invalid email or password.');
+  const hash = await sha256(String(row.salt || '') + String(password || ''));
+  if (hash !== row.password_hash) throw new Error('Invalid email or password.');
 
+  const profile = mapProfile(row);
   if (role && normalizeRole(profile.role) !== normalizeRole(role)) {
     throw new Error(ROLE_MISMATCH.replace('{role}', role));
   }
 
-  setSession({ token: data.token, user: profile });
-  return { token: data.token, user: profile };
+  const token = `sess-${newId()}`;
+  setSession({ token, user: profile });
+  return { token, user: profile };
 }
 
-/**
- * Pre-signup check: is this email or phone already registered? Server-side
- * lookup against the users sheet — returns only booleans, same as the old
- * signup_availability RPC.
- */
+/** Pre-signup duplicate check against the users tab (booleans only). */
 export async function checkSignupAvailability(email, phone) {
   if (!isConfigured) return { emailTaken: false, phoneTaken: false };
-  const data = await call(
-    '/availability',
-    { email: (email || '').trim(), phone: (phone || '').trim() },
-    { auth: false }
-  );
-  return { emailTaken: !!data?.email_taken, phoneTaken: !!data?.phone_taken };
+  await ensureReady();
+  const users = await listRows('users');
+  const cleanPhone = (phone || '').trim();
+  return {
+    emailTaken: Boolean(cleanEmail(email) && users.some((u) => sameEmail(u.email, email))),
+    phoneTaken: Boolean(cleanPhone && users.some((u) => String(u.phone || '') === cleanPhone)),
+  };
 }
 
 export async function register({ name, email, phone, password }) {
@@ -102,24 +95,46 @@ export async function register({ name, email, phone, password }) {
     };
   }
 
-  const data = await call(
-    '/signup',
-    { name, email: (email || '').trim(), phone: (phone || '').trim(), password },
-    { auth: false }
-  );
+  await ensureReady();
+  const { emailTaken, phoneTaken } = await checkSignupAvailability(email, phone);
+  if (emailTaken) throw new Error('An account already exists with this email.');
+  if (phoneTaken) throw new Error('An account already exists with this phone number.');
 
-  // No auto-login and (on this branch) no email confirmation step — the user
-  // goes straight back to the login page.
-  return {
-    token: null,
-    user: mapProfile(data?.user),
-    pending: true,
-    needsEmailConfirmation: false,
+  const salt = newId();
+  const row = {
+    id: newId(),
+    name: (name || '').trim(),
+    email: cleanEmail(email),
+    phone: (phone || '').trim() || null,
+    country: null,
+    role: 'client',
+    status: 'Active',
+    title: null,
+    department: null,
+    timezone: null,
+    avatar: null,
+    preferences: {},
+    password_hash: await sha256(salt + String(password || '')),
+    salt,
+    created_at: new Date().toISOString(),
   };
+  await upsertRows('users', [row]);
+
+  // Create the user's Drive home right away: "<Name> — <email>" folder with
+  // all five tool spreadsheets. Failure here is non-fatal — anything missing
+  // is lazily re-created on the user's first write.
+  try {
+    await provisionUserDrive({ id: row.id, name: row.name, email: row.email });
+  } catch {
+    /* lazily created later */
+  }
+
+  // No auto-login, no email confirmation — straight back to the login page.
+  return { token: null, user: mapProfile(row), pending: true, needsEmailConfirmation: false };
 }
 
-/** Signup email confirmation is skipped on the Sheets branch — kept as no-ops
- *  so Register.jsx compiles unchanged (it never reaches the code step). */
+/** Signup email confirmation doesn't exist in the demo — kept as no-ops so
+ *  Register.jsx compiles unchanged (it never reaches the code step). */
 export async function verifySignupCode() {
   return { ok: true };
 }
@@ -127,93 +142,50 @@ export async function resendSignupCode() {
   return { ok: true };
 }
 
-/**
- * Step 1 of the code-based reset. Returns { exists:false } when no account uses
- * this email; otherwise the script emails a 6-digit code (MailApp).
- */
+// ── Password reset / email change — need an email server; stubbed ───────────
 export async function requestPasswordResetCode(email) {
-  const clean = (email || '').trim();
-  if (!isConfigured) {
-    return { exists: true, message: 'A reset code has been sent (demo).' };
-  }
-  const data = await call('/requestReset', { email: clean }, { auth: false });
-  return { exists: !!data?.exists };
+  if (!isConfigured) return { exists: true, message: 'A reset code has been sent (demo).' };
+  void email;
+  throw new Error(NO_SERVER_MSG);
 }
-
-/**
- * Step 2: verify the 6-digit code. On success the server swaps it for a
- * one-time reset token, which we keep as the "recovery session" until
- * updatePassword() consumes it.
- */
-export async function verifyPasswordResetCode(email, code) {
+export async function verifyPasswordResetCode() {
   if (!isConfigured) return { ok: true };
-  const clean = (email || '').trim();
-  const data = await call('/verifyReset', { email: clean, code: (code || '').trim() }, { auth: false });
-  try {
-    sessionStorage.setItem(RECOVERY_KEY, JSON.stringify({ email: clean, resetToken: data.resetToken }));
-  } catch {
-    /* ignore */
-  }
-  return { ok: true, session: null };
+  throw new Error(NO_SERVER_MSG);
 }
-
-/** Set the new password using the stored reset token, then make them log in fresh. */
-export async function updatePassword(newPassword) {
-  if (!isConfigured) {
-    return { message: 'Password updated.' };
-  }
-  const rec = readRecovery();
-  if (!rec?.resetToken) {
-    throw new Error('This reset has expired — request a new code from Forgot Password.');
-  }
-  const data = await call(
-    '/updatePassword',
-    { email: rec.email, resetToken: rec.resetToken, password: newPassword },
-    { auth: false }
-  );
-  clearRecoverySession();
-  clearSession(); // the server killed all sessions for this account anyway
-  return { message: data?.message || 'Password updated. Please log in with your new password.' };
+export async function updatePassword() {
+  if (!isConfigured) return { message: 'Password updated.' };
+  throw new Error(NO_SERVER_MSG);
 }
+export function hasRecoverySession() {
+  return false;
+}
+export function clearRecoverySession() {}
 
-/**
- * Start changing the signed-in user's email: the script emails a 6-digit code
- * to the NEW address; the change applies once verifyEmailChange() succeeds.
- */
-export async function requestEmailChange(newEmail) {
+export async function requestEmailChange() {
   if (!isConfigured) return { ok: true };
-  await call('/requestEmailChange', { newEmail: (newEmail || '').trim() });
-  return { ok: true };
+  throw new Error(NO_SERVER_MSG);
 }
-
-/** Confirm the email change with the 6-digit code sent to the new address. */
-export async function verifyEmailChange(newEmail, code) {
+export async function verifyEmailChange() {
   if (!isConfigured) return { ok: true };
-  await call('/verifyEmailChange', { newEmail: (newEmail || '').trim(), code: (code || '').trim() });
-  // Refresh the cached profile so the app shows the new email immediately.
-  try {
-    const me = await call('/me');
-    const s = getSession();
-    if (s) setSession({ token: s.token, user: mapProfile(me) });
-  } catch {
-    /* non-fatal: email already changed server-side */
-  }
-  return { ok: true };
+  throw new Error(NO_SERVER_MSG);
 }
 
 export async function getCurrentUser() {
   if (!isConfigured) return demoUser;
-  if (!getSession()?.token) return null;
-  const me = await call('/me');
-  return mapProfile(me);
+  const session = getSession();
+  if (!session?.token) return null;
+  // interactive:false — this runs at app boot with no user gesture, so it must
+  // never open the Google popup; a missing token just keeps the cached profile
+  // (gsApi throws GOOGLE_TOKEN, which AuthContext treats as a soft failure).
+  const users = await listRows('users', { interactive: false });
+  const row = users.find((u) => u.id === session.user?.id) || null;
+  if (!row) return null; // account deleted from the sheet → AuthContext signs out
+  const profile = mapProfile(row);
+  patchSessionUser(profile);
+  return profile;
 }
 
 export async function logout() {
   if (!isConfigured) return;
-  try {
-    await call('/logout');
-  } catch {
-    /* the local session is cleared regardless */
-  }
   clearSession();
 }

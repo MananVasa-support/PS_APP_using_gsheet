@@ -1,23 +1,20 @@
-// Reasons Eliminator data layer (Google Sheets backend).
+// Reasons Eliminator data layer (direct Google Sheets).
 //
 // The tool's pages read its three stores SYNCHRONOUSLY (in render/useMemo), so
 // this service keeps an in-memory cache that is hydrated ONCE when the tool
 // opens (the RE App gates rendering on it). Every write then updates the cache
 // instantly (UI stays snappy) and fire-and-forgets the matching row upsert /
-// delete to the Apps Script — three worksheets in the user's "Reasons
-// Eliminator" spreadsheet:
+// delete — three tabs in the user's "Reasons Eliminator" spreadsheet:
 //
 //   sessions      — one row per assessment session (id = client-generated text,
 //                   fits the Power Planner bridge ids 'pp:<weekStart>')
 //   grip_tests    — one row per reason's LATEST grip score (keyed reason_id)
 //   grip_history  — one row per completed grip-test run (append-only)
 //
-// Demo mode (no VITE_API_BASE_URL) never touches this file's network paths —
+// Demo mode (no Google client id) never touches this file's network paths —
 // the three feature services keep their original localStorage behavior there.
 
-import { call, getToken, onAuthChange, isConfigured } from '@/lib/gsApi';
-
-const TOOL = 'reasons';
+import { listRows, upsertRows, deleteRows, clearRows, getToken, onAuthChange, isConfigured } from '@/lib/gsApi';
 
 export const reasonsCache = {
   sessions: [], // session objects (same shape the tool always used)
@@ -72,15 +69,18 @@ export function hydrateReasons() {
   if (!isConfigured) return Promise.resolve();
   if (!hydration) {
     hydration = (async () => {
-      // One request hydrates all three worksheets.
-      const res = await call('/list', { tool: TOOL, sheets: ['sessions', 'grip_tests', 'grip_history'] });
-      reasonsCache.sessions = (res?.sessions || []).map(rowToSession);
+      const [sessions, grips, runs] = await Promise.all([
+        listRows('re_sessions'),
+        listRows('re_grip_tests'),
+        listRows('re_grip_history'),
+      ]);
+      reasonsCache.sessions = sessions.map(rowToSession);
       const grip = {};
-      (res?.grip_tests || []).forEach((r) => {
+      grips.forEach((r) => {
         grip[r.reason_id] = rowToGrip(r);
       });
       reasonsCache.grip = grip;
-      reasonsCache.runs = (res?.grip_history || []).map(rowToRun);
+      reasonsCache.runs = runs.map(rowToRun);
       reasonsCache.hydrated = true;
     })().catch((e) => {
       hydration = null; // allow a retry on the next visit
@@ -118,94 +118,82 @@ const fireAndForget = (fn) => {
 export function persistSessionRow(session) {
   if (!isConfigured || !session?.id) return;
   fireAndForget(() =>
-    call('/upsert', {
-      tool: TOOL,
-      sheet: 'sessions',
-      rows: [
-        {
-          id: String(session.id),
-          status: session.status || 'draft',
-          source: session.source || null,
-          week_start: session.weekStart || null,
-          reasons: session.reasons || [],
-          created_at: session.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ],
-    })
+    upsertRows('re_sessions', [
+      {
+        id: String(session.id),
+        status: session.status || 'draft',
+        source: session.source || null,
+        week_start: session.weekStart || null,
+        reasons: session.reasons || [],
+        created_at: session.createdAt || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ])
   );
 }
 
 export function deleteSessionRow(id) {
   if (!isConfigured || !id) return;
-  fireAndForget(() => call('/delete', { tool: TOOL, sheet: 'sessions', ids: [String(id)] }));
+  fireAndForget(() => deleteRows('re_sessions', [String(id)]));
 }
 
 export function clearSessionRows() {
   if (!isConfigured) return;
-  fireAndForget(() => call('/clear', { tool: TOOL, sheet: 'sessions' }));
+  fireAndForget(() => clearRows('re_sessions'));
 }
 
 // ── Grip scores (latest per reason) ──────────────────────────────────────────
 export function persistGripRow(rec) {
   if (!isConfigured || !rec?.reasonId) return;
   fireAndForget(() =>
-    call('/upsert', {
-      tool: TOOL,
-      sheet: 'grip_tests',
-      rows: [
-        {
-          reason_id: String(rec.reasonId),
-          session_id: rec.sessionId != null ? String(rec.sessionId) : null,
-          seq: typeof rec.seq === 'number' ? rec.seq : null,
-          reason_text: rec.text || null,
-          reason_date: rec.date || null,
-          score: typeof rec.score === 'number' ? rec.score : null,
-          status: rec.status || null,
-          updated_at: new Date().toISOString(),
-        },
-      ],
-    })
+    upsertRows('re_grip_tests', [
+      {
+        reason_id: String(rec.reasonId),
+        session_id: rec.sessionId != null ? String(rec.sessionId) : null,
+        seq: typeof rec.seq === 'number' ? rec.seq : null,
+        reason_text: rec.text || null,
+        reason_date: rec.date || null,
+        score: typeof rec.score === 'number' ? rec.score : null,
+        status: rec.status || null,
+        updated_at: new Date().toISOString(),
+      },
+    ])
   );
 }
 
 export function deleteGripRow(reasonId) {
   if (!isConfigured || !reasonId) return;
-  fireAndForget(() => call('/delete', { tool: TOOL, sheet: 'grip_tests', ids: [String(reasonId)] }));
+  fireAndForget(() => deleteRows('re_grip_tests', [String(reasonId)]));
 }
 
 export function clearGripRows() {
   if (!isConfigured) return;
-  fireAndForget(() => call('/clear', { tool: TOOL, sheet: 'grip_tests' }));
+  fireAndForget(() => clearRows('re_grip_tests'));
 }
 
 // ── Grip-test runs (history) ─────────────────────────────────────────────────
 export function persistRunRow(run) {
   if (!isConfigured || !run?.id) return;
   fireAndForget(() =>
-    call('/upsert', {
-      tool: TOOL,
-      sheet: 'grip_history',
-      rows: [
-        {
-          id: String(run.id),
-          run_date: run.date || new Date().toISOString(),
-          month: run.month || null,
-          archived: !!run.archived,
-          entries: run.entries || [],
-          updated_at: new Date().toISOString(),
-        },
-      ],
-    })
+    upsertRows('re_grip_history', [
+      {
+        id: String(run.id),
+        run_date: run.date || new Date().toISOString(),
+        month: run.month || null,
+        archived: !!run.archived,
+        entries: run.entries || [],
+        updated_at: new Date().toISOString(),
+      },
+    ])
   );
 }
 
 export function deleteRunRow(id) {
   if (!isConfigured || !id) return;
-  fireAndForget(() => call('/delete', { tool: TOOL, sheet: 'grip_history', ids: [String(id)] }));
+  fireAndForget(() => deleteRows('re_grip_history', [String(id)]));
 }
 
 export function clearRunRows() {
   if (!isConfigured) return;
-  fireAndForget(() => call('/clear', { tool: TOOL, sheet: 'grip_history' }));
+  fireAndForget(() => clearRows('re_grip_history'));
 }

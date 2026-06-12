@@ -1,49 +1,42 @@
-import { call, getToken, onAuthChange, isConfigured } from '@/lib/gsApi';
+import { listRows, upsertRows, deleteRows, getToken, onAuthChange, isConfigured } from '@/lib/gsApi';
 import { computeAnalytics } from '@/features/power-planner/utils/powerPlannerUtils';
 
 /**
- * Power Planner — data layer (Google Sheets backend). THREE worksheets in the
- * user's "Power Planner" spreadsheet, one purpose each:
+ * Power Planner — data layer (direct Google Sheets). THREE tabs in the user's
+ * "Power Planner" spreadsheet, one purpose each:
  *
- *   weeks     one row per week. `data` = the full PLAN json (commitments +
- *             frequency/duration/delegate/etc., actions, other things,
- *             to-stop, watch-outs, last-week insights). Keyed by week_start —
- *             editing a week UPDATES its row, never duplicates.
+ *   weeks     one row per week. `data` = the full PLAN json. Keyed by
+ *             week_start — editing a week UPDATES its row, never duplicates.
  *   reviews   one row per week — the auto-computed REVIEW scoreboard
  *             (completion %, productivity score, totals, insight blocks) in
- *             REAL columns so admin/consultant views can read them without
- *             parsing the plan json. Recomputed on every sync.
- *   settings  a single row (id='settings') — start_date, schedule (custom week
- *             boundaries), custom_options (remembered dropdown names),
- *             gcal_event_ids (Calendar de-dupe map).
+ *             REAL columns. Recomputed on every sync.
+ *   settings  a single row (id='settings') — start_date, schedule,
+ *             custom_options, gcal_event_ids (Calendar de-dupe map).
  *
- * Carry-forward needs NO sheet: carried items exist as flagged rows
+ * Carry-forward needs NO tab: carried items exist as flagged rows
  * (isRepeat/repeatOf) inside the next week's plan.
  *
- * Sync model (UNCHANGED from the Supabase branch — Sheets allows roughly a
- * write per second sustained, so batching matters even more here): writes are
- * DEBOUNCED and DIFFED — only weeks whose content actually changed are
- * upserted; weeks that vanish from the map are deleted. Demo mode (no API
- * url): everything stays in localStorage exactly as before.
+ * Sync model (unchanged): writes are DEBOUNCED and DIFFED — only weeks whose
+ * content actually changed are upserted; weeks that vanish from the map are
+ * deleted. The Sheets API allows ~60 writes/min/user, so batching matters.
+ * Demo mode (no Google client id): everything stays in localStorage.
  */
 
 const DEBOUNCE_MS = 900;
-const TOOL = 'power-planner';
 
 // ── Load everything for hydration ───────────────────────────────────────────
 export async function loadPlanner() {
   if (!isConfigured) return null;
-  // One request for both worksheets (cuts the Apps Script round-trips in half).
-  const res = await call('/list', { tool: TOOL, sheets: ['weeks', 'settings'] });
+  const [weekRows, settingsRows] = await Promise.all([listRows('pp_weeks'), listRows('pp_settings')]);
 
   const weeks = {};
-  (res?.weeks || []).forEach((row) => {
+  weekRows.forEach((row) => {
     weeks[row.week_start] = row.data || {};
   });
   // Seed the diff baseline so hydration doesn't immediately re-upload everything.
   lastSynced = snapshot(weeks);
 
-  const s = (res?.settings || [])[0];
+  const s = settingsRows[0];
   return {
     weeks,
     startDate: s?.start_date || '',
@@ -87,17 +80,15 @@ async function flushWeeks() {
     if (changed.length) {
       const now = new Date().toISOString();
       // Upsert the changed weeks (the PLAN)…
-      await call('/upsert', {
-        tool: TOOL,
-        sheet: 'weeks',
-        rows: changed.map((weekStart) => ({ week_start: weekStart, data: map[weekStart], updated_at: now })),
-      });
+      await upsertRows(
+        'pp_weeks',
+        changed.map((weekStart) => ({ week_start: weekStart, data: map[weekStart], updated_at: now }))
+      );
 
       // …and refresh each one's REVIEW scoreboard (computed projection).
-      await call('/upsert', {
-        tool: TOOL,
-        sheet: 'reviews',
-        rows: changed.map((weekStart) => {
+      await upsertRows(
+        'pp_reviews',
+        changed.map((weekStart) => {
           const w = map[weekStart] || {};
           const a = computeAnalytics(w.commitments || [], w.actions || []);
           return {
@@ -110,13 +101,13 @@ async function flushWeeks() {
             insights: w.lastWeekInsights || {},
             updated_at: now,
           };
-        }),
-      });
+        })
+      );
     }
 
     if (removed.length) {
-      await call('/delete', { tool: TOOL, sheet: 'weeks', ids: removed });
-      await call('/delete', { tool: TOOL, sheet: 'reviews', ids: removed });
+      await deleteRows('pp_weeks', removed);
+      await deleteRows('pp_reviews', removed);
     }
 
     lastSynced = current;
@@ -142,13 +133,9 @@ async function flushSettings() {
   if (!patch) return;
   if (!getToken()) return;
   try {
-    // The settings sheet is a singleton row keyed id='settings'; /upsert MERGES,
-    // so partial patches (e.g. only gcal_event_ids) leave the rest untouched.
-    await call('/upsert', {
-      tool: TOOL,
-      sheet: 'settings',
-      rows: [{ id: 'settings', ...patch, updated_at: new Date().toISOString() }],
-    });
+    // Singleton row keyed id='settings'; upsertRows MERGES, so partial patches
+    // (e.g. only gcal_event_ids) leave the rest untouched.
+    await upsertRows('pp_settings', [{ id: 'settings', ...patch, updated_at: new Date().toISOString() }]);
   } catch {
     /* retried implicitly by the next settings change */
   }
@@ -177,8 +164,8 @@ if (isConfigured) {
 // ── Google Calendar event-id map (cross-device de-dupe) ─────────────────────
 export async function loadGcalEventIds() {
   if (!isConfigured) return null;
-  const rows = await call('/list', { tool: TOOL, sheet: 'settings' });
-  return (rows || [])[0]?.gcal_event_ids || {};
+  const rows = await listRows('pp_settings');
+  return rows[0]?.gcal_event_ids || {};
 }
 
 export function saveGcalEventIds(map) {

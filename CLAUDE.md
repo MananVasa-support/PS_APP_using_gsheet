@@ -1,41 +1,46 @@
 # Project handoff — Productivity Shastra (read me first)
 
-## ⚠️ THIS BRANCH: `gsheets-backend` — Supabase REMOVED, Google Sheets backend
+## ⚠️ THIS BRANCH: `gsheets-backend` — Supabase REMOVED, DIRECT Google Sheets
 
-An experiment branch (2026-06-12) to compare speed vs the Supabase version on
-`master`. Everything below this section describes `master`; on THIS branch:
+A demo/experiment branch (2026-06-12) to compare against the Supabase version
+on `master`. Everything below this section describes `master`; on THIS branch:
 
-- **Backend = ONE Google Apps Script web app** (`backend/gsheets/Code.gs`) +
-  Google Drive/Sheets as the database. Deploy steps: `backend/gsheets/README.md`.
-  Manual setup = create 1 Drive folder, paste its id into Code.gs, deploy as
-  Web app (Execute as Me / Anyone), put the `/exec` URL in `frontend/.env` as
-  `VITE_API_BASE_URL`. Everything else (per-user folders, per-tool spreadsheets,
-  worksheets, headers) auto-creates. Re-deploy "New version" after script edits.
-- **Auth**: users/sessions sheets in a `_System` spreadsheet. SHA-256+salt
-  password hashes; session token in sessionStorage (F5 keeps login, fresh
-  launch doesn't). Signup blocks duplicate email/phone, returns to login (no
-  auto-login). Password reset = emailed 6-digit code (MailApp, ~100/day quota)
-  → one-time reset token → `/reset-password`. **Signup email-OTP confirmation
-  SKIPPED on this branch** (register returns needsEmailConfirmation:false).
-- **Frontend changes**: new `lib/gsApi.js` (transport: POST text/plain JSON to
-  dodge CORS preflight, token in body; per-request timing logs —
-  `window.apiTimings()` console.tables them; retry+backoff on rate limits;
-  client-generated row ids). `lib/supabase.js` is now a SHIM (auth.getSession/
-  onAuthStateChange/signOut work off gsApi; .from/.rpc throw) so the ~12 legacy
-  services (admin/consultant/time/report/form/analytics…) compile untouched —
-  their Supabase paths referenced tables that never existed, so behavior is
-  unchanged. Rewritten internals, exports IDENTICAL: AuthContext, authService,
-  userService, taService, level2Service, tfService, meetingService, ppService
-  (debounced+diffed sync kept), reService (in-memory cache + fire-and-forget
-  kept). `/leaderboard` route replaces the challenge_leaderboard RPC (same
-  scoring). ResetPassword.jsx adapted to the reset-token flow.
-- **Google Calendar**: the Supabase Edge Function "sign-in-once" path is
-  stubbed OFF (`SERVER_GCAL=false` in googleCalendarApi.js); the classic GIS
-  popup fallback still works (VITE_GOOGLE_CLIENT_ID, re-consent ~hourly).
-  Avatar upload throws "not available" (no file storage in Sheets).
-- `@supabase/supabase-js` uninstalled. Demo mode (no VITE_API_BASE_URL) still
-  works exactly as before. Build green. Do NOT merge into master — comparison
-  experiment only.
+- **NO SERVER AT ALL** (user dropped the earlier Apps Script middle step —
+  `backend/gsheets/Code.gs` is kept only as reference, superseded). The browser
+  talks DIRECTLY to the Drive API v3 + Sheets API v4 via `lib/gsApi.js`.
+  Only env var: `VITE_GOOGLE_CLIENT_ID` (same OAuth client as Calendar) —
+  `isConfigured` = its presence; empty = offline/localStorage demo mode.
+  Cloud project needs **Google Sheets API + Google Drive API enabled**. Scope
+  `spreadsheets + drive.file`; one consent popup per ~hour (token cached in
+  sessionStorage), popup only ever opens from user-gesture paths
+  (interactive:false at app boot).
+- **Drive structure (all auto-created, ids cached in _meta + memory):**
+  root folder `Productivity-Shastra-Data` → `_System` spreadsheet (tabs:
+  `users`, `_meta`) → ONE FOLDER PER USER `"<Name> — <email>"` created at
+  SIGNUP, containing 5 spreadsheets: Time Auditor (entries, challenges),
+  Time Finder (assessments), Meeting (meetings), Power Planner (weeks,
+  reviews, settings), Reasons Eliminator (sessions, grip_tests, grip_history).
+  Tab row 1 = headers mirroring old Postgres columns (no user_id — the folder
+  is the scope); cells JSON-encoded. Everything lives in the Drive of whoever
+  completes the consent popup (demo-grade single-account model).
+- **Auth = users tab, checked CLIENT-SIDE** (demo-grade; SHA-256+salt hashes
+  via Web Crypto, never plain). Session token in sessionStorage (F5 keeps
+  login, fresh launch doesn't). Duplicate email/phone blocked; signup returns
+  to login (no auto-login) and PROVISIONS the user's folder+spreadsheets.
+  **Password reset, email change, signup OTP: stubbed** ("not available in the
+  Sheets demo" — they need an email server). Deleted users-sheet row → next
+  app boot signs out.
+- **Services**: exports IDENTICAL to master (pages untouched). gsApi surface =
+  listRows/upsertRows(merge)/deleteRows/clearRows + listRowsForUser.
+  ppService keeps debounced+diffed sync; reService keeps in-memory cache +
+  fire-and-forget. **Leaderboard computed CLIENT-SIDE** in level2Service
+  (reads every user's Time Auditor sheets via _meta; same 50/50 formula).
+  `lib/supabase.js` is a SHIM (auth.* works off gsApi; .from/.rpc throw) so
+  the ~12 legacy services compile untouched. Timing: every Google API call
+  logs ms; `window.apiTimings()` console.tables the session.
+- **Google Calendar**: Edge-Function path stubbed OFF; classic GIS popup
+  fallback works. Avatar upload throws "not available".
+- `@supabase/supabase-js` uninstalled. Build green. Do NOT merge into master.
 
 ---
 

@@ -1,24 +1,20 @@
-import { call, newId, getToken, isConfigured } from '@/lib/gsApi';
+import { listRows, upsertRows, deleteRows, newId, getToken, isConfigured } from '@/lib/gsApi';
 
 /**
  * Time Auditor assessments — the single data layer for the whole Time Auditor
  * suite (tool, Final Summary, Analytics, Reports).
  *
- * Storage model (Google Sheets backend): ONE row per assessment in the user's
- * "Time Auditor" spreadsheet, `entries` worksheet:
+ * Storage (direct Google Sheets): ONE row per assessment in the user's
+ * "Time Auditor" spreadsheet (inside their Drive folder), `entries` tab:
  *   id | entry (JSON) | created_at
  * The `entry` holds the full assessment exactly as the UI builds it:
  *   { date, startTime, slots[], top3[], stats, active }
- * A user can take the assessment INFINITE times → infinite rows. Per-user
- * isolation: the session token only ever resolves to that user's spreadsheet.
+ * Ids are generated CLIENT-SIDE (uuid).
  *
- * Ids are generated CLIENT-SIDE (uuid) — the Sheets backend never invents ids.
- *
- * Offline/demo (no VITE_API_BASE_URL): falls back to localStorage, same shape.
+ * Offline/demo (no VITE_GOOGLE_CLIENT_ID): falls back to localStorage.
  */
 
 const LOCAL_KEY = 'ta_assessments_v2';
-const TOOL = 'time-auditor';
 
 // ── localStorage fallback (demo mode) ───────────────────────────────────────
 function localList() {
@@ -45,8 +41,8 @@ const rowToAssessment = (row) => ({ id: row.id, ...(row.entry || {}) });
 /** All of the signed-in user's assessments, newest first. */
 export async function listAssessments() {
   if (!isConfigured) return localList();
-  const rows = await call('/list', { tool: TOOL, sheet: 'entries' });
-  return (rows || [])
+  const rows = await listRows('ta_entries');
+  return rows
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .map(rowToAssessment);
 }
@@ -60,7 +56,7 @@ export async function saveAssessment(payload) {
   }
   if (!getToken()) throw new Error('Not signed in.');
   const row = { id: newId(), entry: payload, created_at: new Date().toISOString() };
-  const [saved] = await call('/upsert', { tool: TOOL, sheet: 'entries', rows: [row] });
+  const [saved] = await upsertRows('ta_entries', [row]);
   return rowToAssessment(saved || row);
 }
 
@@ -70,7 +66,7 @@ export async function updateAssessment(id, payload) {
     localWrite(localList().map((a) => (a.id === id ? { id, ...payload } : a)));
     return { id, ...payload };
   }
-  const [saved] = await call('/upsert', { tool: TOOL, sheet: 'entries', rows: [{ id, entry: payload }] });
+  const [saved] = await upsertRows('ta_entries', [{ id, entry: payload }]);
   return rowToAssessment(saved || { id, entry: payload });
 }
 
@@ -80,6 +76,6 @@ export async function deleteAssessment(id) {
     localWrite(localList().filter((a) => a.id !== id));
     return { ok: true };
   }
-  await call('/delete', { tool: TOOL, sheet: 'entries', ids: [id] });
+  await deleteRows('ta_entries', [id]);
   return { ok: true };
 }

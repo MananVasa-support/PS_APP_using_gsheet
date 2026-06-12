@@ -1,21 +1,27 @@
-import { call, isConfigured, getSession, patchSessionUser } from '@/lib/gsApi';
+import { listRows, upsertRows, isConfigured, getSession, patchSessionUser } from '@/lib/gsApi';
 import { mapProfile } from '@/utils/mappers';
 import { demoUser } from '@/data/mockData';
 
-/** Current-user profile + preferences (Google Sheets backend: users sheet). */
+/** Current-user profile + preferences (users tab of the _System spreadsheet). */
+
+function myId() {
+  const id = getSession()?.user?.id;
+  if (!id) throw new Error('Not authenticated');
+  return id;
+}
 
 export async function getProfile() {
   if (!isConfigured) return demoUser;
-  if (!getSession()?.token) throw new Error('Not authenticated');
-  const me = await call('/me');
-  return mapProfile(me);
+  const id = myId();
+  const users = await listRows('users');
+  return mapProfile(users.find((u) => u.id === id) || null);
 }
 
 /** Update the user's own profile. Sensitive fields (role/status) are simply
- *  not accepted by the /updateProfile route, mirroring the old DB trigger. */
+ *  never written here, mirroring the old DB trigger. */
 export async function updateProfile(payload = {}) {
   if (!isConfigured) return { ...demoUser, ...payload };
-  if (!getSession()?.token) throw new Error('Not authenticated');
+  const id = myId();
 
   const ALLOWED = ['name', 'title', 'department', 'phone', 'country', 'timezone', 'avatar'];
   const patch = {};
@@ -24,7 +30,8 @@ export async function updateProfile(payload = {}) {
   }
   if (Object.keys(patch).length === 0) return getProfile();
 
-  const updated = await call('/updateProfile', { patch });
+  // upsertRows MERGES by id — only the provided columns change.
+  const [updated] = await upsertRows('users', [{ id, ...patch }]);
   const profile = mapProfile(updated);
   patchSessionUser(profile); // keep the cached session user fresh
   return profile;
@@ -32,13 +39,13 @@ export async function updateProfile(payload = {}) {
 
 export async function updatePreferences(prefs) {
   if (!isConfigured) return prefs;
-  if (!getSession()?.token) throw new Error('Not authenticated');
-  const updated = await call('/updateProfile', { patch: { preferences: prefs } });
+  const id = myId();
+  const [updated] = await upsertRows('users', [{ id, preferences: prefs }]);
   return updated?.preferences || prefs;
 }
 
-/** File storage doesn't exist on the Sheets backend — avatars are URL-only. */
+/** File storage doesn't exist on the Sheets demo — avatars are URL-only. */
 export async function uploadAvatar() {
   if (!isConfigured) return { path: '', url: '' };
-  throw new Error('Avatar upload is not available on the Google Sheets backend.');
+  throw new Error('Avatar upload is not available in the Google Sheets demo.');
 }

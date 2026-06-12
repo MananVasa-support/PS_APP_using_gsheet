@@ -1,15 +1,15 @@
-import { call, newId, getToken, isConfigured } from '@/lib/gsApi';
+import { listRows, upsertRows, deleteRows, clearRows, newId, getToken, isConfigured } from '@/lib/gsApi';
 
 /**
  * Time Finder assessments — data layer for the whole Time Finder tool.
  *
- * Storage model (Google Sheets backend): ONE row per assessment in the user's
- * "Time Finder" spreadsheet, `assessments` worksheet:
+ * Storage (direct Google Sheets): ONE row per assessment in the user's
+ * "Time Finder" spreadsheet, `assessments` tab:
  *   id | assessment (JSON) | archived | created_at
  * `assessment` holds the object the UI builds: { title?, createdAt, routines[],
  * totalTimeSaved }. Active vs archived lives in the `archived` column.
  *
- * Demo mode (no VITE_API_BASE_URL): falls back to the original localStorage
+ * Demo mode (no Google client id): falls back to the original localStorage
  * keys ('assessments' / 'archivedAssessments') so the tool still works offline.
  *
  * NOTE: the in-progress working draft ('currentAssessment') deliberately stays
@@ -18,7 +18,6 @@ import { call, newId, getToken, isConfigured } from '@/lib/gsApi';
 
 const ACTIVE_KEY = 'assessments';
 const ARCHIVED_KEY = 'archivedAssessments';
-const TOOL = 'time-finder';
 
 // ── localStorage fallback (demo mode) ───────────────────────────────────────
 const localRead = (key) => {
@@ -45,8 +44,8 @@ export async function listAssessments() {
   if (!isConfigured) {
     return { active: localRead(ACTIVE_KEY), archived: localRead(ARCHIVED_KEY) };
   }
-  const rows = await call('/list', { tool: TOOL, sheet: 'assessments' });
-  const all = (rows || [])
+  const rows = await listRows('tf_assessments');
+  const all = rows
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .map(rowToAssessment);
   return {
@@ -65,7 +64,7 @@ export async function saveAssessment(payload, { archived = false } = {}) {
   }
   if (!getToken()) throw new Error('Not signed in.');
   const row = { id: newId(), assessment: payload, archived, created_at: new Date().toISOString() };
-  const [saved] = await call('/upsert', { tool: TOOL, sheet: 'assessments', rows: [row] });
+  const [saved] = await upsertRows('tf_assessments', [row]);
   return rowToAssessment(saved || row);
 }
 
@@ -77,7 +76,7 @@ export async function updateAssessment(id, payload) {
     }
     return { id, ...payload };
   }
-  const [saved] = await call('/upsert', { tool: TOOL, sheet: 'assessments', rows: [{ id, assessment: payload }] });
+  const [saved] = await upsertRows('tf_assessments', [{ id, assessment: payload }]);
   return rowToAssessment(saved || { id, assessment: payload });
 }
 
@@ -94,7 +93,7 @@ export async function setArchived(id, archived) {
     }
     return { ok: true };
   }
-  await call('/upsert', { tool: TOOL, sheet: 'assessments', rows: [{ id, archived }] });
+  await upsertRows('tf_assessments', [{ id, archived }]);
   return { ok: true };
 }
 
@@ -106,7 +105,7 @@ export async function deleteAssessment(id) {
     }
     return { ok: true };
   }
-  await call('/delete', { tool: TOOL, sheet: 'assessments', ids: [id] });
+  await deleteRows('tf_assessments', [id]);
   return { ok: true };
 }
 
@@ -117,6 +116,6 @@ export async function clearAssessments(archived) {
     return { ok: true };
   }
   if (!getToken()) throw new Error('Not signed in.');
-  await call('/clear', { tool: TOOL, sheet: 'assessments', where: { archived: !!archived } });
+  await clearRows('tf_assessments', { archived: !!archived });
   return { ok: true };
 }
