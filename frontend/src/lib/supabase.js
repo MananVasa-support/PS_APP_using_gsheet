@@ -1,39 +1,24 @@
-// Supabase client. When the two env vars are present (see frontend/.env), this
-// exports a real client and `isConfigured=true`, flipping the whole app from the
-// offline/localStorage demo path onto the real database + auth. When they're
-// absent, it falls back to a throwing stub so offline/demo mode still compiles
-// (every service gates on `isConfigured` and uses localStorage in that case).
+// COMPATIBILITY SHIM — Supabase is GONE on this branch (gsheets-backend).
+//
+// The real backend is a Google Apps Script web app + Google Sheets (see
+// src/lib/gsApi.js and backend/gsheets/Code.gs). This file keeps the same
+// exports the rest of the app has always imported:
+//
+//   isConfigured  — true when VITE_API_BASE_URL is set (was: Supabase env vars)
+//   unwrapError   — unchanged error normalizer
+//   supabase      — a MINIMAL stand-in:
+//       supabase.auth.getSession / onAuthStateChange / signOut work, backed by
+//       the Sheets session (several services only ever used auth.getSession()
+//       to learn the user id). EVERYTHING ELSE (.from, .rpc, .storage,
+//       .channel, .functions) throws — exactly like the legacy services'
+//       calls against tables/RPCs that never existed in schema.sql behaved on
+//       the Supabase branch.
+//
+// New code should import from '@/lib/gsApi' directly, not from here.
 
-import { createClient } from '@supabase/supabase-js';
+import { getSession, onAuthChange, clearSession, isConfigured as configured } from './gsApi';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const isConfigured = Boolean(url && anonKey);
-
-export const supabase = isConfigured
-  ? createClient(url, anonKey, {
-      auth: {
-        // Middle-ground persistence: the session lives in sessionStorage, so a
-        // REFRESH (F5) keeps the user logged in, but closing the tab/browser or
-        // a fresh launch starts at the login page (no auto-login). Swap the
-        // storage to window.localStorage to restore "stay logged in forever".
-        persistSession: true,
-        storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    })
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(
-            '[supabase] not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env'
-          );
-        },
-      }
-    );
+export const isConfigured = configured;
 
 export function unwrapError(err) {
   if (!err) return null;
@@ -45,3 +30,39 @@ export function unwrapError(err) {
   e.details = err.details;
   return e;
 }
+
+// Shape a gsApi session like a Supabase session: { access_token, user: { id } }.
+const toSupabaseSession = (s) =>
+  s?.token ? { access_token: s.token, user: { id: s.user?.id, email: s.user?.email } } : null;
+
+const auth = {
+  async getSession() {
+    return { data: { session: toSupabaseSession(getSession()) } };
+  },
+  onAuthStateChange(callback) {
+    const unsubscribe = onAuthChange((event, s) => callback(event, toSupabaseSession(s)));
+    return { data: { subscription: { unsubscribe } } };
+  },
+  async signOut() {
+    clearSession();
+    return { error: null };
+  },
+};
+
+function notAvailable(api) {
+  return () => {
+    throw new Error(
+      `[supabase shim] ${api} is not available on the Google Sheets backend — use '@/lib/gsApi' instead.`
+    );
+  };
+}
+
+export const supabase = {
+  auth,
+  from: notAvailable('supabase.from()'),
+  rpc: notAvailable('supabase.rpc()'),
+  channel: notAvailable('supabase.channel()'),
+  removeChannel: () => {},
+  storage: { from: notAvailable('supabase.storage') },
+  functions: { invoke: notAvailable('supabase.functions') },
+};

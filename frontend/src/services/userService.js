@@ -1,80 +1,44 @@
-import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
+import { call, isConfigured, getSession, patchSessionUser } from '@/lib/gsApi';
 import { mapProfile } from '@/utils/mappers';
 import { demoUser } from '@/data/mockData';
 
-/** Current-user profile, preferences, and avatar upload. */
-
-async function getMyId() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.user?.id || null;
-}
+/** Current-user profile + preferences (Google Sheets backend: users sheet). */
 
 export async function getProfile() {
   if (!isConfigured) return demoUser;
-  const id = await getMyId();
-  if (!id) throw new Error('Not authenticated');
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
-  if (error) throw unwrapError(error);
-  return mapProfile(data);
+  if (!getSession()?.token) throw new Error('Not authenticated');
+  const me = await call('/me');
+  return mapProfile(me);
 }
 
-/** Update the user's own profile. Sensitive fields (role/status/clientId)
- *  are blocked by a DB trigger and silently ignored if passed. */
+/** Update the user's own profile. Sensitive fields (role/status) are simply
+ *  not accepted by the /updateProfile route, mirroring the old DB trigger. */
 export async function updateProfile(payload = {}) {
   if (!isConfigured) return { ...demoUser, ...payload };
-  const id = await getMyId();
-  if (!id) throw new Error('Not authenticated');
+  if (!getSession()?.token) throw new Error('Not authenticated');
 
   const ALLOWED = ['name', 'title', 'department', 'phone', 'country', 'timezone', 'avatar'];
-  const row = {};
+  const patch = {};
   for (const key of ALLOWED) {
-    if (payload[key] !== undefined) row[key] = payload[key];
+    if (payload[key] !== undefined) patch[key] = payload[key];
   }
-  if (Object.keys(row).length === 0) return getProfile();
+  if (Object.keys(patch).length === 0) return getProfile();
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(row)
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw unwrapError(error);
-  return mapProfile(data);
+  const updated = await call('/updateProfile', { patch });
+  const profile = mapProfile(updated);
+  patchSessionUser(profile); // keep the cached session user fresh
+  return profile;
 }
 
 export async function updatePreferences(prefs) {
   if (!isConfigured) return prefs;
-  const id = await getMyId();
-  if (!id) throw new Error('Not authenticated');
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ preferences: prefs })
-    .eq('id', id)
-    .select('preferences')
-    .single();
-  if (error) throw unwrapError(error);
-  return data?.preferences || prefs;
+  if (!getSession()?.token) throw new Error('Not authenticated');
+  const updated = await call('/updateProfile', { patch: { preferences: prefs } });
+  return updated?.preferences || prefs;
 }
 
-/** Upload an avatar image to the `avatars` bucket and persist its URL on the profile. */
-export async function uploadAvatar(file) {
+/** File storage doesn't exist on the Sheets backend — avatars are URL-only. */
+export async function uploadAvatar() {
   if (!isConfigured) return { path: '', url: '' };
-  const id = await getMyId();
-  if (!id) throw new Error('Not authenticated');
-  if (!file) throw new Error('No file provided');
-
-  const ext = (file.name?.split('.').pop() || 'png').toLowerCase();
-  const path = `${id}/avatar.${ext}`;
-  const { error: upErr } = await supabase.storage
-    .from('avatars')
-    .upload(path, file, { upsert: true, contentType: file.type || 'image/png' });
-  if (upErr) throw unwrapError(upErr);
-
-  const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-  const url = pub.publicUrl;
-  const { error: updErr } = await supabase.from('profiles').update({ avatar: url }).eq('id', id);
-  if (updErr) throw unwrapError(updErr);
-  return { path, url };
+  throw new Error('Avatar upload is not available on the Google Sheets backend.');
 }

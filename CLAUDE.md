@@ -1,5 +1,44 @@
 # Project handoff — Productivity Shastra (read me first)
 
+## ⚠️ THIS BRANCH: `gsheets-backend` — Supabase REMOVED, Google Sheets backend
+
+An experiment branch (2026-06-12) to compare speed vs the Supabase version on
+`master`. Everything below this section describes `master`; on THIS branch:
+
+- **Backend = ONE Google Apps Script web app** (`backend/gsheets/Code.gs`) +
+  Google Drive/Sheets as the database. Deploy steps: `backend/gsheets/README.md`.
+  Manual setup = create 1 Drive folder, paste its id into Code.gs, deploy as
+  Web app (Execute as Me / Anyone), put the `/exec` URL in `frontend/.env` as
+  `VITE_API_BASE_URL`. Everything else (per-user folders, per-tool spreadsheets,
+  worksheets, headers) auto-creates. Re-deploy "New version" after script edits.
+- **Auth**: users/sessions sheets in a `_System` spreadsheet. SHA-256+salt
+  password hashes; session token in sessionStorage (F5 keeps login, fresh
+  launch doesn't). Signup blocks duplicate email/phone, returns to login (no
+  auto-login). Password reset = emailed 6-digit code (MailApp, ~100/day quota)
+  → one-time reset token → `/reset-password`. **Signup email-OTP confirmation
+  SKIPPED on this branch** (register returns needsEmailConfirmation:false).
+- **Frontend changes**: new `lib/gsApi.js` (transport: POST text/plain JSON to
+  dodge CORS preflight, token in body; per-request timing logs —
+  `window.apiTimings()` console.tables them; retry+backoff on rate limits;
+  client-generated row ids). `lib/supabase.js` is now a SHIM (auth.getSession/
+  onAuthStateChange/signOut work off gsApi; .from/.rpc throw) so the ~12 legacy
+  services (admin/consultant/time/report/form/analytics…) compile untouched —
+  their Supabase paths referenced tables that never existed, so behavior is
+  unchanged. Rewritten internals, exports IDENTICAL: AuthContext, authService,
+  userService, taService, level2Service, tfService, meetingService, ppService
+  (debounced+diffed sync kept), reService (in-memory cache + fire-and-forget
+  kept). `/leaderboard` route replaces the challenge_leaderboard RPC (same
+  scoring). ResetPassword.jsx adapted to the reset-token flow.
+- **Google Calendar**: the Supabase Edge Function "sign-in-once" path is
+  stubbed OFF (`SERVER_GCAL=false` in googleCalendarApi.js); the classic GIS
+  popup fallback still works (VITE_GOOGLE_CLIENT_ID, re-consent ~hourly).
+  Avatar upload throws "not available" (no file storage in Sheets).
+- `@supabase/supabase-js` uninstalled. Demo mode (no VITE_API_BASE_URL) still
+  works exactly as before. Build green. Do NOT merge into master — comparison
+  experiment only.
+
+---
+
 This file is auto-loaded by Claude Code at the start of every session opened in
 this folder. It exists so a new session can work smartly **without** re-reading
 the whole codebase and without needing `--resume`/`--continue`. Keep it current.

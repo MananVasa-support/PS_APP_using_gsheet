@@ -12,7 +12,7 @@
 import { addDaysISO } from "./weekDates";
 import { addDurationToStartTime } from "./powerPlannerUtils";
 import { browserTimeZone } from "./googleCalendar";
-import { isConfigured, supabase } from "@/lib/supabase";
+import { isConfigured } from "@/lib/supabase";
 import { loadGcalEventIds, saveGcalEventIds } from "@/services/ppService";
 
 const GOOGLE_CLIENT_ID =
@@ -40,22 +40,19 @@ const loadGis = () => {
   return gisPromise;
 };
 
-// ── "Sign in once" server tokens (Supabase Edge Function `gcal`) ────────────
-// The user consents to Google ONE time; the refresh token lives server-side
-// and every later export gets a fresh access token here silently — no popup,
-// any device. Falls back to the classic GIS popup if the function isn't
-// deployed/reachable.
-const FN_BASE = `${import.meta.env?.VITE_SUPABASE_URL || ""}/functions/v1/gcal`;
+// ── "Sign in once" server tokens — NOT AVAILABLE on the Sheets backend ──────
+// The Supabase Edge Function `gcal` (server-held refresh tokens) does not
+// exist on the gsheets-backend branch, so the silent sign-in-once path is
+// stubbed off and every flow below falls through to the classic GIS popup
+// (frontend-only OAuth; the user re-connects roughly once an hour).
+const SERVER_GCAL = false;
+const FN_BASE = "";
 
-const fnAuthHeader = async () => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : null;
-};
+const fnAuthHeader = async () => null;
 
 // Silent token from the stored refresh token. null = not connected / no function.
 const serverToken = async () => {
+  if (!SERVER_GCAL) return null;
   try {
     const headers = await fnAuthHeader();
     if (!headers) return null;
@@ -73,6 +70,7 @@ const serverToken = async () => {
 // completed connection by POLLING /token until it succeeds (or the window is
 // closed / ~2 minutes pass).
 const connectViaServer = async () => {
+  if (!SERVER_GCAL) throw new Error("__fn_unavailable__");
   const headers = await fnAuthHeader();
   if (!headers) throw new Error("Not signed in.");
   const res = await fetch(`${FN_BASE}/authorize`, { method: "POST", headers });
@@ -96,6 +94,7 @@ const connectViaServer = async () => {
 
 /** Forget the Google connection (lets the user switch accounts). */
 export const disconnectGoogleCalendar = async () => {
+  if (!SERVER_GCAL) return { ok: false }; // popup tokens aren't stored anywhere
   const headers = await fnAuthHeader();
   if (!headers) return { ok: false };
   try {
@@ -108,8 +107,9 @@ export const disconnectGoogleCalendar = async () => {
 
 // Get a Calendar access token. Order: silent server token → one-time server
 // connect (single consent, then silent forever) → classic GIS popup fallback.
+// On the Sheets backend SERVER_GCAL is false, so this goes straight to the popup.
 export const requestCalendarToken = async () => {
-  if (isConfigured) {
+  if (isConfigured && SERVER_GCAL) {
     let token = await serverToken();
     if (token) return token;
     try {

@@ -1,12 +1,13 @@
-import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
+import { call, getSession, setSession, clearSession, isConfigured } from '@/lib/gsApi';
 import { mapProfile } from '@/utils/mappers';
 import { normalizeRole } from '@/utils/roles';
 import { demoUser } from '@/data/mockData';
 
 /**
- * Auth service backed by Supabase Auth + the `profiles` table.
+ * Auth service backed by the Google Apps Script web app (users/sessions sheets
+ * in the _System spreadsheet — see backend/gsheets/Code.gs).
  *
- * Public surface (kept stable so existing pages don't change):
+ * Public surface (kept IDENTICAL to the Supabase branch so no page changes):
  *   login({ email, password, role }) -> { token, user }
  *   register({ name, email, phone, password }) -> { token, user, pending, needsEmailConfirmation }
  *   requestPasswordResetCode(email)  -> { exists, message? }
@@ -15,24 +16,43 @@ import { demoUser } from '@/data/mockData';
  *   getCurrentUser()                 -> profile | null
  *   logout()
  *
- * When Supabase env vars are missing we fall back to a demo response so the
- * UI is still explorable offline (see src/lib/supabase.js).
+ * Differences vs Supabase (deliberate, this branch is an experiment):
+ *   - signup email-OTP confirmation is SKIPPED (register returns
+ *     needsEmailConfirmation:false, so Register.jsx goes straight to /login).
+ *     verifySignupCode/resendSignupCode stay exported as no-ops.
+ *   - password reset still uses an emailed 6-digit code (MailApp, ~100
+ *     emails/day quota). The "recovery session" is a one-time reset token kept
+ *     in sessionStorage until the new password is saved.
+ *
+ * When VITE_API_BASE_URL is missing we fall back to the same demo responses
+ * as before so the UI stays explorable offline.
  */
 
-const ROLE_MISMATCH =
-  "This account isn't a {role}. Please pick the correct role and try again.";
+const ROLE_MISMATCH = "This account isn't a {role}. Please pick the correct role and try again.";
 
 const DEMO_ADMIN_EMAILS = ['admin@unleashed.in', 'alex.morgan@unleashed.in'];
 const DEMO_CONSULTANT_EMAILS = ['consultant@unleashed.in', 'priya.nair@unleashed.in'];
 
-async function fetchProfileById(id) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw unwrapError(error);
-  return mapProfile(data);
+// "Recovery session": proof that the user typed a valid reset code, pending
+// the new password. sessionStorage (like the auth session) — survives F5 only.
+const RECOVERY_KEY = 'gs.recovery';
+
+const readRecovery = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(RECOVERY_KEY)) || null;
+  } catch {
+    return null;
+  }
+};
+
+/** Is a password reset mid-flight? (ResetPassword.jsx gates on this.) */
+export function hasRecoverySession() {
+  return Boolean(readRecovery()?.resetToken);
+}
+
+/** Abandon the in-progress reset (leaving the page, Back to login, …). */
+export function clearRecoverySession() {
+  sessionStorage.removeItem(RECOVERY_KEY);
 }
 
 export async function login({ email, password, role }) {
@@ -47,40 +67,30 @@ export async function login({ email, password, role }) {
     };
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: (email || '').trim(),
-    password,
-  });
-  if (error) throw unwrapError(error);
-
-  const profile = await fetchProfileById(data.user.id);
-  if (!profile) {
-    await supabase.auth.signOut();
-    throw new Error('Your account is missing a profile. Please contact support.');
-  }
+  const data = await call('/login', { email: (email || '').trim(), password }, { auth: false });
+  const profile = mapProfile(data.user);
 
   if (role && normalizeRole(profile.role) !== normalizeRole(role)) {
-    await supabase.auth.signOut();
     throw new Error(ROLE_MISMATCH.replace('{role}', role));
   }
 
-  return { token: data.session?.access_token || null, user: profile };
+  setSession({ token: data.token, user: profile });
+  return { token: data.token, user: profile };
 }
 
 /**
- * Pre-signup check: is this email or phone already registered? Uses a
- * SECURITY DEFINER RPC (`signup_availability`) so the not-logged-in signup form
- * can ask without being able to read any actual profile data. Returns booleans.
+ * Pre-signup check: is this email or phone already registered? Server-side
+ * lookup against the users sheet — returns only booleans, same as the old
+ * signup_availability RPC.
  */
 export async function checkSignupAvailability(email, phone) {
   if (!isConfigured) return { emailTaken: false, phoneTaken: false };
-  const { data, error } = await supabase.rpc('signup_availability', {
-    p_email: (email || '').trim(),
-    p_phone: (phone || '').trim(),
-  });
-  if (error) throw unwrapError(error);
-  const row = Array.isArray(data) ? data[0] : data;
-  return { emailTaken: !!row?.email_taken, phoneTaken: !!row?.phone_taken };
+  const data = await call(
+    '/availability',
+    { email: (email || '').trim(), phone: (phone || '').trim() },
+    { auth: false }
+  );
+  return { emailTaken: !!data?.email_taken, phoneTaken: !!data?.phone_taken };
 }
 
 export async function register({ name, email, phone, password }) {
@@ -92,190 +102,118 @@ export async function register({ name, email, phone, password }) {
     };
   }
 
-  const { data, error } = await supabase.auth.signUp({
-    email: (email || '').trim(),
-    password,
-    options: {
-      data: { name, phone, role: 'client' },
-    },
-  });
-  if (error) {
-    const mapped = unwrapError(error);
-    const msg = mapped.message || '';
-    // Friendly duplicate messages — whether the block comes from Supabase Auth
-    // ("user already registered") or from our DB unique indexes firing inside
-    // the signup trigger ("profiles_email_unique" / "profiles_phone_unique").
-    if (/profiles_phone_unique/i.test(msg)) {
-      mapped.message = 'An account already exists with this phone number.';
-    } else if (/already\s*(registered|exists)|user already|profiles_email_unique|duplicate key/i.test(msg)) {
-      mapped.message = 'An account already exists with this email.';
-    }
-    throw mapped;
-  }
+  const data = await call(
+    '/signup',
+    { name, email: (email || '').trim(), phone: (phone || '').trim(), password },
+    { auth: false }
+  );
 
-  // With "Confirm email" ON, signUp returns NO session — the account stays
-  // unconfirmed until the user enters the emailed 6-digit code (verifySignupCode
-  // below). With it OFF, signUp returns a session; we sign out so the user still
-  // logs in manually instead of being auto-logged-in.
-  let profile = null;
-  if (data.session?.user?.id) {
-    profile = await fetchProfileById(data.session.user.id);
-    await supabase.auth.signOut();
-  }
-
+  // No auto-login and (on this branch) no email confirmation step — the user
+  // goes straight back to the login page.
   return {
     token: null,
-    user: profile,
+    user: mapProfile(data?.user),
     pending: true,
-    needsEmailConfirmation: !data.session,
+    needsEmailConfirmation: false,
   };
 }
 
-/**
- * Verify the 6-digit code emailed at signup (type 'signup'). On success the
- * email is confirmed; we sign out so the user logs in fresh.
- */
-export async function verifySignupCode(email, code) {
-  if (!isConfigured) return { ok: true };
-  const { error } = await supabase.auth.verifyOtp({
-    email: (email || '').trim(),
-    token: (code || '').trim(),
-    type: 'signup',
-  });
-  if (error) {
-    const mapped = unwrapError(error);
-    if (/expired|invalid|token/i.test(mapped.message || '')) {
-      mapped.message = 'That code is invalid or has expired. Request a new one.';
-    }
-    throw mapped;
-  }
-  await supabase.auth.signOut();
+/** Signup email confirmation is skipped on the Sheets branch — kept as no-ops
+ *  so Register.jsx compiles unchanged (it never reaches the code step). */
+export async function verifySignupCode() {
   return { ok: true };
 }
-
-/** Re-send the signup confirmation code to the same email. */
-export async function resendSignupCode(email) {
-  if (!isConfigured) return { ok: true };
-  const { error } = await supabase.auth.resend({ type: 'signup', email: (email || '').trim() });
-  if (error) throw unwrapError(error);
+export async function resendSignupCode() {
   return { ok: true };
 }
 
 /**
  * Step 1 of the code-based reset. Returns { exists:false } when no account uses
- * this email (so the UI can say "no account exists with this email"); otherwise
- * sends the recovery email (which carries a 6-digit code) and returns
- * { exists:true }.
+ * this email; otherwise the script emails a 6-digit code (MailApp).
  */
 export async function requestPasswordResetCode(email) {
   const clean = (email || '').trim();
   if (!isConfigured) {
     return { exists: true, message: 'A reset code has been sent (demo).' };
   }
-  const { emailTaken } = await checkSignupAvailability(clean, '');
-  if (!emailTaken) return { exists: false };
-
-  const { error } = await supabase.auth.resetPasswordForEmail(clean, {
-    // Kept as a fallback so the email's link (if the template still has one)
-    // also lands somewhere sensible; the primary path is the typed code.
-    redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined,
-  });
-  if (error) throw unwrapError(error);
-  return { exists: true };
+  const data = await call('/requestReset', { email: clean }, { auth: false });
+  return { exists: !!data?.exists };
 }
 
 /**
- * Step 2 of the code-based reset. Verifies the 6-digit code from the email; on
- * success Supabase establishes a temporary recovery session, after which
- * updatePassword() can set the new password.
+ * Step 2: verify the 6-digit code. On success the server swaps it for a
+ * one-time reset token, which we keep as the "recovery session" until
+ * updatePassword() consumes it.
  */
 export async function verifyPasswordResetCode(email, code) {
   if (!isConfigured) return { ok: true };
-  const { data, error } = await supabase.auth.verifyOtp({
-    email: (email || '').trim(),
-    token: (code || '').trim(),
-    type: 'recovery',
-  });
-  if (error) {
-    const mapped = unwrapError(error);
-    if (/expired|invalid|token/i.test(mapped.message || '')) {
-      mapped.message = 'That code is invalid or has expired. Request a new one.';
-    }
-    throw mapped;
+  const clean = (email || '').trim();
+  const data = await call('/verifyReset', { email: clean, code: (code || '').trim() }, { auth: false });
+  try {
+    sessionStorage.setItem(RECOVERY_KEY, JSON.stringify({ email: clean, resetToken: data.resetToken }));
+  } catch {
+    /* ignore */
   }
-  return { ok: true, session: data.session };
+  return { ok: true, session: null };
 }
 
-/**
- * Set a new password for the user who arrived via the reset email link. The
- * recovery session is already active (Supabase processes the link on load), so
- * this just updates the password on that session.
- */
+/** Set the new password using the stored reset token, then make them log in fresh. */
 export async function updatePassword(newPassword) {
   if (!isConfigured) {
     return { message: 'Password updated.' };
   }
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw unwrapError(error);
-  // Don't leave them logged in on the recovery session — make them sign in
-  // fresh with the new password (consistent with the rest of the auth flow).
-  await supabase.auth.signOut();
-  return { message: 'Password updated. Please log in with your new password.' };
+  const rec = readRecovery();
+  if (!rec?.resetToken) {
+    throw new Error('This reset has expired — request a new code from Forgot Password.');
+  }
+  const data = await call(
+    '/updatePassword',
+    { email: rec.email, resetToken: rec.resetToken, password: newPassword },
+    { auth: false }
+  );
+  clearRecoverySession();
+  clearSession(); // the server killed all sessions for this account anyway
+  return { message: data?.message || 'Password updated. Please log in with your new password.' };
 }
 
 /**
- * Start changing the signed-in user's email. Supabase emails a confirmation to
- * the NEW address (a 6-digit code if the "Change Email Address" template uses
- * {{ .Token }}). The change only takes effect once verifyEmailChange() succeeds.
+ * Start changing the signed-in user's email: the script emails a 6-digit code
+ * to the NEW address; the change applies once verifyEmailChange() succeeds.
  */
 export async function requestEmailChange(newEmail) {
   if (!isConfigured) return { ok: true };
-  const { error } = await supabase.auth.updateUser({ email: (newEmail || '').trim() });
-  if (error) throw unwrapError(error);
+  await call('/requestEmailChange', { newEmail: (newEmail || '').trim() });
   return { ok: true };
 }
 
 /** Confirm the email change with the 6-digit code sent to the new address. */
 export async function verifyEmailChange(newEmail, code) {
   if (!isConfigured) return { ok: true };
-  const clean = (newEmail || '').trim();
-  const { error } = await supabase.auth.verifyOtp({
-    email: clean,
-    token: (code || '').trim(),
-    type: 'email_change',
-  });
-  if (error) {
-    const mapped = unwrapError(error);
-    if (/expired|invalid|token/i.test(mapped.message || '')) {
-      mapped.message = 'That code is invalid or has expired. Try changing your email again.';
-    }
-    throw mapped;
-  }
-  // auth.users.email is now updated, but the signup trigger only ever set
-  // profiles.email at INSERT — so sync it here, otherwise the app would keep
-  // showing the old email (and dup-checks would still see the old one).
+  await call('/verifyEmailChange', { newEmail: (newEmail || '').trim(), code: (code || '').trim() });
+  // Refresh the cached profile so the app shows the new email immediately.
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const uid = session?.user?.id;
-    if (uid) await supabase.from('profiles').update({ email: clean }).eq('id', uid);
+    const me = await call('/me');
+    const s = getSession();
+    if (s) setSession({ token: s.token, user: mapProfile(me) });
   } catch {
-    /* non-fatal: auth email already changed; the profile row can be re-synced */
+    /* non-fatal: email already changed server-side */
   }
   return { ok: true };
 }
 
 export async function getCurrentUser() {
   if (!isConfigured) return demoUser;
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.user?.id) return null;
-  return fetchProfileById(session.user.id);
+  if (!getSession()?.token) return null;
+  const me = await call('/me');
+  return mapProfile(me);
 }
 
 export async function logout() {
   if (!isConfigured) return;
-  await supabase.auth.signOut();
+  try {
+    await call('/logout');
+  } catch {
+    /* the local session is cleared regardless */
+  }
+  clearSession();
 }

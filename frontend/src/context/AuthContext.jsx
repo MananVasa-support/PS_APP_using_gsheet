@@ -1,19 +1,25 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase, isConfigured } from '@/lib/supabase';
-import { mapProfile } from '@/utils/mappers';
+import {
+  isConfigured,
+  getSession as getStoredSession,
+  onAuthChange,
+  clearSession,
+} from '@/lib/gsApi';
 import * as authService from '@/services/authService';
 import { isAdmin, isConsultant, isClient } from '@/utils/roles';
 
 const AuthContext = createContext(null);
 
 /**
- * Auth provider — owns the Supabase session, the merged profile, and the
- * login/register/logout helpers. Subscribes to `onAuthStateChange` so the
- * UI reflects sign-ins/outs from any tab automatically.
+ * Auth provider — owns the Google-Sheets-backend session (token in
+ * sessionStorage), the user profile, and the login/register/logout helpers.
+ * Subscribes to the gsApi auth events so sign-ins/outs triggered anywhere in
+ * the app are reflected here.
  *
- * Shape exposed to consumers:
+ * Shape exposed to consumers (UNCHANGED from the Supabase branch):
  *   { user, session, token, loading, isAuthenticated, isAdmin, isConsultant,
- *     isClient, role, login, register, logout, applySession, setUser }
+ *     isClient, role, authBusy, setAuthBusy, login, register, logout,
+ *     applySession, setUser }
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -21,9 +27,8 @@ export function AuthProvider({ children }) {
   // Start in loading=true so ProtectedRoute waits for the initial session check
   // before deciding to redirect to /login.
   const [loading, setLoading] = useState(true);
-  // True while a short-lived auth flow (signup, email/code verify) is creating a
-  // session it's about to discard. AuthLayout reads this to NOT bounce the user
-  // to the dashboard during that flicker.
+  // True while a short-lived auth flow (signup, reset-code verify) is running.
+  // AuthLayout reads this to NOT bounce the user to the dashboard mid-flow.
   const [authBusy, setAuthBusy] = useState(false);
   const mountedRef = useRef(true);
 
@@ -37,8 +42,7 @@ export function AuthProvider({ children }) {
           // Demo / offline mode. The session lives in sessionStorage (per browser
           // tab) — NOT localStorage — so every fresh launch starts logged-out at
           // the public Landing/Login, while a mid-session refresh keeps the user
-          // signed in. Drop any legacy localStorage session from older builds so
-          // it no longer auto-logs the demo user back in.
+          // signed in. Drop any legacy localStorage session from older builds.
           localStorage.removeItem('ta_user');
           const raw = sessionStorage.getItem('ta_user');
           if (raw) {
@@ -51,39 +55,37 @@ export function AuthProvider({ children }) {
           }
           return;
         }
-        const {
-          data: { session: s },
-        } = await supabase.auth.getSession();
-        if (!mountedRef.current) return;
 
-        // A password reset that was started but never finished leaves a recovery
-        // session in storage. Don't auto-login from it — sign out and start at
-        // the login page (auto-login stays OFF for incomplete flows).
-        if (s?.user?.id && localStorage.getItem('ps_reset_pending') === '1') {
+        // A password reset that was started but never finished must not leave
+        // anything behind — start clean at the login page.
+        if (localStorage.getItem('ps_reset_pending') === '1') {
           localStorage.removeItem('ps_reset_pending');
-          await supabase.auth.signOut();
-          if (mountedRef.current) {
-            setSession(null);
-            setUser(null);
-          }
-          return;
+          authService.clearRecoverySession();
         }
 
-        setSession(s);
-        if (s?.user?.id) {
-          const profile = await fetchProfile(s.user.id);
-          if (!mountedRef.current) return;
-          if (!profile) {
-            // The session points to an account with no profile (e.g. it was
-            // deleted). Don't strand the user on a broken "?" dashboard — clear
-            // the stale session so they land back on the login page.
-            await supabase.auth.signOut();
-            setSession(null);
-            setUser(null);
-          } else {
-            setUser(profile);
-          }
-        }
+        const stored = getStoredSession(); // sessionStorage { token, user }
+        if (!stored?.token) return;
+
+        // Trust the stored profile immediately (instant paint), then validate
+        // the token against the server in the background — a deleted account or
+        // expired session signs out instead of stranding a broken dashboard.
+        setUser(stored.user || null);
+        setSession({ access_token: stored.token });
+        authService
+          .getCurrentUser()
+          .then((profile) => {
+            if (!mountedRef.current) return;
+            if (profile) setUser(profile);
+          })
+          .catch((err) => {
+            if (!mountedRef.current) return;
+            if (err?.code === 'AUTH_INVALID') {
+              // gsApi already cleared the stored session; reflect it here.
+              setSession(null);
+              setUser(null);
+            }
+            // Network hiccups keep the optimistic session — same UX as before.
+          });
       } finally {
         if (mountedRef.current) setLoading(false);
       }
@@ -97,66 +99,36 @@ export function AuthProvider({ children }) {
       };
     }
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, s) => {
+    // Reflect sign-ins/outs triggered anywhere (login page, expired token, …).
+    const unsubscribe = onAuthChange((event, s) => {
       if (!mountedRef.current) return;
-      setSession(s);
-      if (!s?.user?.id) {
+      if (event === 'SIGNED_OUT' || !s?.token) {
+        setSession(null);
         setUser(null);
-        return;
-      }
-      if (
-        event === 'SIGNED_IN' ||
-        event === 'INITIAL_SESSION' ||
-        event === 'TOKEN_REFRESHED' ||
-        event === 'USER_UPDATED'
-      ) {
-        const profile = await fetchProfile(s.user.id);
-        if (!mountedRef.current) return;
-        if (!profile) {
-          // Account/profile no longer exists — clear the stale session instead
-          // of showing a half-logged-in "?" state.
-          await supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
-        } else {
-          setUser(profile);
-        }
+      } else if (event === 'SIGNED_IN') {
+        setSession({ access_token: s.token });
+        if (s.user) setUser(s.user);
       }
     });
 
     return () => {
       mountedRef.current = false;
-      sub?.subscription?.unsubscribe?.();
+      unsubscribe();
     };
   }, []);
 
   // Mirror demo-mode user into sessionStorage so a refresh keeps them signed in
   // for the current tab only. Closing the tab / a new launch starts logged-out.
   useEffect(() => {
-    if (isConfigured) return; // Supabase manages its own persistence
+    if (isConfigured) return; // gsApi manages its own persistence
     if (user) sessionStorage.setItem('ta_user', JSON.stringify(user));
     else sessionStorage.removeItem('ta_user');
   }, [user]);
-
-  async function fetchProfile(id) {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.error('[auth] failed to load profile', error);
-      return null;
-    }
-    return mapProfile(data);
-  }
 
   const login = useCallback(async (credentials) => {
     setLoading(true);
     try {
       const result = await authService.login(credentials);
-      // onAuthStateChange will also fire — pre-set so the caller can navigate immediately.
       setUser(result.user);
       if (result.token) setSession({ access_token: result.token });
       return result.user;
@@ -169,8 +141,11 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const result = await authService.register(payload);
-      if (result.user) setUser(result.user);
-      if (result.token) setSession({ access_token: result.token });
+      // No auto-login after signup (matches the Supabase branch behavior).
+      if (result.token) {
+        setUser(result.user);
+        setSession({ access_token: result.token });
+      }
       return result.user;
     } finally {
       setLoading(false);
@@ -179,14 +154,14 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     await authService.logout();
+    if (!isConfigured) clearSession?.();
     setUser(null);
     setSession(null);
   }, []);
 
   /**
    * Commit an already-fetched session into context. Used by flows that obtain
-   * the user/token outside the regular login() path (e.g. confirmation screens
-   * after registration).
+   * the user/token outside the regular login() path.
    */
   const applySession = useCallback((next) => {
     if (next?.user) setUser(next.user);

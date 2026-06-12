@@ -1,63 +1,49 @@
-import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
+import { call, getToken, onAuthChange, isConfigured } from '@/lib/gsApi';
 import { computeAnalytics } from '@/features/power-planner/utils/powerPlannerUtils';
 
 /**
- * Power Planner — data layer. THREE tables, one purpose each:
+ * Power Planner — data layer (Google Sheets backend). THREE worksheets in the
+ * user's "Power Planner" spreadsheet, one purpose each:
  *
- *   power_planner_weeks    one row per user-week. `data` jsonb = the full PLAN
- *                          (commitments + frequency/duration/delegate/etc.,
- *                          actions, other things, to-stop, watch-outs,
- *                          last-week insights). unique(user_id, week_start) —
- *                          editing a week UPDATES its row, never duplicates.
- *   power_planner_reviews  one row per user-week — the auto-computed REVIEW
- *                          scoreboard (completion %, productivity score,
- *                          totals, insight blocks) in REAL columns so
- *                          admin/consultant/analytics can query without
- *                          parsing the plan jsonb. Recomputed on every sync.
- *   power_planner_settings one row per user — start_date, schedule (custom
- *                          week boundaries), custom_options (remembered
- *                          dropdown names), gcal_event_ids (Calendar de-dupe
- *                          map, so re-exports update events on any device).
+ *   weeks     one row per week. `data` = the full PLAN json (commitments +
+ *             frequency/duration/delegate/etc., actions, other things,
+ *             to-stop, watch-outs, last-week insights). Keyed by week_start —
+ *             editing a week UPDATES its row, never duplicates.
+ *   reviews   one row per week — the auto-computed REVIEW scoreboard
+ *             (completion %, productivity score, totals, insight blocks) in
+ *             REAL columns so admin/consultant views can read them without
+ *             parsing the plan json. Recomputed on every sync.
+ *   settings  a single row (id='settings') — start_date, schedule (custom week
+ *             boundaries), custom_options (remembered dropdown names),
+ *             gcal_event_ids (Calendar de-dupe map).
  *
- * Carry-forward needs NO table: carried items exist as flagged rows
+ * Carry-forward needs NO sheet: carried items exist as flagged rows
  * (isRepeat/repeatOf) inside the next week's plan.
  *
- * Sync model: the planner edits continuously, so writes are DEBOUNCED and
- * DIFFED — only weeks whose content actually changed are upserted; weeks that
- * vanish from the map (e.g. start-date re-anchor) are deleted. Demo mode
- * (no Supabase): everything stays in localStorage exactly as before.
+ * Sync model (UNCHANGED from the Supabase branch — Sheets allows roughly a
+ * write per second sustained, so batching matters even more here): writes are
+ * DEBOUNCED and DIFFED — only weeks whose content actually changed are
+ * upserted; weeks that vanish from the map are deleted. Demo mode (no API
+ * url): everything stays in localStorage exactly as before.
  */
 
 const DEBOUNCE_MS = 900;
-
-// Always read the CURRENT session (never cache): if one user logs out and
-// another logs in without a reload, a cached id would silently write nothing
-// (RLS rejects) or worse, mis-tag queued syncs.
-async function myId() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.user?.id || null;
-}
+const TOOL = 'power-planner';
 
 // ── Load everything for hydration ───────────────────────────────────────────
 export async function loadPlanner() {
   if (!isConfigured) return null;
-  const [settingsRes, weeksRes] = await Promise.all([
-    supabase.from('power_planner_settings').select('*').maybeSingle(),
-    supabase.from('power_planner_weeks').select('week_start, data'),
-  ]);
-  if (settingsRes.error) throw unwrapError(settingsRes.error);
-  if (weeksRes.error) throw unwrapError(weeksRes.error);
+  // One request for both worksheets (cuts the Apps Script round-trips in half).
+  const res = await call('/list', { tool: TOOL, sheets: ['weeks', 'settings'] });
 
   const weeks = {};
-  (weeksRes.data || []).forEach((row) => {
+  (res?.weeks || []).forEach((row) => {
     weeks[row.week_start] = row.data || {};
   });
   // Seed the diff baseline so hydration doesn't immediately re-upload everything.
   lastSynced = snapshot(weeks);
 
-  const s = settingsRes.data;
+  const s = (res?.settings || [])[0];
   return {
     weeks,
     startDate: s?.start_date || '',
@@ -91,8 +77,7 @@ async function flushWeeks() {
   const map = pendingMap;
   pendingMap = null;
   if (!map) return;
-  const uid = await myId();
-  if (!uid) return;
+  if (!getToken()) return;
 
   const current = snapshot(map);
   const changed = Object.keys(current).filter((k) => current[k] !== lastSynced[k]);
@@ -100,43 +85,38 @@ async function flushWeeks() {
 
   try {
     if (changed.length) {
+      const now = new Date().toISOString();
       // Upsert the changed weeks (the PLAN)…
-      const rows = changed.map((weekStart) => ({
-        user_id: uid,
-        week_start: weekStart,
-        data: map[weekStart],
-        updated_at: new Date().toISOString(),
-      }));
-      const { error } = await supabase
-        .from('power_planner_weeks')
-        .upsert(rows, { onConflict: 'user_id,week_start' });
-      if (error) throw error;
+      await call('/upsert', {
+        tool: TOOL,
+        sheet: 'weeks',
+        rows: changed.map((weekStart) => ({ week_start: weekStart, data: map[weekStart], updated_at: now })),
+      });
 
       // …and refresh each one's REVIEW scoreboard (computed projection).
-      const reviewRows = changed.map((weekStart) => {
-        const w = map[weekStart] || {};
-        const a = computeAnalytics(w.commitments || [], w.actions || []);
-        return {
-          user_id: uid,
-          week_start: weekStart,
-          completion_pct: a.completionPercentage || 0,
-          productivity_score: a.productivityScore || 0,
-          total_commitments: a.totalCommitments || 0,
-          planned_hours: a.totalPlannedHours || 0,
-          delegated_count: a.delegatedTasks || 0,
-          insights: w.lastWeekInsights || {},
-          updated_at: new Date().toISOString(),
-        };
+      await call('/upsert', {
+        tool: TOOL,
+        sheet: 'reviews',
+        rows: changed.map((weekStart) => {
+          const w = map[weekStart] || {};
+          const a = computeAnalytics(w.commitments || [], w.actions || []);
+          return {
+            week_start: weekStart,
+            completion_pct: a.completionPercentage || 0,
+            productivity_score: a.productivityScore || 0,
+            total_commitments: a.totalCommitments || 0,
+            planned_hours: a.totalPlannedHours || 0,
+            delegated_count: a.delegatedTasks || 0,
+            insights: w.lastWeekInsights || {},
+            updated_at: now,
+          };
+        }),
       });
-      const { error: revErr } = await supabase
-        .from('power_planner_reviews')
-        .upsert(reviewRows, { onConflict: 'user_id,week_start' });
-      if (revErr) throw revErr;
     }
 
     if (removed.length) {
-      await supabase.from('power_planner_weeks').delete().eq('user_id', uid).in('week_start', removed);
-      await supabase.from('power_planner_reviews').delete().eq('user_id', uid).in('week_start', removed);
+      await call('/delete', { tool: TOOL, sheet: 'weeks', ids: removed });
+      await call('/delete', { tool: TOOL, sheet: 'reviews', ids: removed });
     }
 
     lastSynced = current;
@@ -160,20 +140,22 @@ async function flushSettings() {
   const patch = pendingSettings;
   pendingSettings = null;
   if (!patch) return;
-  const uid = await myId();
-  if (!uid) return;
+  if (!getToken()) return;
   try {
-    const { error } = await supabase
-      .from('power_planner_settings')
-      .upsert({ user_id: uid, ...patch, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-    if (error) throw error;
+    // The settings sheet is a singleton row keyed id='settings'; /upsert MERGES,
+    // so partial patches (e.g. only gcal_event_ids) leave the rest untouched.
+    await call('/upsert', {
+      tool: TOOL,
+      sheet: 'settings',
+      rows: [{ id: 'settings', ...patch, updated_at: new Date().toISOString() }],
+    });
   } catch {
     /* retried implicitly by the next settings change */
   }
 }
 
 // Push everything still sitting in the debounce queues RIGHT NOW. Called before
-// logout — once the session is gone, a queued upsert would fail RLS silently.
+// logout — once the session is gone, a queued upsert would be rejected.
 export async function flushPendingSyncs() {
   if (!isConfigured) return;
   clearTimeout(weekTimer);
@@ -181,15 +163,22 @@ export async function flushPendingSyncs() {
   await Promise.all([flushWeeks(), flushSettings()]);
 }
 
+// A different login must not inherit the previous user's diff baseline.
+if (isConfigured) {
+  onAuthChange(() => {
+    lastSynced = {};
+    pendingMap = null;
+    pendingSettings = null;
+    clearTimeout(weekTimer);
+    clearTimeout(settingsTimer);
+  });
+}
+
 // ── Google Calendar event-id map (cross-device de-dupe) ─────────────────────
 export async function loadGcalEventIds() {
   if (!isConfigured) return null;
-  const { data, error } = await supabase
-    .from('power_planner_settings')
-    .select('gcal_event_ids')
-    .maybeSingle();
-  if (error) throw unwrapError(error);
-  return data?.gcal_event_ids || {};
+  const rows = await call('/list', { tool: TOOL, sheet: 'settings' });
+  return (rows || [])[0]?.gcal_event_ids || {};
 }
 
 export function saveGcalEventIds(map) {

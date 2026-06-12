@@ -1,24 +1,24 @@
-import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
+import { call, newId, getToken, isConfigured } from '@/lib/gsApi';
 
 /**
  * Time Finder assessments — data layer for the whole Time Finder tool.
  *
- * Storage model: ONE row per assessment in `time_finder_assessments`
- *   { id uuid, user_id uuid, assessment jsonb, archived bool, created_at }
+ * Storage model (Google Sheets backend): ONE row per assessment in the user's
+ * "Time Finder" spreadsheet, `assessments` worksheet:
+ *   id | assessment (JSON) | archived | created_at
  * `assessment` holds the object the UI builds: { title?, createdAt, routines[],
- * totalTimeSaved }. Active vs archived lives in the `archived` column. A user
- * can save unlimited assessments; RLS scopes rows (own / consultant-read /
- * admin-all) and the user_id index keeps per-user lookups instant.
+ * totalTimeSaved }. Active vs archived lives in the `archived` column.
  *
- * Demo mode (no Supabase env): falls back to the original localStorage keys
- * ('assessments' / 'archivedAssessments') so the tool still works offline.
+ * Demo mode (no VITE_API_BASE_URL): falls back to the original localStorage
+ * keys ('assessments' / 'archivedAssessments') so the tool still works offline.
  *
  * NOTE: the in-progress working draft ('currentAssessment') deliberately stays
- * in localStorage — only COMPLETED assessments are stored in the database.
+ * in localStorage — only COMPLETED assessments are stored in the backend.
  */
 
 const ACTIVE_KEY = 'assessments';
 const ARCHIVED_KEY = 'archivedAssessments';
+const TOOL = 'time-finder';
 
 // ── localStorage fallback (demo mode) ───────────────────────────────────────
 const localRead = (key) => {
@@ -36,14 +36,7 @@ const localWrite = (key, list) => {
   }
 };
 
-async function myId() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.user?.id || null;
-}
-
-const rowToAssessment = (row) => ({ ...(row.assessment || {}), id: row.id, archived: row.archived });
+const rowToAssessment = (row) => ({ ...(row.assessment || {}), id: row.id, archived: !!row.archived });
 
 // ── public API ───────────────────────────────────────────────────────────────
 
@@ -52,12 +45,10 @@ export async function listAssessments() {
   if (!isConfigured) {
     return { active: localRead(ACTIVE_KEY), archived: localRead(ARCHIVED_KEY) };
   }
-  const { data, error } = await supabase
-    .from('time_finder_assessments')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw unwrapError(error);
-  const all = (data || []).map(rowToAssessment);
+  const rows = await call('/list', { tool: TOOL, sheet: 'assessments' });
+  const all = (rows || [])
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .map(rowToAssessment);
   return {
     active: all.filter((a) => !a.archived),
     archived: all.filter((a) => a.archived),
@@ -72,15 +63,10 @@ export async function saveAssessment(payload, { archived = false } = {}) {
     localWrite(key, [a, ...localRead(key)]);
     return a;
   }
-  const uid = await myId();
-  if (!uid) throw new Error('Not signed in.');
-  const { data, error } = await supabase
-    .from('time_finder_assessments')
-    .insert({ user_id: uid, assessment: payload, archived })
-    .select('*')
-    .single();
-  if (error) throw unwrapError(error);
-  return rowToAssessment(data);
+  if (!getToken()) throw new Error('Not signed in.');
+  const row = { id: newId(), assessment: payload, archived, created_at: new Date().toISOString() };
+  const [saved] = await call('/upsert', { tool: TOOL, sheet: 'assessments', rows: [row] });
+  return rowToAssessment(saved || row);
 }
 
 /** Overwrite an assessment's content (e.g. after inline routine edits). */
@@ -91,14 +77,8 @@ export async function updateAssessment(id, payload) {
     }
     return { id, ...payload };
   }
-  const { data, error } = await supabase
-    .from('time_finder_assessments')
-    .update({ assessment: payload })
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw unwrapError(error);
-  return rowToAssessment(data);
+  const [saved] = await call('/upsert', { tool: TOOL, sheet: 'assessments', rows: [{ id, assessment: payload }] });
+  return rowToAssessment(saved || { id, assessment: payload });
 }
 
 /** Move an assessment between active and archived. */
@@ -114,11 +94,7 @@ export async function setArchived(id, archived) {
     }
     return { ok: true };
   }
-  const { error } = await supabase
-    .from('time_finder_assessments')
-    .update({ archived })
-    .eq('id', id);
-  if (error) throw unwrapError(error);
+  await call('/upsert', { tool: TOOL, sheet: 'assessments', rows: [{ id, archived }] });
   return { ok: true };
 }
 
@@ -130,8 +106,7 @@ export async function deleteAssessment(id) {
     }
     return { ok: true };
   }
-  const { error } = await supabase.from('time_finder_assessments').delete().eq('id', id);
-  if (error) throw unwrapError(error);
+  await call('/delete', { tool: TOOL, sheet: 'assessments', ids: [id] });
   return { ok: true };
 }
 
@@ -141,13 +116,7 @@ export async function clearAssessments(archived) {
     localStorage.removeItem(archived ? ARCHIVED_KEY : ACTIVE_KEY);
     return { ok: true };
   }
-  const uid = await myId();
-  if (!uid) throw new Error('Not signed in.');
-  const { error } = await supabase
-    .from('time_finder_assessments')
-    .delete()
-    .eq('user_id', uid)
-    .eq('archived', archived);
-  if (error) throw unwrapError(error);
+  if (!getToken()) throw new Error('Not signed in.');
+  await call('/clear', { tool: TOOL, sheet: 'assessments', where: { archived: !!archived } });
   return { ok: true };
 }

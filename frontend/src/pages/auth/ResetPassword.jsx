@@ -3,9 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiLock, FiCheck, FiCheckCircle } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
-import { useAuth } from '@/hooks/useAuth';
-import { updatePassword } from '@/services/authService';
-import { supabase, isConfigured } from '@/lib/supabase';
+import { updatePassword, hasRecoverySession, clearRecoverySession } from '@/services/authService';
+import { isConfigured } from '@/lib/gsApi';
 
 // Keep these in lock-step with Register.jsx AND the Supabase password policy
 // (min 8 + lower + upper + digit + symbol).
@@ -49,20 +48,19 @@ function PasswordRules({ value = '' }) {
 }
 
 /**
- * Where the password-reset email link lands. Supabase processes the link on
- * load (detectSessionInUrl) and puts the user in a temporary recovery session;
- * here they choose a new password.
+ * Where the password-reset flow lands after the 6-digit code is verified.
+ * ForgotPassword stored a one-time reset token (the "recovery session", in
+ * sessionStorage); here the user chooses a new password, which consumes it.
  */
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const { setAuthBusy } = useAuth();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
-  // Whether we actually arrived from a valid reset link (a recovery session).
-  const [ready, setReady] = useState(!isConfigured); // demo mode is always "ready"
+  // Whether we actually arrived from a verified reset code (a recovery token).
+  const [ready] = useState(() => !isConfigured || hasRecoverySession()); // demo mode is always "ready"
   // Tracks "did the user actually finish the reset?" — read in the unmount
   // cleanup below to decide whether to discard the recovery session.
   const doneRef = useRef(false);
@@ -70,32 +68,17 @@ export default function ResetPassword() {
     doneRef.current = done;
   }, [done]);
 
-  useEffect(() => {
-    if (!isConfigured) return;
-    // The recovery session may already be set by the time we mount, or arrive a
-    // moment later — handle both.
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || session) setReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
-  }, []);
-
   // If the user LEAVES this page without finishing (clicks Back, closes, etc.),
-  // the recovery session would otherwise linger and silently log them into the
-  // dashboard (with no profile → "?"). So on unmount-without-completion we clear
-  // it. authBusy suppresses the brief dashboard flash while signOut resolves.
+  // the recovery token would otherwise linger — clear it so the abandoned reset
+  // can't be resumed by whoever opens the tab next.
   useEffect(() => {
     return () => {
       if (isConfigured && !doneRef.current) {
         localStorage.removeItem('ps_reset_pending');
-        setAuthBusy(true);
-        supabase.auth.signOut().finally(() => setAuthBusy(false));
+        clearRecoverySession();
       }
     };
-  }, [setAuthBusy]);
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -120,18 +103,12 @@ export default function ResetPassword() {
     }
   }
 
-  // Leaving mid-reset: drop the temporary recovery session first, then go to
-  // login — so you land on the login page like normal, never half-logged-in.
+  // Leaving mid-reset: drop the recovery token first, then go to login.
   async function backToLogin() {
-    doneRef.current = true; // we're handling the session here; skip the unmount cleanup
+    doneRef.current = true; // we're handling the cleanup here; skip the unmount cleanup
     localStorage.removeItem('ps_reset_pending');
-    setAuthBusy(true);
-    try {
-      if (isConfigured) await supabase.auth.signOut();
-    } finally {
-      setAuthBusy(false);
-      navigate('/login');
-    }
+    if (isConfigured) clearRecoverySession();
+    navigate('/login');
   }
 
   if (done) {

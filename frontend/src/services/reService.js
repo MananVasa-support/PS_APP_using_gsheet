@@ -1,19 +1,23 @@
-// Reasons Eliminator data layer (Supabase).
+// Reasons Eliminator data layer (Google Sheets backend).
 //
 // The tool's pages read its three stores SYNCHRONOUSLY (in render/useMemo), so
 // this service keeps an in-memory cache that is hydrated ONCE when the tool
 // opens (the RE App gates rendering on it). Every write then updates the cache
 // instantly (UI stays snappy) and fire-and-forgets the matching row upsert /
-// delete to Supabase:
+// delete to the Apps Script — three worksheets in the user's "Reasons
+// Eliminator" spreadsheet:
 //
-//   reasons_sessions      — one row per assessment session ((user_id, id) PK)
-//   reasons_grip_tests    — one row per reason's LATEST grip score
-//   reasons_grip_history  — one row per completed grip-test run
+//   sessions      — one row per assessment session (id = client-generated text,
+//                   fits the Power Planner bridge ids 'pp:<weekStart>')
+//   grip_tests    — one row per reason's LATEST grip score (keyed reason_id)
+//   grip_history  — one row per completed grip-test run (append-only)
 //
-// Demo mode (no Supabase env) never touches this file's network paths — the
-// three feature services keep their original localStorage behavior there.
+// Demo mode (no VITE_API_BASE_URL) never touches this file's network paths —
+// the three feature services keep their original localStorage behavior there.
 
-import { isConfigured, supabase } from '@/lib/supabase';
+import { call, getToken, onAuthChange, isConfigured } from '@/lib/gsApi';
+
+const TOOL = 'reasons';
 
 export const reasonsCache = {
   sessions: [], // session objects (same shape the tool always used)
@@ -29,14 +33,6 @@ const resetCache = () => {
   reasonsCache.runs = [];
   reasonsCache.draft = null;
   reasonsCache.hydrated = false;
-};
-
-// Always read the CURRENT session — never cache the uid (stale-session bug).
-const myId = async () => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.user?.id || null;
 };
 
 // ── row ↔ app-shape mappers ──────────────────────────────────────────────────
@@ -76,20 +72,15 @@ export function hydrateReasons() {
   if (!isConfigured) return Promise.resolve();
   if (!hydration) {
     hydration = (async () => {
-      const [s, g, h] = await Promise.all([
-        supabase.from('reasons_sessions').select('*'),
-        supabase.from('reasons_grip_tests').select('*'),
-        supabase.from('reasons_grip_history').select('*'),
-      ]);
-      const err = s.error || g.error || h.error;
-      if (err) throw err;
-      reasonsCache.sessions = (s.data || []).map(rowToSession);
+      // One request hydrates all three worksheets.
+      const res = await call('/list', { tool: TOOL, sheets: ['sessions', 'grip_tests', 'grip_history'] });
+      reasonsCache.sessions = (res?.sessions || []).map(rowToSession);
       const grip = {};
-      (g.data || []).forEach((r) => {
+      (res?.grip_tests || []).forEach((r) => {
         grip[r.reason_id] = rowToGrip(r);
       });
       reasonsCache.grip = grip;
-      reasonsCache.runs = (h.data || []).map(rowToRun);
+      reasonsCache.runs = (res?.grip_history || []).map(rowToRun);
       reasonsCache.hydrated = true;
     })().catch((e) => {
       hydration = null; // allow a retry on the next visit
@@ -106,7 +97,7 @@ export const ensureReasonsHydrated = () =>
 
 // A login as a DIFFERENT user must never see the previous user's cache.
 if (isConfigured) {
-  supabase.auth.onAuthStateChange((event) => {
+  onAuthChange((event) => {
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
       resetCache();
       hydration = null;
@@ -114,126 +105,107 @@ if (isConfigured) {
   });
 }
 
+// Fire-and-forget helper — every write below updates the cache synchronously
+// (the caller already did) and pushes the row in the background.
+const fireAndForget = (fn) => {
+  if (!getToken()) return;
+  Promise.resolve()
+    .then(fn)
+    .catch(() => {});
+};
+
 // ── Sessions ─────────────────────────────────────────────────────────────────
 export function persistSessionRow(session) {
   if (!isConfigured || !session?.id) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_sessions').upsert(
-      {
-        user_id: uid,
-        id: String(session.id),
-        status: session.status || 'draft',
-        source: session.source || null,
-        week_start: session.weekStart || null,
-        reasons: session.reasons || [],
-        created_at: session.createdAt || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,id' }
-    );
-  })().catch(() => {});
+  fireAndForget(() =>
+    call('/upsert', {
+      tool: TOOL,
+      sheet: 'sessions',
+      rows: [
+        {
+          id: String(session.id),
+          status: session.status || 'draft',
+          source: session.source || null,
+          week_start: session.weekStart || null,
+          reasons: session.reasons || [],
+          created_at: session.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
+    })
+  );
 }
 
 export function deleteSessionRow(id) {
   if (!isConfigured || !id) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_sessions').delete().eq('user_id', uid).eq('id', String(id));
-  })().catch(() => {});
+  fireAndForget(() => call('/delete', { tool: TOOL, sheet: 'sessions', ids: [String(id)] }));
 }
 
 export function clearSessionRows() {
   if (!isConfigured) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_sessions').delete().eq('user_id', uid);
-  })().catch(() => {});
+  fireAndForget(() => call('/clear', { tool: TOOL, sheet: 'sessions' }));
 }
 
 // ── Grip scores (latest per reason) ──────────────────────────────────────────
 export function persistGripRow(rec) {
   if (!isConfigured || !rec?.reasonId) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_grip_tests').upsert(
-      {
-        user_id: uid,
-        reason_id: String(rec.reasonId),
-        session_id: rec.sessionId != null ? String(rec.sessionId) : null,
-        seq: typeof rec.seq === 'number' ? rec.seq : null,
-        reason_text: rec.text || null,
-        reason_date: rec.date || null,
-        score: typeof rec.score === 'number' ? rec.score : null,
-        status: rec.status || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,reason_id' }
-    );
-  })().catch(() => {});
+  fireAndForget(() =>
+    call('/upsert', {
+      tool: TOOL,
+      sheet: 'grip_tests',
+      rows: [
+        {
+          reason_id: String(rec.reasonId),
+          session_id: rec.sessionId != null ? String(rec.sessionId) : null,
+          seq: typeof rec.seq === 'number' ? rec.seq : null,
+          reason_text: rec.text || null,
+          reason_date: rec.date || null,
+          score: typeof rec.score === 'number' ? rec.score : null,
+          status: rec.status || null,
+          updated_at: new Date().toISOString(),
+        },
+      ],
+    })
+  );
 }
 
 export function deleteGripRow(reasonId) {
   if (!isConfigured || !reasonId) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase
-      .from('reasons_grip_tests')
-      .delete()
-      .eq('user_id', uid)
-      .eq('reason_id', String(reasonId));
-  })().catch(() => {});
+  fireAndForget(() => call('/delete', { tool: TOOL, sheet: 'grip_tests', ids: [String(reasonId)] }));
 }
 
 export function clearGripRows() {
   if (!isConfigured) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_grip_tests').delete().eq('user_id', uid);
-  })().catch(() => {});
+  fireAndForget(() => call('/clear', { tool: TOOL, sheet: 'grip_tests' }));
 }
 
 // ── Grip-test runs (history) ─────────────────────────────────────────────────
 export function persistRunRow(run) {
   if (!isConfigured || !run?.id) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_grip_history').upsert(
-      {
-        user_id: uid,
-        id: String(run.id),
-        run_date: run.date || new Date().toISOString(),
-        month: run.month || null,
-        archived: !!run.archived,
-        entries: run.entries || [],
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,id' }
-    );
-  })().catch(() => {});
+  fireAndForget(() =>
+    call('/upsert', {
+      tool: TOOL,
+      sheet: 'grip_history',
+      rows: [
+        {
+          id: String(run.id),
+          run_date: run.date || new Date().toISOString(),
+          month: run.month || null,
+          archived: !!run.archived,
+          entries: run.entries || [],
+          updated_at: new Date().toISOString(),
+        },
+      ],
+    })
+  );
 }
 
 export function deleteRunRow(id) {
   if (!isConfigured || !id) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_grip_history').delete().eq('user_id', uid).eq('id', String(id));
-  })().catch(() => {});
+  fireAndForget(() => call('/delete', { tool: TOOL, sheet: 'grip_history', ids: [String(id)] }));
 }
 
 export function clearRunRows() {
   if (!isConfigured) return;
-  (async () => {
-    const uid = await myId();
-    if (!uid) return;
-    await supabase.from('reasons_grip_history').delete().eq('user_id', uid);
-  })().catch(() => {});
+  fireAndForget(() => call('/clear', { tool: TOOL, sheet: 'grip_history' }));
 }
