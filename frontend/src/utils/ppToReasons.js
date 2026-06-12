@@ -60,9 +60,13 @@ export function syncWeekReviewToReasons(
     if (!weekStart) return;
     const rows = [...commitments, ...actions, ...otherCommitments];
 
-    // A row qualifies once at least one TFCR category is picked for it.
+    // A row qualifies only when the user WROTE the reason ("what got in the
+    // way") AND picked at least one TFCR category. TFCR alone with an empty
+    // box stays in the planner — there is no reason text to eliminate.
     const qualifying = [];
     rows.forEach((row) => {
+      const text = (row?.reasonNotDone || '').trim();
+      if (!text) return;
       const gap = row?.gapReason || {};
       const cats = Object.keys(gap).filter((c) => CAT_ID[c]);
       if (cats.length === 0) return;
@@ -72,11 +76,13 @@ export function syncWeekReviewToReasons(
           .map((label) => SUB_TO_DETAIL[`${c}:${label}`])
           .filter(Boolean)
       );
-      const name = taskName(row);
-      const text =
-        (row.reasonNotDone || '').trim() ||
-        (name ? `Couldn't complete: ${name}` : 'Task not completed');
-      qualifying.push({ id: `pp:${row.id}`, text, categories, details, task: name });
+      qualifying.push({
+        id: `pp:${row.id}`,
+        text,
+        categories,
+        details,
+        task: taskName(row),
+      });
     });
 
     const sessionId = `pp:${weekStart}`;

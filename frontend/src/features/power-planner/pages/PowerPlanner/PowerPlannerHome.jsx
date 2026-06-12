@@ -25,7 +25,10 @@ import {
   hydrateEventIdMap,
 } from "../../utils/googleCalendarApi";
 import usePowerPlanner from "../../hooks/usePowerPlanner";
-import { computeScheduleConflicts } from "../../utils/powerPlannerUtils";
+import {
+  computeScheduleConflicts,
+  parseDurationToHours,
+} from "../../utils/powerPlannerUtils";
 import {
   addDaysISO,
   daysBetweenISO,
@@ -414,11 +417,37 @@ const PowerPlannerHome = () => {
     // (schedule, name, details), so there's no "this one vs all" question.
     return savePlannerData({ includeCarryForward: false });
   };
+  // A reviewed row whose Reasons block is open (scored under 100%, or it ran
+  // over its allotted time) MUST have its TFCR filled in: at least one of
+  // T/F/C/R picked, and every picked category with at least one subcategory.
+  // Only the free-text "what got in the way" box is optional (it decides
+  // whether the reason flows to the Reasons Eliminator).
+  const reviewNeedsReasons = (r) => {
+    const scored = r?.scored === true || (r?.progress || 0) > 0;
+    const incomplete = (r?.progress || 0) < 1;
+    const allotted = parseDurationToHours(r?.duration);
+    const actual = parseDurationToHours(r?.actualDuration);
+    const overtime = allotted > 0 && actual > allotted;
+    return (scored && incomplete) || overtime;
+  };
+  const reviewTfcrMissing = () => {
+    const rows = [...commitments, ...actions, ...otherCommitments];
+    return rows.some((r) => {
+      if (!reviewNeedsReasons(r)) return false;
+      const gap = r.gapReason || {};
+      const cats = Object.keys(gap);
+      if (cats.length === 0) return true; // no TFCR picked at all
+      // A picked category without any subcategory is incomplete too.
+      return cats.some((c) => !Array.isArray(gap[c]) || gap[c].length === 0);
+    });
+  };
+
   const handleSaveReview = () => {
+    if (reviewTfcrMissing()) return { invalid: true, reviewReasons: true };
     const res = savePlannerData({ includeCarryForward: true });
-    // Mirror this week's TFCR reasons into the Reasons Eliminator (one session
-    // per week, marked "From Power Planner") so the user assigns Power Words
-    // there. Power Words already assigned survive re-saves.
+    // Mirror this week's typed TFCR reasons into the Reasons Eliminator (one
+    // session per week, marked "From Power Planner") so the user assigns
+    // Power Words there. Power Words already assigned survive re-saves.
     syncWeekReviewToReasons(selectedWeek, {
       commitments,
       actions,
@@ -724,7 +753,9 @@ const PowerPlannerHome = () => {
             if (res?.invalid) {
               // Required fields still empty — keep the user here to fix them.
               setNavSaveError(
-                "Can't save — some required fields are still empty. Go back and fill the highlighted boxes (name, date, duration, start time, delegate) first."
+                res.reviewReasons
+                  ? "Can't save — every task scored under 100% needs its TFCR filled in: pick at least one of T/F/C/R and a subcategory for each."
+                  : "Can't save — some required fields are still empty. Go back and fill the highlighted boxes (name, date, duration, start time, delegate) first."
               );
               return;
             }

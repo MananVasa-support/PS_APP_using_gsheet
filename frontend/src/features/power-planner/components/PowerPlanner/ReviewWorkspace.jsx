@@ -1066,6 +1066,7 @@ const ReviewWorkspace = ({
   onSave,
 }) => {
   const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [reviewTab, setReviewTab] = useState("topGoals");
 
   // Overall % = average of the RESULT %s the user typed for goals + other things
@@ -1102,6 +1103,16 @@ const ReviewWorkspace = ({
 
   const handleSave = () => {
     const result = onSave?.();
+    if (result?.invalid) {
+      // TFCR is mandatory for every task whose Reasons block is open — block
+      // the save until each has at least one category + subcategory picked.
+      setSaveMessage("");
+      setSaveError(
+        "Can't save — every task scored under 100% needs its TFCR: pick at least one of T/F/C/R and a subcategory for each. (Writing the reason is optional.)"
+      );
+      return;
+    }
+    setSaveError("");
     if (result?.forwarded) {
       setSaveMessage("Saved. Carried forward to next week.");
     } else {
@@ -1194,7 +1205,11 @@ const ReviewWorkspace = ({
       )}
 
       <div className="flex items-center justify-end gap-3">
-        {saveMessage ? (
+        {saveError ? (
+          <p className="max-w-md text-right text-xs font-semibold text-red-600">
+            {saveError}
+          </p>
+        ) : saveMessage ? (
           <p className="text-xs font-medium text-black">{saveMessage}</p>
         ) : null}
         <button
