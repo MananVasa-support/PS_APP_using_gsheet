@@ -78,12 +78,11 @@ const formatDate = (date) => {
 };
 
 const reasonModeLabel = (mode) => {
-  if (mode === "overtime") return "What took longer than planned (Reason)";
-  if (mode === "both")
-    return "What got in the way & took longer (Reason)";
-  return "What got in the way (Reason)";
+  if (mode === "overtime") return "Why the delay — what took more time?";
+  if (mode === "both") return "Reasons (not finished AND took longer than allotted)";
+  return "Reasons why not done";
 };
-const reasonModePlaceholder = () => "Type the reason (optional)";
+const reasonModePlaceholder = () => "What got in the way (Reason)";
 
 const ReasonRow = ({ colSpan, mode, tfcr, reason, onChangeTfcr, onChangeReason }) => (
   <tr className="border-b border-black bg-white">
