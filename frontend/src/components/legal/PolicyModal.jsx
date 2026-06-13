@@ -8,29 +8,37 @@ import { cn } from '@/utils/cn';
 /**
  * Legal policy reader — opened from the global footer's "Policies" link.
  *
- * Design-system native: same backdrop + spring family as components/ui/Modal,
- * sized to ~56% of the viewport on desktop (full-width sheet feel on mobile),
- * with three tabs (Privacy / Terms / Refund), animated tab transitions, and a
- * shared contact card.
+ * A light "document reader" surface (white content, dark text) that mirrors the
+ * source policy documents and stays readable regardless of the app theme, with
+ * three tabs (Privacy / Terms / Refund).
+ *
+ * IMPORTANT — why there is exactly ONE AnimatePresence here:
+ *   An earlier version nested a second `AnimatePresence mode="wait"` for the tab
+ *   transition INSIDE the overlay's AnimatePresence. Framer Motion makes a
+ *   parent's exit wait for every descendant's exit to finish; once a tab had
+ *   been switched, the inner presence was mid-transition and the OUTER overlay's
+ *   exit never completed — so the `fixed inset-0` backdrop stayed mounted and
+ *   silently blocked every click after closing. The tab content now animates
+ *   with a keyed mount-in only (no inner AnimatePresence), so the overlay always
+ *   unmounts cleanly and the app is fully interactive the instant it closes.
  *
  * Production hardening:
- *  - rendered in a PORTAL to <body>, so the fixed overlay is always relative to
- *    the viewport even when opened from a transformed (framer-motion) subtree
- *    like a tool page — never clipped or mis-positioned.
- *  - full a11y: role=dialog/tablist/tab/tabpanel, labelled tabs, Escape to
- *    close, click-outside to close, arrow-key tab navigation, focus moved into
- *    the dialog on open and restored to the trigger on close, body scroll lock.
+ *   - rendered in a PORTAL to <body> so the fixed overlay is viewport-anchored
+ *     even when opened from a transformed (framer-motion) tool subtree.
+ *   - full a11y: role=dialog/tablist/tab/tabpanel, Escape + click-outside close,
+ *     arrow-key tab navigation, focus moved into the dialog and restored to the
+ *     trigger on close, body scroll lock (always restored on close/unmount).
  */
 
 function Block({ block }) {
   if (typeof block === 'string') {
-    return <p className="mb-3 text-sm leading-relaxed text-ink-300">{block}</p>;
+    return <p className="mb-3 text-sm leading-relaxed text-gray-700">{block}</p>;
   }
   if (block.ul) {
     return (
       <ul className="mb-3 space-y-1.5 pl-1">
         {block.ul.map((item, i) => (
-          <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-ink-300">
+          <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-gray-700">
             <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
             <span>{item}</span>
           </li>
@@ -40,7 +48,7 @@ function Block({ block }) {
   }
   if (block.note) {
     return (
-      <div className="mb-3 rounded-xl border-l-2 border-brand-500 bg-brand-500/10 px-4 py-3 text-sm leading-relaxed text-fg">
+      <div className="mb-3 rounded-xl border-l-4 border-brand-500 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-800">
         {block.note}
       </div>
     );
@@ -52,30 +60,32 @@ function PolicyBody({ policy }) {
   return (
     <div>
       <div className="mb-6 overflow-hidden rounded-2xl bg-brand-gradient px-5 py-5 text-white shadow-glow">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">Legal &amp; Compliance</p>
-        <h3 className="mt-1 font-display text-2xl font-bold">{policy.title}</h3>
-        <p className="mt-1 text-xs text-white/70">{policy.meta}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/75">Legal &amp; Compliance</p>
+        <h3 className="mt-1 font-display text-2xl font-bold text-white">{policy.title}</h3>
+        <p className="mt-1 text-xs text-white/75">{policy.meta}</p>
       </div>
 
       {policy.intro && (
-        <div className="mb-6 rounded-xl border border-ink-700 bg-ink-900/50 px-4 py-3 text-sm leading-relaxed text-fg-muted">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm leading-relaxed text-gray-700">
           {policy.intro}
         </div>
       )}
 
       {policy.sections.map((s) => (
         <section key={s.n} className="mb-7">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-400">{s.n}</p>
-          <h4 className="mb-3 mt-1 border-b border-ink-800 pb-2 font-display text-lg font-bold text-fg-strong">{s.h}</h4>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">{s.n}</p>
+          <h4 className="mb-3 mt-1 border-b border-gray-200 pb-2 font-display text-lg font-bold text-gray-900">
+            {s.h}
+          </h4>
           {s.body.map((block, i) => (
             <Block key={i} block={block} />
           ))}
         </section>
       ))}
 
-      <div className="rounded-2xl border border-ink-700 bg-ink-900/60 p-5">
-        <h4 className="font-display text-lg font-bold text-fg-strong">{POLICY_CONTACT.org}</h4>
-        <p className="mt-1 text-xs text-ink-400">{POLICY_CONTACT.line}</p>
+      <div className="rounded-2xl bg-gray-900 p-5 text-white">
+        <h4 className="font-display text-lg font-bold text-white">{POLICY_CONTACT.org}</h4>
+        <p className="mt-1 text-xs text-gray-400">{POLICY_CONTACT.line}</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {[
             ['Address', POLICY_CONTACT.address],
@@ -84,8 +94,8 @@ function PolicyBody({ policy }) {
             ['Phone', POLICY_CONTACT.phone],
           ].map(([label, val]) => (
             <div key={label}>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-500">{label}</p>
-              <p className="text-sm text-fg-muted">{val}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-500">{label}</p>
+              <p className="text-sm text-gray-200">{val}</p>
             </div>
           ))}
         </div>
@@ -98,23 +108,30 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
   const [tab, setTab] = useState(initialTab);
   const dialogRef = useRef(null);
   const bodyRef = useRef(null);
-  const triggerRef = useRef(null); // element focused before opening, to restore on close
+  const triggerRef = useRef(null); // element focused before opening, restored on close
 
-  // Sync to the tab the user clicked whenever the modal (re)opens.
+  // Open at whichever tab the user clicked.
   useEffect(() => {
     if (open) setTab(initialTab);
   }, [open, initialTab]);
 
-  // Lock body scroll, remember + restore focus, focus the dialog on open.
+  // On every tab change, reset the scroll container to the top (the scroll box
+  // itself doesn't remount, only its content does).
+  useEffect(() => {
+    if (open) bodyRef.current?.scrollTo({ top: 0 });
+  }, [tab, open]);
+
+  // Lock body scroll + manage focus while open. Cleanup ALWAYS restores both,
+  // whether the modal closes via state or the component unmounts.
   useEffect(() => {
     if (!open) return undefined;
     triggerRef.current = document.activeElement;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const id = requestAnimationFrame(() => dialogRef.current?.focus());
+    const raf = requestAnimationFrame(() => dialogRef.current?.focus());
     return () => {
       document.body.style.overflow = prevOverflow;
-      cancelAnimationFrame(id);
+      cancelAnimationFrame(raf);
       if (triggerRef.current instanceof HTMLElement) triggerRef.current.focus();
     };
   }, [open]);
@@ -130,20 +147,17 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
   }, [open, onClose]);
 
   const tabIndex = POLICIES.findIndex((p) => p.id === tab);
+  const active = POLICIES[tabIndex] || POLICIES[0];
 
-  // Arrow-key navigation across the tablist.
   const onTabKeyDown = useCallback(
     (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
       e.preventDefault();
       const dir = e.key === 'ArrowRight' ? 1 : -1;
-      const next = (tabIndex + dir + POLICIES.length) % POLICIES.length;
-      setTab(POLICIES[next].id);
+      setTab(POLICIES[(tabIndex + dir + POLICIES.length) % POLICIES.length].id);
     },
     [tabIndex]
   );
-
-  const active = POLICIES[tabIndex] || POLICIES[0];
 
   if (typeof document === 'undefined') return null;
 
@@ -151,10 +165,11 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 
@@ -169,25 +184,24 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
             exit={{ opacity: 0, y: 30, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={cn(
-              'always-dark relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-ink-700 bg-ink-950 shadow-2xl outline-none',
+              'relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white text-gray-800 shadow-2xl outline-none',
               'sm:max-h-[84vh] sm:rounded-3xl',
-              // ~56% of the viewport on desktop, comfortably bounded.
               'sm:w-[92vw] lg:w-[56vw] lg:min-w-[640px] lg:max-w-[64rem]'
             )}
           >
-            {/* Header: brand + tabs + close */}
-            <div className="shrink-0 border-b border-ink-800 bg-ink-950/95 px-5 pt-4 backdrop-blur">
+            {/* Header: brand + tabs + close (white, sticky) */}
+            <div className="shrink-0 border-b border-gray-200 bg-white px-5 pt-4">
               <div className="flex items-center gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-500/10 text-brand-500">
                   <FiShield className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-fg-strong">Policies</p>
-                  <p className="truncate text-xs text-ink-500">Altus Corporation · Productivity Shastra</p>
+                  <p className="text-sm font-semibold text-gray-900">Policies</p>
+                  <p className="truncate text-xs text-gray-500">Altus Corporation · Productivity Shastra</p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-800 hover:text-fg-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   aria-label="Close policies"
                 >
                   <FiX className="h-5 w-5" />
@@ -209,7 +223,7 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
                       onKeyDown={onTabKeyDown}
                       className={cn(
                         'relative rounded-t-md px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
-                        isActive ? 'text-fg-strong' : 'text-ink-400 hover:text-fg'
+                        isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'
                       )}
                     >
                       {p.label}
@@ -226,25 +240,23 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
               </div>
             </div>
 
-            {/* Scrollable body — tab switch fades + slides, scroll resets to top */}
+            {/* Scrollable body — content remounts per tab and animates in (no
+                nested AnimatePresence, so the overlay always unmounts cleanly). */}
             <div
               ref={bodyRef}
               id="policy-panel"
               role="tabpanel"
               aria-labelledby={`policy-tab-${active.id}`}
-              className="min-h-0 flex-1 overflow-y-auto px-5 py-6"
+              className="min-h-0 flex-1 overflow-y-auto bg-white px-5 py-6"
             >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={active.id}
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -12 }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
-                >
-                  <PolicyBody policy={active} />
-                </motion.div>
-              </AnimatePresence>
+              <motion.div
+                key={active.id}
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <PolicyBody policy={active} />
+              </motion.div>
             </div>
           </motion.div>
         </motion.div>
