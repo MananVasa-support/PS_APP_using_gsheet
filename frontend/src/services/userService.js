@@ -1,8 +1,9 @@
-import { listRows, upsertRows, isConfigured, getSession, patchSessionUser } from '@/lib/gsApi';
+import { isSupabaseConfigured, appGetUser, appUpdateProfile } from '@/lib/supabaseAuth';
+import { getSession, patchSessionUser } from '@/lib/gsApi';
 import { mapProfile } from '@/utils/mappers';
 import { demoUser } from '@/data/mockData';
 
-/** Current-user profile + preferences (users tab of the _System spreadsheet). */
+/** Current-user profile + preferences (Supabase `app_users` table). */
 
 function myId() {
   const id = getSession()?.user?.id;
@@ -11,16 +12,15 @@ function myId() {
 }
 
 export async function getProfile() {
-  if (!isConfigured) return demoUser;
-  const id = myId();
-  const users = await listRows('users');
-  return mapProfile(users.find((u) => u.id === id) || null);
+  if (!isSupabaseConfigured) return demoUser;
+  const row = await appGetUser(myId());
+  return mapProfile(row);
 }
 
 /** Update the user's own profile. Sensitive fields (role/status) are simply
- *  never written here, mirroring the old DB trigger. */
+ *  not accepted by the app_update_profile RPC, mirroring the old DB trigger. */
 export async function updateProfile(payload = {}) {
-  if (!isConfigured) return { ...demoUser, ...payload };
+  if (!isSupabaseConfigured) return { ...demoUser, ...payload };
   const id = myId();
 
   const ALLOWED = ['name', 'title', 'department', 'phone', 'country', 'timezone', 'avatar'];
@@ -30,22 +30,19 @@ export async function updateProfile(payload = {}) {
   }
   if (Object.keys(patch).length === 0) return getProfile();
 
-  // upsertRows MERGES by id — only the provided columns change.
-  const [updated] = await upsertRows('users', [{ id, ...patch }]);
-  const profile = mapProfile(updated);
+  const profile = mapProfile(await appUpdateProfile(id, patch));
   patchSessionUser(profile); // keep the cached session user fresh
   return profile;
 }
 
 export async function updatePreferences(prefs) {
-  if (!isConfigured) return prefs;
-  const id = myId();
-  const [updated] = await upsertRows('users', [{ id, preferences: prefs }]);
+  if (!isSupabaseConfigured) return prefs;
+  const updated = await appUpdateProfile(myId(), { preferences: prefs });
   return updated?.preferences || prefs;
 }
 
-/** File storage doesn't exist on the Sheets demo — avatars are URL-only. */
+/** File storage doesn't exist in this demo — avatars are URL-only. */
 export async function uploadAvatar() {
-  if (!isConfigured) return { path: '', url: '' };
-  throw new Error('Avatar upload is not available in the Google Sheets demo.');
+  if (!isSupabaseConfigured) return { path: '', url: '' };
+  throw new Error('Avatar upload is not available in this demo.');
 }

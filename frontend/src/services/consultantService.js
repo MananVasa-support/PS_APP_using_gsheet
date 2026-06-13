@@ -1,5 +1,5 @@
 import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
-import { listRows } from '@/lib/gsApi';
+import { isSupabaseConfigured, appListUsers } from '@/lib/supabaseAuth';
 import { mapFormSubmission, mapReport } from '@/utils/mappers';
 import {
   mockClients,
@@ -44,7 +44,7 @@ async function getMyId() {
 }
 
 export async function getMyClients() {
-  if (!isConfigured) {
+  if (!isSupabaseConfigured) {
     return {
       clients: myMockClients().map((c) => {
         const tasks = mockClientTasks(c.id);
@@ -57,13 +57,10 @@ export async function getMyClients() {
     };
   }
 
-  const uid = await getMyId();
-  if (!uid) return { clients: [] };
-
-  // Sheets backend: consultant↔client ASSIGNMENTS aren't modeled in the demo,
-  // so a consultant sees ALL client accounts from the users tab (task counts
-  // stay 0 — the assigned-tasks system never existed on master either).
-  const users = await listRows('users');
+  // Consultant↔client ASSIGNMENTS aren't modeled in the demo, so a consultant
+  // sees ALL client accounts from Supabase (task counts stay 0 — the
+  // assigned-tasks system never existed on master either).
+  const users = await appListUsers();
   return {
     clients: users
       .filter((u) => (u.role || 'client') === 'client')

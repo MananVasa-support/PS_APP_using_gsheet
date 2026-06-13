@@ -23,13 +23,23 @@ on `master`. Everything below this section describes `master`; on THIS branch:
   Tab row 1 = headers mirroring old Postgres columns (no user_id — the folder
   is the scope); cells JSON-encoded. Everything lives in the Drive of whoever
   completes the consent popup (demo-grade single-account model).
-- **Auth = users tab, checked CLIENT-SIDE** (demo-grade; SHA-256+salt hashes
-  via Web Crypto, never plain). Session token in sessionStorage (F5 keeps
-  login, fresh launch doesn't). Duplicate email/phone blocked; signup returns
-  to login (no auto-login) and PROVISIONS the user's folder+spreadsheets.
-  **Password reset, email change, signup OTP: stubbed** ("not available in the
-  Sheets demo" — they need an email server). Deleted users-sheet row → next
-  app boot signs out.
+- **Auth = Supabase (2026-06-13).** Only the `_System` users data moved to
+  Supabase; ALL tool data + the `_meta` Drive cache stay in Sheets. Table
+  `app_users` (mirrors the old users columns incl. password_hash+salt) is
+  reached via SECURITY DEFINER RPCs (`app_login/app_signup/app_availability/
+  app_get_user/app_list_users/app_update_profile/app_delete_user`); RLS on +
+  no policies so the anon key can't read the table directly (hash/salt stay
+  server-only). Same SHA-256(salt+password) scheme → lossless migration from
+  the sheet (Apps Script `sync-users.gs`). Frontend: `lib/supabaseAuth.js`
+  (PostgREST fetch, no SDK) + authService/userService rewritten;
+  admin/consultant/level2 user lists + leaderboard read `app_list_users`
+  (leaderboard still joins each user's Sheets tool data by id). Session token
+  stays a `sess-<uuid>` in sessionStorage (F5 keeps login). Env:
+  VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY (auth), VITE_GOOGLE_CLIENT_ID
+  (tools). SQL+migration: `backend/supabase-auth/`. The user's Drive tool
+  folder now auto-provisions LAZILY on first tool use (no Google popup at
+  signup). **Password reset, email change, signup OTP: still stubbed.**
+  Deleted app_users row → next app boot signs out.
 - **Services**: exports IDENTICAL to master (pages untouched). gsApi surface =
   listRows/upsertRows(merge)/deleteRows/clearRows + listRowsForUser.
   ppService keeps debounced+diffed sync; reService keeps in-memory cache +

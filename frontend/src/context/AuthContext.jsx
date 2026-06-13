@@ -1,10 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  isConfigured,
-  getSession as getStoredSession,
-  onAuthChange,
-  clearSession,
-} from '@/lib/gsApi';
+import { isSupabaseConfigured as isConfigured } from '@/lib/supabaseAuth';
+import { getSession as getStoredSession, onAuthChange, clearSession } from '@/lib/gsApi';
 import * as authService from '@/services/authService';
 import { isAdmin, isConsultant, isClient } from '@/utils/roles';
 

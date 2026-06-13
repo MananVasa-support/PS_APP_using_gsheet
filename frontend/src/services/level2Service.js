@@ -1,4 +1,5 @@
 import { listRows, listRowsForUser, upsertRows, newId, getToken, isConfigured } from '@/lib/gsApi';
+import { appListUsers } from '@/lib/supabaseAuth';
 
 /**
  * Level-2 challenge runs — one row per run in the user's "Time Auditor"
@@ -46,7 +47,9 @@ export async function setRunStatus(id, status) {
 export async function getLeaderboard() {
   if (!isConfigured) return [];
 
-  const users = await listRows('users');
+  // User identities come from Supabase (app_users); each user's audit/challenge
+  // data is still read from their Google Sheets tool spreadsheet below.
+  const users = await appListUsers();
   const perUser = await Promise.all(
     users.map(async (u) => {
       const runs = (await listRowsForUser('ta_challenges', u))

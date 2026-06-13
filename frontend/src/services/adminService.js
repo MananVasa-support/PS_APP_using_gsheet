@@ -1,5 +1,5 @@
 import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
-import { listRows } from '@/lib/gsApi';
+import { isSupabaseConfigured, appListUsers } from '@/lib/supabaseAuth';
 import { mapFormSubmission, mapProfile } from '@/utils/mappers';
 import { usersByDepartment, registrationsTrend } from '@/data/mockData';
 import { mockClients, mockConsultants, mockForms, mockTasks, consultantName } from '@/data/roleMock';
@@ -67,7 +67,7 @@ export async function getAdminOverview() {
 }
 
 export async function getClients({ status, q } = {}) {
-  if (!isConfigured) {
+  if (!isSupabaseConfigured) {
     let list = mockClients.map(shapeMockClient);
     if (status && status !== 'All') list = list.filter((c) => c.status === status);
     if (q) {
@@ -83,8 +83,8 @@ export async function getClients({ status, q } = {}) {
     return { clients: list };
   }
 
-  // Sheets backend: every account lives in the users tab.
-  const users = await listRows('users');
+  // Identity lives in Supabase now (app_users) — read every account from there.
+  const users = await appListUsers();
   let clients = users
     .filter((u) => (u.role || 'client') === 'client')
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -114,7 +114,7 @@ export async function getClients({ status, q } = {}) {
 }
 
 export async function getConsultants() {
-  if (!isConfigured) {
+  if (!isSupabaseConfigured) {
     return {
       consultants: mockConsultants.map((c) => ({
         ...c,
@@ -123,9 +123,9 @@ export async function getConsultants() {
     };
   }
 
-  // Sheets backend: consultants are users-tab rows with role='consultant'
-  // (set by editing the sheet — there's no admin UI for it in the demo).
-  const users = await listRows('users');
+  // Consultants are app_users rows with role='consultant' (set by editing the
+  // Supabase table — there's no admin UI for it in the demo).
+  const users = await appListUsers();
   return {
     consultants: users
       .filter((u) => u.role === 'consultant')
