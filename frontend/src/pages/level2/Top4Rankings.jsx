@@ -1,10 +1,11 @@
 import { Card, Avatar, PageHeader, BackButton } from '@/components/ui';
-import { rankings } from '@/data/rankingsMock';
+import { useRankings } from '@/hooks/useRankings';
 import { formatNumber } from '@/utils/format';
 
 const medal = ['#a1a1aa', '#94a3b8', '#52525b']; // gold / silver / bronze
 
 export default function Top4Rankings() {
+  const rankings = useRankings(); // real cross-user leaderboard (mock until it loads)
   const top4 = rankings.slice(0, 4);
 
   return (

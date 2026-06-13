@@ -1,8 +1,10 @@
 import { Card, ProgressRing, PageHeader, BackButton } from '@/components/ui';
 import BarChartCard from '@/components/charts/BarChartCard.jsx';
-import { weeklyProductivity, rankings } from '@/data/rankingsMock';
+import { useRankings, useWeeklyProductivity } from '@/hooks/useRankings';
 
 export default function Analysis() {
+  const rankings = useRankings(); // real cross-user leaderboard (mock until it loads)
+  const weeklyProductivity = useWeeklyProductivity(); // own audits, last 7 days
   const avg = Math.round(weeklyProductivity.reduce((s, d) => s + d.value, 0) / weeklyProductivity.length);
   const best = weeklyProductivity.reduce((a, b) => (b.value > a.value ? b : a));
   const me = rankings.find((r) => r.isMe);

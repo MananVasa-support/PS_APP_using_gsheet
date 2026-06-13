@@ -1,12 +1,15 @@
 import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
+import { listRows } from '@/lib/gsApi';
 import { mapFormSubmission, mapProfile } from '@/utils/mappers';
 import { usersByDepartment, registrationsTrend } from '@/data/mockData';
 import { mockClients, mockConsultants, mockForms, mockTasks, consultantName } from '@/data/roleMock';
 
 /**
- * Admin-panel data layer — uses Supabase + the SECURITY DEFINER RPCs declared
- * in supabase/migrations/0001_init.sql. RLS guarantees these queries only
- * succeed when the signed-in user is an admin.
+ * Admin-panel data layer. On the Sheets branch only the CLIENT/CONSULTANT
+ * LISTS are real (read from the users tab — enough for the staff client
+ * picker on /dashboard and /analytics). The deeper admin views (overview
+ * stats, approvals, assignments) stay parked, exactly as on master — their
+ * RPCs/tables never existed there either.
  */
 
 // ── Mock shapers (used when Supabase isn't configured) ──────────────────────
@@ -80,44 +83,33 @@ export async function getClients({ status, q } = {}) {
     return { clients: list };
   }
 
-  let query = supabase
-    .from('profiles')
-    .select('*')
-    .eq('role', 'client')
-    .order('created_at', { ascending: false });
-  if (status && status !== 'All') query = query.eq('status', status);
+  // Sheets backend: every account lives in the users tab.
+  const users = await listRows('users');
+  let clients = users
+    .filter((u) => (u.role || 'client') === 'client')
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      clientId: '',
+      dept: r.department,
+      title: r.title,
+      role: r.role || 'client',
+      date: r.created_at,
+      status: r.status,
+      assignedConsultant: null, // consultant assignments aren't modeled in the Sheets demo
+    }));
+  if (status && status !== 'All') clients = clients.filter((c) => c.status === status);
   if (q) {
-    const term = `%${q.replace(/[%_]/g, '\\$&')}%`;
-    query = query.or(`name.ilike.${term},email.ilike.${term},client_id.ilike.${term},department.ilike.${term}`);
+    const t = q.toLowerCase();
+    clients = clients.filter(
+      (c) =>
+        (c.name || '').toLowerCase().includes(t) ||
+        (c.email || '').toLowerCase().includes(t) ||
+        (c.dept || '').toLowerCase().includes(t)
+    );
   }
-  const { data, error } = await query;
-  if (error) throw unwrapError(error);
-
-  // Look up consultant names for the rows that have assignments.
-  const consultantIds = [...new Set((data || []).map((r) => r.assigned_consultant).filter(Boolean))];
-  let consultantMap = new Map();
-  if (consultantIds.length) {
-    const { data: cs } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .in('id', consultantIds);
-    consultantMap = new Map((cs || []).map((c) => [c.id, c]));
-  }
-
-  const clients = (data || []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    email: r.email,
-    clientId: r.client_id,
-    dept: r.department,
-    title: r.title,
-    role: r.role,
-    date: r.created_at,
-    status: r.status,
-    assignedConsultant: r.assigned_consultant
-      ? { id: r.assigned_consultant, name: consultantMap.get(r.assigned_consultant)?.name || '—' }
-      : null,
-  }));
   return { clients };
 }
 
@@ -131,37 +123,22 @@ export async function getConsultants() {
     };
   }
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('role', 'consultant')
-    .order('name');
-  if (error) throw unwrapError(error);
-
-  // For each consultant, count assigned clients in a single query.
-  const ids = (data || []).map((c) => c.id);
-  let countsMap = new Map();
-  if (ids.length) {
-    const { data: clients } = await supabase
-      .from('profiles')
-      .select('assigned_consultant')
-      .in('assigned_consultant', ids);
-    countsMap = (clients || []).reduce((acc, r) => {
-      acc.set(r.assigned_consultant, (acc.get(r.assigned_consultant) || 0) + 1);
-      return acc;
-    }, new Map());
-  }
-
+  // Sheets backend: consultants are users-tab rows with role='consultant'
+  // (set by editing the sheet — there's no admin UI for it in the demo).
+  const users = await listRows('users');
   return {
-    consultants: (data || []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      email: c.email,
-      title: c.title,
-      department: c.department,
-      status: c.status,
-      assignedCount: countsMap.get(c.id) || 0,
-    })),
+    consultants: users
+      .filter((u) => u.role === 'consultant')
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        title: c.title,
+        department: c.department,
+        status: c.status,
+        assignedCount: 0, // assignments aren't modeled in the Sheets demo
+      })),
   };
 }
 

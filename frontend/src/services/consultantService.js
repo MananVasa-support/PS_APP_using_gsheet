@@ -1,4 +1,5 @@
 import { supabase, unwrapError, isConfigured } from '@/lib/supabase';
+import { listRows } from '@/lib/gsApi';
 import { mapFormSubmission, mapReport } from '@/utils/mappers';
 import {
   mockClients,
@@ -59,43 +60,26 @@ export async function getMyClients() {
   const uid = await getMyId();
   if (!uid) return { clients: [] };
 
-  const { data: clients, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('role', 'client')
-    .eq('assigned_consultant', uid)
-    .order('name');
-  if (error) throw unwrapError(error);
-
-  const ids = (clients || []).map((c) => c.id);
-  let tasks = [];
-  if (ids.length) {
-    const { data } = await supabase
-      .from('assigned_tasks')
-      .select('client_id, status, progress')
-      .eq('consultant_id', uid)
-      .in('client_id', ids);
-    tasks = data || [];
-  }
-
+  // Sheets backend: consultant↔client ASSIGNMENTS aren't modeled in the demo,
+  // so a consultant sees ALL client accounts from the users tab (task counts
+  // stay 0 — the assigned-tasks system never existed on master either).
+  const users = await listRows('users');
   return {
-    clients: (clients || []).map((c) => {
-      const t = tasks.filter((x) => x.client_id === c.id);
-      const done = t.filter((x) => x.status === 'Completed').length;
-      const progress = t.length ? Math.round(t.reduce((s, x) => s + (x.progress || 0), 0) / t.length) : 0;
-      return {
+    clients: users
+      .filter((u) => (u.role || 'client') === 'client')
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
+      .map((c) => ({
         id: c.id,
         name: c.name,
         email: c.email,
-        clientId: c.client_id,
+        clientId: '',
         dept: c.department,
         title: c.title,
         status: c.status,
         date: c.created_at,
-        tasks: { total: t.length, done },
-        progress,
-      };
-    }),
+        tasks: { total: 0, done: 0 },
+        progress: 0,
+      })),
   };
 }
 

@@ -1,12 +1,13 @@
 import { FaTrophy } from 'react-icons/fa';
 import { Card, Avatar, Badge, PageHeader, BackButton } from '@/components/ui';
-import { rankings } from '@/data/rankingsMock';
+import { useRankings } from '@/hooks/useRankings';
 import { formatNumber } from '@/utils/format';
 
 const medal = ['#a1a1aa', '#94a3b8', '#52525b']; // gold / silver / bronze
 const order = [1, 0, 2]; // visual podium order: 2nd, 1st, 3rd
 
 export default function Top3Rankings() {
+  const rankings = useRankings(); // real cross-user leaderboard (mock until it loads)
   const top3 = rankings.slice(0, 3);
 
   return (

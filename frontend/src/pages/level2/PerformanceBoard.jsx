@@ -1,9 +1,10 @@
 import { Card, Avatar, PageHeader, BackButton } from '@/components/ui';
 import BarChartCard from '@/components/charts/BarChartCard.jsx';
-import { rankings } from '@/data/rankingsMock';
+import { useRankings } from '@/hooks/useRankings';
 import { formatNumber } from '@/utils/format';
 
 export default function PerformanceBoard() {
+  const rankings = useRankings(); // real cross-user leaderboard (mock until it loads)
   const chartData = rankings.map((u) => ({ label: u.name.split(' ')[0], value: u.points }));
 
   return (
