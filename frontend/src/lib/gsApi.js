@@ -531,7 +531,9 @@ async function ensureSystem(opts) {
         `name='${esc(SYSTEM_NAME)}' and '${rootId}' in parents and mimeType='${SHEET_MIME}' and trashed=false`,
         opts
       );
-      if (!id) id = await createToolSpreadsheet(SYSTEM_NAME, [SHEET_DEFS.users, SHEET_DEFS._meta], rootId, opts);
+      // Auth moved to Supabase — _System now holds ONLY the _meta id cache
+      // (the users tab is obsolete and no longer created).
+      if (!id) id = await createToolSpreadsheet(SYSTEM_NAME, [SHEET_DEFS._meta], rootId, opts);
       localStorage.setItem('gs.systemId', id);
       return id;
     })().catch((e) => {
