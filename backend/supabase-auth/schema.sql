@@ -61,9 +61,12 @@ $$;
 
 -- SHA-256(salt || password) hex — IDENTICAL to the frontend's Web Crypto hash,
 -- so users migrated from the sheet (with their existing hash+salt) verify.
+-- Uses Postgres's BUILT-IN sha256(bytea) (pg_catalog, always in scope) — NOT
+-- pgcrypto's digest(), which Supabase installs in the `extensions` schema and
+-- would fail to resolve as `digest(text, unknown) does not exist`.
 create or replace function public._app_hash(p_salt text, p_password text)
 returns text language sql immutable as $$
-  select encode(digest(p_salt || p_password, 'sha256'), 'hex');
+  select encode(sha256(convert_to(p_salt || p_password, 'UTF8')), 'hex');
 $$;
 
 -- ── CREATE (signup) ─────────────────────────────────────────────────────────
