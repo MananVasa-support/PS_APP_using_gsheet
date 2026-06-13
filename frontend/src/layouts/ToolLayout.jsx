@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar.jsx';
+import Footer from '@/components/layout/Footer.jsx';
 import Logo from '@/components/ui/Logo.jsx';
 
 /**
@@ -11,9 +12,12 @@ import Logo from '@/components/ui/Logo.jsx';
  */
 export default function ToolLayout() {
   return (
-    <div className="min-h-screen bg-ink-950">
+    <div className="flex min-h-screen flex-col bg-ink-950">
       <Navbar showSearch={false} leading={<Logo height={36} className="mr-1" to="/dashboard" />} />
-      <Outlet />
+      <div className="flex-1">
+        <Outlet />
+      </div>
+      <Footer />
     </div>
   );
 }

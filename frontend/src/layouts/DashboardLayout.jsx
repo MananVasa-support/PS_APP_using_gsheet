@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar.jsx';
 import TimeAuditorSidebar from '@/components/layout/TimeAuditorSidebar.jsx';
 import Navbar from '@/components/layout/Navbar.jsx';
+import Footer from '@/components/layout/Footer.jsx';
 import Logo from '@/components/ui/Logo.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,14 +39,17 @@ export default function DashboardLayout() {
         <Navbar showSearch={false} leading={<Logo height={36} className="mr-1" to="/dashboard" />} />
         <div className="flex">
           <TimeAuditorSidebar />
-          <div className="min-w-0 flex-1">
-            <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {/* Content column is at least viewport-minus-navbar tall so the footer
+              sits at the bottom and the sticky sidebar always has full height. */}
+          <div className="flex min-h-[calc(100vh-4rem)] min-w-0 flex-1 flex-col">
+            <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
               <Suspense fallback={ContentFallback}>
                 <div key={location.pathname} className="page-enter">
                   <Outlet />
                 </div>
               </Suspense>
             </main>
+            <Footer />
           </div>
         </div>
       </div>
@@ -62,15 +66,16 @@ export default function DashboardLayout() {
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      <div className={cn('transition-all duration-300', collapsed ? 'lg:pl-20' : 'lg:pl-64')}>
+      <div className={cn('flex min-h-screen flex-col transition-all duration-300', collapsed ? 'lg:pl-20' : 'lg:pl-64')}>
         <Navbar onOpenMobile={() => setMobileOpen(true)} />
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <Suspense fallback={ContentFallback}>
             <div key={location.pathname} className="page-enter">
               <Outlet />
             </div>
           </Suspense>
         </main>
+        <Footer />
       </div>
     </div>
   );
