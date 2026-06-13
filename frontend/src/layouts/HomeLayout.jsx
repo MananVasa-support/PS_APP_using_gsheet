@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar.jsx';
+import Footer from '@/components/layout/Footer.jsx';
 import Logo from '@/components/ui/Logo.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
 
@@ -16,10 +17,10 @@ import Spinner from '@/components/ui/Spinner.jsx';
 export default function HomeLayout() {
   const location = useLocation();
   return (
-    <div className="min-h-screen bg-ink-950">
+    <div className="flex min-h-screen flex-col bg-ink-950">
       {/* No sidebar here, so the brand logo lives in the top bar (shown everywhere). */}
       <Navbar leading={<Logo height={36} className="mr-1" to="/dashboard" />} />
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         <Suspense
           fallback={
             <div className="grid h-[60vh] place-items-center">
@@ -33,6 +34,7 @@ export default function HomeLayout() {
           </div>
         </Suspense>
       </main>
+      <Footer />
     </div>
   );
 }

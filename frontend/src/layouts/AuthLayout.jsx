@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FiTarget, FiTrendingUp, FiAward } from 'react-icons/fi';
 import Logo from '@/components/ui/Logo.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
+import Footer from '@/components/layout/Footer.jsx';
 import { useAuth } from '@/hooks/useAuth';
 
 const features = [
@@ -29,7 +30,8 @@ export default function AuthLayout() {
   }
 
   return (
-    <div className="always-dark grid min-h-screen lg:grid-cols-2">
+    <div className="always-dark flex min-h-screen flex-col">
+      <div className="grid flex-1 lg:grid-cols-2">
       {/* Brand / story panel */}
       <div className="relative hidden overflow-hidden bg-auth-radial p-10 lg:flex lg:flex-col">
         <div className="absolute inset-0 bg-grid-faint [background-size:40px_40px] opacity-40" />
@@ -75,8 +77,6 @@ export default function AuthLayout() {
             ))}
           </div>
         </div>
-
-        <p className="relative z-10 text-xs text-slate-600">© {new Date().getFullYear()} Productivity Shastra. All rights reserved.</p>
       </div>
 
       {/* Form side */}
@@ -91,6 +91,9 @@ export default function AuthLayout() {
           </Suspense>
         </div>
       </div>
+      </div>
+
+      <Footer variant="auth" />
     </div>
   );
 }
