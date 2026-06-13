@@ -227,12 +227,15 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
                       )}
                     >
                       {p.label}
+                      {/* Static underline — NOT a framer `layoutId` element. A
+                          layoutId here registered the underline in Framer's
+                          shared-layout projection system, which activates on tab
+                          switch and then never releases during the overlay's
+                          AnimatePresence exit — leaving the fixed overlay mounted
+                          and blocking all input after closing. A plain span has
+                          no projection record, so the overlay always unmounts. */}
                       {isActive && (
-                        <motion.span
-                          layoutId="policy-tab-underline"
-                          className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand-500"
-                          transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                        />
+                        <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand-500" />
                       )}
                     </button>
                   );
