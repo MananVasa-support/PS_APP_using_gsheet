@@ -5,22 +5,21 @@ import {
   appAvailability,
   appGetUser,
 } from '@/lib/supabaseAuth';
-import { getSession, setSession, clearSession, patchSessionUser, newId } from '@/lib/gsApi';
+import { getSession, setSession, clearSession, patchSessionUser, newId } from '@/lib/session';
 import { mapProfile } from '@/utils/mappers';
 import { normalizeRole } from '@/utils/roles';
 import { demoUser } from '@/data/mockData';
 
 /**
  * Auth service — IDENTITY ONLY, backed by Supabase (the `app_users` table +
- * SECURITY DEFINER RPCs; see backend/supabase-auth/schema.sql). This is the one
- * part of the app that moved OFF Google Sheets: login, signup, availability,
- * profile reads. Everything else (the 5 tools' data + the `_meta` Drive cache)
- * still lives in Google Sheets via gsApi.js — untouched.
+ * SECURITY DEFINER RPCs; see backend/supabase-auth/schema.sql): login, signup,
+ * availability, profile reads. Tool data is stored separately (browser
+ * localStorage in the tool services) — auth doesn't touch it.
  *
- * The session token stays a client-minted `sess-<uuid>` in sessionStorage
+ * The session token is a client-minted `sess-<uuid>` in sessionStorage
  * (F5 keeps login, fresh launch starts at login) — Supabase here is a data
  * store for the user row, not a JWT session provider, so the app session model
- * is unchanged and the tool services keep working exactly as before.
+ * is owned by lib/session.js.
  *
  * Public surface kept IDENTICAL so no page changes. Flows needing an email
  * server (password reset, email change, signup OTP) stay stubbed.

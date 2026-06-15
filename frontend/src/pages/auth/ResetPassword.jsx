@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { FiLock, FiCheck, FiCheckCircle } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
 import { updatePassword, hasRecoverySession, clearRecoverySession } from '@/services/authService';
-import { isConfigured } from '@/lib/gsApi';
+import { isSupabaseConfigured as isConfigured } from '@/lib/supabaseAuth';
 
 // Keep these in lock-step with Register.jsx AND the Supabase password policy
 // (min 8 + lower + upper + digit + symbol).

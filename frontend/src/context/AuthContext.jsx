@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { isSupabaseConfigured as isConfigured } from '@/lib/supabaseAuth';
-import { getSession as getStoredSession, onAuthChange, clearSession } from '@/lib/gsApi';
+import { getSession as getStoredSession, onAuthChange, clearSession } from '@/lib/session';
 import * as authService from '@/services/authService';
 import { isAdmin, isConsultant, isClient } from '@/utils/roles';
 
@@ -9,7 +9,7 @@ const AuthContext = createContext(null);
 /**
  * Auth provider — owns the Google-Sheets-backend session (token in
  * sessionStorage), the user profile, and the login/register/logout helpers.
- * Subscribes to the gsApi auth events so sign-ins/outs triggered anywhere in
+ * Subscribes to the session auth events so sign-ins/outs triggered anywhere in
  * the app are reflected here.
  *
  * Shape exposed to consumers (UNCHANGED from the Supabase branch):
@@ -125,7 +125,7 @@ export function AuthProvider({ children }) {
   // Mirror demo-mode user into sessionStorage so a refresh keeps them signed in
   // for the current tab only. Closing the tab / a new launch starts logged-out.
   useEffect(() => {
-    if (isConfigured) return; // gsApi manages its own persistence
+    if (isConfigured) return; // the session store manages persistence
     if (user) sessionStorage.setItem('ta_user', JSON.stringify(user));
     else sessionStorage.removeItem('ta_user');
   }, [user]);

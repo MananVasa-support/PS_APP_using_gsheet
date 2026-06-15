@@ -1,5 +1,5 @@
 import { isSupabaseConfigured, appGetUser, appUpdateProfile } from '@/lib/supabaseAuth';
-import { getSession, patchSessionUser } from '@/lib/gsApi';
+import { getSession, patchSessionUser } from '@/lib/session';
 import { mapProfile } from '@/utils/mappers';
 import { demoUser } from '@/data/mockData';
 

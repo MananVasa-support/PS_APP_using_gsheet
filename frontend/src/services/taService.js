@@ -1,22 +1,13 @@
-import { listRows, upsertRows, deleteRows, newId, getToken, isConfigured } from '@/lib/gsApi';
-
 /**
- * Time Auditor assessments — the single data layer for the whole Time Auditor
- * suite (tool, Final Summary, Analytics, Reports).
+ * Time Auditor assessments — data layer.
  *
- * Storage (direct Google Sheets): ONE row per assessment in the user's
- * "Time Auditor" spreadsheet (inside their Drive folder), `entries` tab:
- *   id | entry (JSON) | created_at
- * The `entry` holds the full assessment exactly as the UI builds it:
- *   { date, startTime, slots[], top3[], stats, active }
- * Ids are generated CLIENT-SIDE (uuid).
- *
- * Offline/demo (no VITE_GOOGLE_CLIENT_ID): falls back to localStorage.
+ * Storage: browser localStorage (one list under `ta_assessments_v2`). Google
+ * Sheets storage was removed; tool data now lives locally until a backend is
+ * wired up. Same exported surface so pages/contexts are unchanged.
  */
 
 const LOCAL_KEY = 'ta_assessments_v2';
 
-// ── localStorage fallback (demo mode) ───────────────────────────────────────
 function localList() {
   try {
     const raw = localStorage.getItem(LOCAL_KEY);
@@ -34,48 +25,26 @@ function localWrite(list) {
   }
 }
 
-const rowToAssessment = (row) => ({ id: row.id, ...(row.entry || {}) });
-
-// ── public API ───────────────────────────────────────────────────────────────
-
-/** All of the signed-in user's assessments, newest first. */
+/** All of the user's assessments, newest first. */
 export async function listAssessments() {
-  if (!isConfigured) return localList();
-  const rows = await listRows('ta_entries');
-  return rows
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .map(rowToAssessment);
+  return localList();
 }
 
-/** Save a NEW assessment. Returns it with its database id. */
+/** Save a NEW assessment. Returns it with its id. */
 export async function saveAssessment(payload) {
-  if (!isConfigured) {
-    const a = { id: `asmt_${Date.now()}`, ...payload };
-    localWrite([a, ...localList()]);
-    return a;
-  }
-  if (!getToken()) throw new Error('Not signed in.');
-  const row = { id: newId(), entry: payload, created_at: new Date().toISOString() };
-  const [saved] = await upsertRows('ta_entries', [row]);
-  return rowToAssessment(saved || row);
+  const a = { id: `asmt_${Date.now()}`, ...payload };
+  localWrite([a, ...localList()]);
+  return a;
 }
 
 /** Overwrite an existing assessment (used by re-save after Edit). */
 export async function updateAssessment(id, payload) {
-  if (!isConfigured) {
-    localWrite(localList().map((a) => (a.id === id ? { id, ...payload } : a)));
-    return { id, ...payload };
-  }
-  const [saved] = await upsertRows('ta_entries', [{ id, entry: payload }]);
-  return rowToAssessment(saved || { id, entry: payload });
+  localWrite(localList().map((a) => (a.id === id ? { id, ...payload } : a)));
+  return { id, ...payload };
 }
 
 /** Delete one assessment. */
 export async function deleteAssessment(id) {
-  if (!isConfigured) {
-    localWrite(localList().filter((a) => a.id !== id));
-    return { ok: true };
-  }
-  await deleteRows('ta_entries', [id]);
+  localWrite(localList().filter((a) => a.id !== id));
   return { ok: true };
 }

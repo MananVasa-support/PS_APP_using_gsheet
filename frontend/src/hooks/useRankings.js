@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { rankings as mockRankings, weeklyProductivity as mockWeekly } from '@/data/rankingsMock';
 import { getLeaderboard } from '@/services/level2Service';
 import { listAssessments } from '@/services/taService';
-import { isConfigured, getSession } from '@/lib/gsApi';
+import { getSession } from '@/lib/session';
 
 /**
  * Level-2 rankings for the Analysis / Top-3 / Top-4 / Performance pages.
@@ -16,7 +16,6 @@ export function useRankings() {
   const [rankings, setRankings] = useState(mockRankings);
 
   useEffect(() => {
-    if (!isConfigured) return undefined;
     let active = true;
     const myId = getSession()?.user?.id;
     getLeaderboard()
@@ -55,7 +54,6 @@ export function useWeeklyProductivity() {
   const [weekly, setWeekly] = useState(mockWeekly);
 
   useEffect(() => {
-    if (!isConfigured) return undefined;
     let active = true;
     listAssessments()
       .then((list) => {

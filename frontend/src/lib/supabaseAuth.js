@@ -1,11 +1,10 @@
 /**
  * Supabase AUTH client — the ONLY thing on this branch that talks to Supabase.
  *
- * Scope: identity only. The `_System` users data now lives in a Supabase
- * Postgres table (`app_users`) reached through SECURITY DEFINER RPCs, so the
- * password hash/salt never leave the database. EVERYTHING ELSE (all 5 tools'
- * data + the `_meta` Drive id cache) still lives in Google Sheets via gsApi.js
- * — this file does not touch any of that.
+ * Scope: identity only. User accounts live in a Supabase Postgres table
+ * (`app_users`) reached through SECURITY DEFINER RPCs, so the password
+ * hash/salt never leave the database. Tool data is stored separately (browser
+ * localStorage in the tool services); this file does not touch it.
  *
  * Transport: plain fetch to PostgREST's /rest/v1/rpc/<fn> (no SDK dependency).
  * The anon key is sent as both apikey and Bearer, exactly like supabase-js.
@@ -16,8 +15,8 @@
  * When either is missing, isSupabaseConfigured=false and the auth service
  * falls back to its offline/demo path.
  *
- * Timing logs (for the speed comparison): every RPC logs `[supabase] app_login
- * … 142ms`; these also feed window.apiTimings() alongside the Sheets calls.
+ * Timing logs: every RPC logs `[supabase] app_login … 142ms` and feeds
+ * window.apiTimings().
  */
 
 const URL = import.meta.env.VITE_SUPABASE_URL || '';
@@ -43,7 +42,7 @@ if (typeof window !== 'undefined') {
     console.table(timings);
     return `${timings.length} supabase request(s) this session`;
   };
-  // Keep window.apiTimings (gsApi) working; add supabase rows when both exist.
+  // Keep any existing window.apiTimings working; add supabase rows too.
   if (typeof prev === 'function') {
     window.apiTimings = () => {
       prev();

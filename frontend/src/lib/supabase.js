@@ -1,24 +1,21 @@
-// COMPATIBILITY SHIM — Supabase is GONE on this branch (gsheets-backend).
+// COMPATIBILITY SHIM for the legacy services.
 //
-// The real backend is a Google Apps Script web app + Google Sheets (see
-// src/lib/gsApi.js and backend/gsheets/Code.gs). This file keeps the same
-// exports the rest of the app has always imported:
+// Real auth runs through Supabase (see lib/supabaseAuth.js + services/
+// authService.js). This file only keeps the small surface the ~12 legacy
+// services (admin/consultant/time/report/form/analytics…) still import:
 //
-//   isConfigured  — true when VITE_API_BASE_URL is set (was: Supabase env vars)
-//   unwrapError   — unchanged error normalizer
-//   supabase      — a MINIMAL stand-in:
-//       supabase.auth.getSession / onAuthStateChange / signOut work, backed by
-//       the Sheets session (several services only ever used auth.getSession()
-//       to learn the user id). EVERYTHING ELSE (.from, .rpc, .storage,
-//       .channel, .functions) throws — exactly like the legacy services'
-//       calls against tables/RPCs that never existed in schema.sql behaved on
-//       the Supabase branch.
-//
-// New code should import from '@/lib/gsApi' directly, not from here.
+//   isConfigured  — tool-data backend present? Google Sheets storage was
+//                   removed, so this is FALSE: every gated service uses its
+//                   localStorage/mock demo path.
+//   unwrapError   — error normalizer (unchanged)
+//   supabase      — a MINIMAL stand-in: auth.getSession/onAuthStateChange/
+//                   signOut work off the app session store; .from/.rpc/etc.
+//                   throw (those tables/RPCs never existed for these services).
 
-import { getSession, onAuthChange, clearSession, isConfigured as configured } from './gsApi';
+import { getSession, onAuthChange, clearSession } from './session';
 
-export const isConfigured = configured;
+// No tool-data backend (Google Sheets removed) → demo/localStorage everywhere.
+export const isConfigured = false;
 
 export function unwrapError(err) {
   if (!err) return null;
@@ -31,7 +28,7 @@ export function unwrapError(err) {
   return e;
 }
 
-// Shape a gsApi session like a Supabase session: { access_token, user: { id } }.
+// Shape the app session like a Supabase session: { access_token, user: { id } }.
 const toSupabaseSession = (s) =>
   s?.token ? { access_token: s.token, user: { id: s.user?.id, email: s.user?.email } } : null;
 
@@ -51,9 +48,7 @@ const auth = {
 
 function notAvailable(api) {
   return () => {
-    throw new Error(
-      `[supabase shim] ${api} is not available on the Google Sheets backend — use '@/lib/gsApi' instead.`
-    );
+    throw new Error(`[supabase shim] ${api} is not available.`);
   };
 }
 
