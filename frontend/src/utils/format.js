@@ -37,16 +37,13 @@ export function formatDate(date) {
 
 /**
  * Title-case a person's name as they type: "john doe" -> "John Doe".
- * Capitalises the first letter of every space-separated word and preserves
- * trailing whitespace so the caret keeps behaving naturally mid-type.
- *
- * Business rule: any lowercase 'n' is always rendered as capital 'N'
- * (e.g. "naresh" -> "Naresh", "vinod" -> "ViNod").
+ * Capitalises ONLY the first letter of every space-separated word and preserves
+ * everything else exactly as typed (and trailing whitespace, so the caret keeps
+ * behaving naturally mid-type). "naresh" -> "Naresh", "vinod" -> "Vinod",
+ * "anna" -> "Anna" — no letter is changed except each word's first character.
  */
 export function titleCaseName(value = '') {
-  return value
-    .replace(/(^|\s)(\S)/g, (_, sep, ch) => sep + ch.toUpperCase())
-    .replace(/n/g, 'N');
+  return value.replace(/(^|\s)(\S)/g, (_, sep, ch) => sep + ch.toUpperCase());
 }
 
 /** Build "AM" initials from a name: "Alex Morgan" -> "AM" */
