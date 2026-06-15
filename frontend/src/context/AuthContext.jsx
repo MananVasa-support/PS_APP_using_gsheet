@@ -1,10 +1,35 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { isSupabaseConfigured as isConfigured } from '@/lib/supabaseAuth';
 import { getSession as getStoredSession, onAuthChange, clearSession } from '@/lib/session';
+import { provisionUserSpreadsheet, isConfigured as isSheetsConfigured } from '@/lib/gsApi';
+import { updatePreferences } from '@/services/userService';
 import * as authService from '@/services/authService';
 import { isAdmin, isConsultant, isClient } from '@/utils/roles';
 
 const AuthContext = createContext(null);
+
+// One-time, per-session, non-blocking: ensure the signed-in user has their
+// Google Sheets spreadsheet (created on first authenticated load — covers both
+// new signups and existing users) and record its id in Supabase preferences.
+// The authoritative userId→spreadsheetId map lives server-side; this is a
+// best-effort mirror "against the user" + a guard so it runs once.
+let sheetProvisioned = false;
+function ensureUserSpreadsheet(user) {
+  if (!isSheetsConfigured || sheetProvisioned || !user?.id) return;
+  sheetProvisioned = true;
+  provisionUserSpreadsheet()
+    .then((res) => {
+      const spreadsheetId = res?.spreadsheetId;
+      if (spreadsheetId && user.preferences?.spreadsheetId !== spreadsheetId) {
+        // app_update_profile REPLACES preferences — spread the existing ones.
+        return updatePreferences({ ...(user.preferences || {}), spreadsheetId });
+      }
+      return null;
+    })
+    .catch(() => {
+      sheetProvisioned = false; // allow a retry on the next load/action
+    });
+}
 
 /**
  * Auth provider — owns the Google-Sheets-backend session (token in
@@ -67,6 +92,7 @@ export function AuthProvider({ children }) {
         // expired session signs out instead of stranding a broken dashboard.
         setUser(stored.user || null);
         setSession({ access_token: stored.token });
+        ensureUserSpreadsheet(stored.user); // refresh with an existing session
         authService
           .getCurrentUser()
           .then((profile) => {
@@ -108,11 +134,13 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthChange((event, s) => {
       if (!mountedRef.current) return;
       if (event === 'SIGNED_OUT' || !s?.token) {
+        sheetProvisioned = false; // next user provisions their own spreadsheet
         setSession(null);
         setUser(null);
       } else if (event === 'SIGNED_IN') {
         setSession({ access_token: s.token });
         if (s.user) setUser(s.user);
+        ensureUserSpreadsheet(s.user); // fresh login
       }
     });
 

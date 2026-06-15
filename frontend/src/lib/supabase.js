@@ -14,8 +14,9 @@
 
 import { getSession, onAuthChange, clearSession } from './session';
 
-// No tool-data backend (Google Sheets removed) → demo/localStorage everywhere.
-export const isConfigured = false;
+// Tool-data backend present when the Apps Script Web App URL is set; otherwise
+// every gated service/context falls back to its localStorage demo path.
+export const isConfigured = Boolean(import.meta.env.VITE_API_BASE_URL);
 
 export function unwrapError(err) {
   if (!err) return null;
