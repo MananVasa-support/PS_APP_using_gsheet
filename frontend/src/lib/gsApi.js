@@ -249,6 +249,22 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// Surface Google save/auth failures to the UI instead of swallowing them.
+// A listener (components/GsErrorToaster) turns these into an on-screen toast,
+// so a user never sees a silent "nothing happened" when a save fails.
+let lastErrEmit = 0;
+function emitError(message) {
+  if (typeof window === 'undefined') return;
+  const now = Date.now();
+  if (now - lastErrEmit < 3000) return; // throttle bursts from a single action
+  lastErrEmit = now;
+  try {
+    window.dispatchEvent(new CustomEvent('gs:error', { detail: String(message) }));
+  } catch {
+    /* ignore */
+  }
+}
+
 // ── Google access token (GIS popup — same pattern as the Calendar export) ───
 const GTOKEN_KEY = 'gs.gtoken'; // { token, exp }
 let gisPromise = null;
@@ -360,13 +376,19 @@ async function gfetch(op, url, { method = 'GET', body, interactive = true } = {}
     } catch (err) {
       if (err instanceof ApiError && err.code === 'GOOGLE_TOKEN' && err.status !== 401) {
         logTiming({ op, ms: Math.round(performance.now() - t0), ok: false, at: new Date().toLocaleTimeString() });
+        emitError(
+          'Google access is needed to save your data into Sheets. When the popup opens, pick your Google account → Advanced → Continue → Allow.'
+        );
         throw err; // sign-in cancelled / silent mode — don't burn retries
       }
       lastErr = err;
     }
   }
   logTiming({ op, ms: Math.round(performance.now() - t0), ok: false, at: new Date().toLocaleTimeString() });
-  throw lastErr instanceof ApiError ? lastErr : new ApiError(lastErr?.message || 'Could not reach Google.', 'NETWORK');
+  const finalErr =
+    lastErr instanceof ApiError ? lastErr : new ApiError(lastErr?.message || 'Could not reach Google.', 'NETWORK');
+  emitError(`Couldn't save to Google Sheets: ${finalErr.message}`);
+  throw finalErr;
 }
 
 // ── Drive helpers ────────────────────────────────────────────────────────────
