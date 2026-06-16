@@ -389,6 +389,18 @@ html.dark .tool-scope .border-zinc-300 {
   border-color: rgb(var(--ink-700));
 }
 
+/* Gradient color-stops — the Time Finder hero uses `from-white to-gray-100`,
+   a light gradient that left white headings invisible. Re-point the Tailwind
+   gradient vars to dark tones (keeps the same from→to structure). */
+html.dark .tool-scope .from-white {
+  --tw-gradient-from: rgb(var(--ink-950)) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(7 9 16 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+html.dark .tool-scope .to-gray-100 {
+  --tw-gradient-to: rgb(var(--ink-900)) var(--tw-gradient-to-position);
+}
+
 /* Consistent, subtle page-entrance used by the shell layouts (keyed by route).
    A gentle fade + rise so navigating between pages feels smooth and deliberate.
    Respects reduced-motion preferences. */
