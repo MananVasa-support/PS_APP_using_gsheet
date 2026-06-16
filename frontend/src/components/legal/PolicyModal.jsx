@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FiX, FiShield } from 'react-icons/fi';
+import { FiX } from 'react-icons/fi';
 import { POLICIES, POLICY_CONTACT } from '@/data/policies';
+import logoUrl from '@/assets/logo.png';
 import { cn } from '@/utils/cn';
 
 /**
@@ -192,8 +193,8 @@ export default function PolicyModal({ open, onClose, initialTab = 'privacy' }) {
             {/* Header: brand + tabs + close (white, sticky) */}
             <div className="shrink-0 border-b border-gray-200 bg-white px-5 pt-4">
               <div className="flex items-center gap-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-500/10 text-brand-500">
-                  <FiShield className="h-5 w-5" />
+                <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-white p-1 shadow-glow ring-1 ring-gray-200">
+                  <img src={logoUrl} alt="Productivity Shastra logo" className="h-full w-full object-contain" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-gray-900">Policies</p>
