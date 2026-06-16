@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PolicyModal from '@/components/legal/PolicyModal.jsx';
+import logoUrl from '@/assets/logo.png';
 import { cn } from '@/utils/cn';
 
 /**
@@ -35,9 +36,17 @@ export default function Footer({ variant = 'app', className }) {
             isAuth ? 'max-w-md py-4 sm:max-w-xl' : 'max-w-7xl py-4'
           )}
         >
-          <p className={cn('text-xs text-ink-500', isAuth && 'text-[11px]')}>
-            © {year} <span className="font-medium text-ink-300">Altus Corp.</span> All Rights Reserved.
-          </p>
+          <div className="flex items-center gap-2.5">
+            <span
+              className="grid shrink-0 place-items-center overflow-hidden rounded-lg bg-white p-0.5 shadow-glow ring-1 ring-ink-700"
+              style={{ height: isAuth ? 20 : 24, width: isAuth ? 20 : 24 }}
+            >
+              <img src={logoUrl} alt="Productivity Shastra logo" className="h-full w-full object-contain" />
+            </span>
+            <p className={cn('text-xs text-ink-500', isAuth && 'text-[11px]')}>
+              © {year} <span className="font-medium text-ink-300">Altus Corp.</span> All Rights Reserved.
+            </p>
+          </div>
 
           <button
             type="button"
