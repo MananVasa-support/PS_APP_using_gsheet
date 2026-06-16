@@ -112,23 +112,13 @@ export default function Layout({ children }) {
           <HubLink />
         </div>
         {/* Top Header */}
-        <header className="h-20 border-b border-line px-6 sm:px-8 flex items-center justify-between bg-surface/80 backdrop-blur-md sticky top-0 z-40">
+        <header className="h-20 border-b border-line px-6 sm:px-8 flex items-center justify-between bg-surface backdrop-blur-md sticky top-0 z-40">
           <div>
             <h1 className="text-lg sm:text-xl font-bold text-mkink select-none">
               Meeting Success Maximizer
             </h1>
             <p className="text-xs text-muted select-none hidden sm:block">
               Plan & align meetings by auditing success markers.
-            </p>
-          </div>
-
-          <div className="text-right hidden sm:block">
-            <p className="text-xs text-muted select-none">System Status</p>
-            <p className="text-sm font-semibold select-none">
-              <span className="inline-flex items-center gap-1.5 text-mkink font-medium">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-red" />
-                SYSTEM READY
-              </span>
             </p>
           </div>
         </header>

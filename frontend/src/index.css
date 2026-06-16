@@ -401,6 +401,27 @@ html.dark .tool-scope .to-gray-100 {
   --tw-gradient-to: rgb(var(--ink-900)) var(--tw-gradient-to-position);
 }
 
+/* Translucent LIGHT surfaces (frosted/sticky headers, overlays). The opacity
+   variants aren't caught by the solid bg rules, so they showed as light bands
+   in dark mode. Remap the high-opacity light ones to dark, preserving the
+   roughly-frosted feel. (bg-white/10–/20 are intentional subtle highlights on
+   dark elements — left alone.) */
+html.dark .tool-scope .bg-white\/95,
+html.dark .tool-scope .bg-zinc-50\/95 {
+  background-color: rgb(var(--ink-850) / 0.95);
+}
+html.dark .tool-scope .bg-white\/80 {
+  background-color: rgb(var(--ink-850) / 0.8);
+}
+html.dark .tool-scope .bg-zinc-50\/70,
+html.dark .tool-scope .bg-brand-gray-50\/70 {
+  background-color: rgb(var(--ink-900) / 0.7);
+}
+html.dark .tool-scope .bg-zinc-50\/60,
+html.dark .tool-scope .bg-brand-gray-50\/60 {
+  background-color: rgb(var(--ink-900) / 0.6);
+}
+
 /* Consistent, subtle page-entrance used by the shell layouts (keyed by route).
    A gentle fade + rise so navigating between pages feels smooth and deliberate.
    Respects reduced-motion preferences. */
