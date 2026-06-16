@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FiShield } from 'react-icons/fi';
 import PolicyModal from '@/components/legal/PolicyModal.jsx';
 import logoUrl from '@/assets/logo.png';
 import { cn } from '@/utils/cn';
@@ -52,11 +53,12 @@ export default function Footer({ variant = 'app', className }) {
             type="button"
             onClick={() => setOpen(true)}
             className={cn(
-              'rounded-md font-medium text-ink-400 transition-colors hover:text-brand-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+              'inline-flex items-center gap-1.5 rounded-md font-medium text-ink-400 transition-colors hover:text-brand-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
               isAuth ? 'text-[11px]' : 'text-xs'
             )}
             aria-haspopup="dialog"
           >
+            <FiShield className={cn('shrink-0', isAuth ? 'h-3 w-3' : 'h-3.5 w-3.5')} aria-hidden="true" />
             Policies
           </button>
         </div>
