@@ -333,6 +333,62 @@ html.dark .tool-scope .hover\:border-line:hover {
   border-color: rgb(var(--ink-600));
 }
 
+/* ---- Extra families the first pass missed (brand-black, zinc-*, the    */
+/* custom .surface-card). text-brand-black alone is the most-used dark     */
+/* heading color in Reasons Eliminator ("What is stopping you?" etc.). --- */
+
+/* Strong text */
+html.dark .tool-scope .text-brand-black,
+html.dark .tool-scope .text-brand-dark,
+html.dark .tool-scope .text-zinc-900,
+html.dark .tool-scope .text-zinc-800,
+html.dark .tool-scope .text-ink-900 {
+  color: rgb(var(--fg-strong));
+}
+/* Body text */
+html.dark .tool-scope .text-zinc-700,
+html.dark .tool-scope .text-zinc-600 {
+  color: rgb(var(--fg));
+}
+/* Muted text */
+html.dark .tool-scope .text-zinc-500,
+html.dark .tool-scope .text-zinc-400,
+html.dark .tool-scope .text-zinc-300 {
+  color: rgb(var(--fg-muted));
+}
+
+/* Surfaces */
+html.dark .tool-scope .surface-card {
+  background-color: rgb(var(--ink-850)); /* card tone — beats scoped.css #fff */
+}
+html.dark .tool-scope .bg-zinc-50 {
+  background-color: rgb(var(--ink-900));
+}
+html.dark .tool-scope .bg-zinc-100 {
+  background-color: rgb(var(--ink-800));
+}
+html.dark .tool-scope .bg-zinc-200 {
+  background-color: rgb(var(--ink-700));
+}
+/* Black-ish filled surfaces / chips → raised neutral (white text reads). */
+html.dark .tool-scope .bg-brand-black,
+html.dark .tool-scope .bg-brand-dark,
+html.dark .tool-scope .bg-zinc-900,
+html.dark .tool-scope .bg-zinc-700,
+html.dark .tool-scope .bg-zinc-400 {
+  background-color: rgb(var(--ink-700));
+}
+
+/* Borders */
+html.dark .tool-scope .border-brand-black {
+  border-color: rgb(var(--ink-600));
+}
+html.dark .tool-scope .border-zinc-100,
+html.dark .tool-scope .border-zinc-200,
+html.dark .tool-scope .border-zinc-300 {
+  border-color: rgb(var(--ink-700));
+}
+
 /* Consistent, subtle page-entrance used by the shell layouts (keyed by route).
    A gentle fade + rise so navigating between pages feels smooth and deliberate.
    Respects reduced-motion preferences. */
