@@ -7,7 +7,7 @@ import MeetingApp from '@/features/meeting/App.jsx';
  */
 export default function MeetingFramework() {
   return (
-    <div className="tool-scope min-h-screen bg-surface font-meeting text-mkink [color-scheme:light]">
+    <div className="tool-scope min-h-screen font-meeting">
       <MeetingApp />
     </div>
   );

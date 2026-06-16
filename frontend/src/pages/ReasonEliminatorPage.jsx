@@ -8,7 +8,7 @@ import ReasonEliminatorApp from '@/features/reason-eliminator/App.jsx';
  */
 export default function ReasonEliminatorPage() {
   return (
-    <div className="tool-scope min-h-screen bg-brand-gray-50 font-sans text-brand-ink [color-scheme:light]">
+    <div className="tool-scope min-h-screen font-sans">
       <ReasonEliminatorApp />
     </div>
   );

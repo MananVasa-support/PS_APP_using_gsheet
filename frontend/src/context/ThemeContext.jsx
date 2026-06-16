@@ -1,28 +1,46 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext(null);
+const STORAGE_KEY = 'ps_theme';
 
 /**
- * Theme. The dark/night theme was removed by request — the app is light-only.
- * We keep this provider (and a no-op toggle/setter) so existing consumers don't
- * break, and we pin <html> to the light palette. Pre-login/public pages opt
- * into a dark look locally via the `.always-dark` scope in index.css.
+ * App theme — dark / light, app-wide. The actual palette lives in CSS variables
+ * (see index.css `:root/html.dark` and `html.light`), so flipping the class on
+ * <html> re-themes the entire shell AND the merged tools (tool-scope dark
+ * overrides). Public/auth pages opt into a fixed dark look via `.always-dark`.
+ *
+ * The choice is remembered in localStorage. Default is dark (matches the
+ * always-dark login screen for a cohesive entry into the app).
  */
+function getInitialTheme() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'dark' || saved === 'light') return saved;
+  } catch {
+    /* ignore */
+  }
+  return 'dark';
+}
+
 export function ThemeProvider({ children }) {
-  const theme = 'light';
+  const [theme, setThemeState] = useState(getInitialTheme);
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark');
-    root.classList.add('light');
-    localStorage.setItem('ps_theme', 'light');
-  }, []);
+    root.classList.remove('dark', 'light');
+    root.classList.add(theme);
+    try {
+      localStorage.setItem(STORAGE_KEY, theme);
+    } catch {
+      /* ignore */
+    }
+  }, [theme]);
 
-  // Dark mode is gone, so toggling/setting is intentionally a no-op.
-  const noop = () => {};
+  const setTheme = (t) => setThemeState(t === 'light' ? 'light' : 'dark');
+  const toggleTheme = () => setThemeState((t) => (t === 'dark' ? 'light' : 'dark'));
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: noop, toggleTheme: noop }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

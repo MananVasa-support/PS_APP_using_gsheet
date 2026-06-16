@@ -2,9 +2,10 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiMenu, FiSearch, FiBell, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiSearch, FiBell, FiSettings, FiLogOut, FiSun, FiMoon } from 'react-icons/fi';
 import Avatar from '@/components/ui/Avatar.jsx';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/context/ThemeContext.jsx';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { formatDate } from '@/utils/format';
 import { guardNav } from '@/lib/navGuard';
@@ -42,6 +43,7 @@ export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
     ? SEARCH_DESTINATIONS.filter((d) => d.label.toLowerCase().includes(query.trim().toLowerCase()))
     : [];
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   // Logout runs through the navigation guard (a tool with unsaved edits asks
@@ -134,7 +136,15 @@ export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
       <div className="ml-auto flex items-center gap-2">
         <span className="hidden text-sm text-ink-400 md:block">{formatDate(new Date())}</span>
 
-        {/* Theme toggle removed — the app is light-only now. */}
+        {/* Dark / light theme toggle — app-wide, persisted, on every page. */}
+        <button
+          onClick={toggleTheme}
+          className="rounded-lg p-2 text-ink-400 transition-colors hover:bg-ink-800 hover:text-fg-strong"
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        >
+          {theme === 'dark' ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
+        </button>
 
         {/* Notifications */}
         <div className="relative" ref={notifRef}>

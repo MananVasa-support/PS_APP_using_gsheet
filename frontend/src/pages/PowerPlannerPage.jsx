@@ -7,7 +7,7 @@ import PowerPlannerApp from '@/features/power-planner/App.jsx';
  */
 export default function PowerPlannerPage() {
   return (
-    <div className="tool-scope min-h-screen bg-white font-sans text-black [color-scheme:light]">
+    <div className="tool-scope min-h-screen font-sans">
       {/* Power Planner has its own native "Back" button (returns to its start
           screen), so it doesn't use the shared HubLink — avoids two back buttons.
           The shared navbar's logo handles returning to the dashboard. */}

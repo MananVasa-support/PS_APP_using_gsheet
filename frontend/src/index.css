@@ -211,6 +211,128 @@ html.light .tool-scope .text-white {
   transform: scale(0.97);
 }
 
+/* ================================================================== */
+/*  Theme-adaptive merged tools                                        */
+/*  The 4 full-screen tools (Power Planner, Meeting, Reasons           */
+/*  Eliminator, Time Finder) were authored light-only with literal     */
+/*  black/white/gray utilities. The wrappers no longer force a light    */
+/*  surface; instead the tool-scope base + a dark override layer below  */
+/*  re-theme them so toggling dark/light affects the tools too.         */
+/* ------------------------------------------------------------------- */
+
+/* Base surface — drives off the same CSS vars as the shell, so this   */
+/* gives a LIGHT page in light mode and a DARK page in dark mode with   */
+/* a single rule. Per-element utilities (bg-white/text-black) still win */
+/* by specificity in light mode and are remapped below in dark mode.    */
+.tool-scope {
+  background-color: rgb(var(--ink-950));
+  color: rgb(var(--fg));
+}
+
+/* ---- DARK MODE: remap the tools' light utilities to dark tones ---- */
+/* Specificity html.dark .tool-scope .X (0,3,0) beats Tailwind's .X.    */
+
+/* Surfaces */
+html.dark .tool-scope .bg-white,
+html.dark .tool-scope .bg-surface {
+  background-color: rgb(var(--ink-850));
+}
+html.dark .tool-scope .bg-surface-alt,
+html.dark .tool-scope .bg-gray-50,
+html.dark .tool-scope .bg-brand-gray-50,
+html.dark .tool-scope .bg-neutral-50 {
+  background-color: rgb(var(--ink-900));
+}
+html.dark .tool-scope .bg-gray-100,
+html.dark .tool-scope .bg-brand-gray-100 {
+  background-color: rgb(var(--ink-800));
+}
+html.dark .tool-scope .bg-gray-200,
+html.dark .tool-scope .bg-brand-gray-200,
+html.dark .tool-scope .bg-brand-gray-300,
+html.dark .tool-scope .bg-line {
+  background-color: rgb(var(--ink-700));
+}
+/* Black filled buttons / bars → a raised neutral so white text reads. */
+html.dark .tool-scope .bg-black,
+html.dark .tool-scope .bg-brand-ink {
+  background-color: rgb(var(--ink-700));
+}
+
+/* Text — strong / body / muted tiers */
+html.dark .tool-scope .text-black,
+html.dark .tool-scope .text-mkink,
+html.dark .tool-scope .text-brand-ink,
+html.dark .tool-scope .text-brand-gray-900,
+html.dark .tool-scope .text-tfink-900,
+html.dark .tool-scope .text-gray-900,
+html.dark .tool-scope .text-gray-800,
+html.dark .tool-scope .text-brand-gray-800 {
+  color: rgb(var(--fg-strong));
+}
+html.dark .tool-scope .text-gray-700,
+html.dark .tool-scope .text-brand-gray-700,
+html.dark .tool-scope .text-gray-600,
+html.dark .tool-scope .text-brand-gray-600 {
+  color: rgb(var(--fg));
+}
+html.dark .tool-scope .text-muted,
+html.dark .tool-scope .text-gray-500,
+html.dark .tool-scope .text-gray-400,
+html.dark .tool-scope .text-gray-300,
+html.dark .tool-scope .text-brand-gray-500,
+html.dark .tool-scope .text-brand-gray-400,
+html.dark .tool-scope .text-brand-gray-300,
+html.dark .tool-scope .text-tfink-500 {
+  color: rgb(var(--fg-muted));
+}
+
+/* Borders — emphasis (black) a touch brighter than hairlines. */
+html.dark .tool-scope .border-black {
+  border-color: rgb(var(--ink-600));
+}
+html.dark .tool-scope .border-line,
+html.dark .tool-scope .border-muted,
+html.dark .tool-scope .border-brand-gray-300,
+html.dark .tool-scope .border-brand-gray-200,
+html.dark .tool-scope .border-brand-gray-100,
+html.dark .tool-scope .border-gray-100,
+html.dark .tool-scope .border-gray-200,
+html.dark .tool-scope .border-gray-300,
+html.dark .tool-scope .border-gray-400,
+html.dark .tool-scope .border-tfink-200 {
+  border-color: rgb(var(--ink-700));
+}
+
+/* Hover variants (Tailwind emits .hover\:X:hover — base rules miss them) */
+html.dark .tool-scope .hover\:bg-black:hover,
+html.dark .tool-scope .hover\:bg-brand-ink:hover {
+  background-color: rgb(var(--ink-600));
+}
+html.dark .tool-scope .hover\:bg-white:hover,
+html.dark .tool-scope .hover\:bg-gray-50:hover,
+html.dark .tool-scope .hover\:bg-brand-gray-50:hover {
+  background-color: rgb(var(--ink-800));
+}
+html.dark .tool-scope .hover\:bg-gray-100:hover,
+html.dark .tool-scope .hover\:bg-brand-gray-100:hover,
+html.dark .tool-scope .hover\:bg-surface-alt:hover {
+  background-color: rgb(var(--ink-750));
+}
+html.dark .tool-scope .hover\:text-black:hover,
+html.dark .tool-scope .hover\:text-mkink:hover,
+html.dark .tool-scope .hover\:text-brand-ink:hover,
+html.dark .tool-scope .hover\:text-brand-gray-600:hover {
+  color: rgb(var(--fg-strong));
+}
+html.dark .tool-scope .hover\:border-black:hover,
+html.dark .tool-scope .hover\:border-brand-gray-300:hover,
+html.dark .tool-scope .hover\:border-gray-400:hover,
+html.dark .tool-scope .hover\:border-muted:hover,
+html.dark .tool-scope .hover\:border-line:hover {
+  border-color: rgb(var(--ink-600));
+}
+
 /* Consistent, subtle page-entrance used by the shell layouts (keyed by route).
    A gentle fade + rise so navigating between pages feels smooth and deliberate.
    Respects reduced-motion preferences. */

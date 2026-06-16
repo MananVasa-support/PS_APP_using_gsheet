@@ -7,7 +7,7 @@ import TimeFinderApp from '@/features/time-finder/App.jsx';
  */
 export default function TimeFinderPage() {
   return (
-    <div className="tool-scope min-h-screen bg-[#fafafa] font-sans text-tfink-900 [color-scheme:light]">
+    <div className="tool-scope min-h-screen font-sans">
       <TimeFinderApp />
     </div>
   );

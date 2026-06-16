@@ -147,17 +147,20 @@ export default function Dashboard() {
         )}
       </div>
 
-      <section className="space-y-3">
-        <h2 className="mb-1 text-xs font-bold uppercase tracking-wider text-ink-500">Choose a Tool to get started</h2>
-        {MODULES.map((m, i) => (
-          <ModuleCard
-            key={m.key}
-            item={m}
-            index={i}
-            readOnly={isClientView}
-            onBlocked={blockAction}
-          />
-        ))}
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-500">Choose a Tool to get started</h2>
+        {/* Stacked on phones; side-by-side and wrapping on iPad / laptop / wide. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {MODULES.map((m, i) => (
+            <ModuleCard
+              key={m.key}
+              item={m}
+              index={i}
+              readOnly={isClientView}
+              onBlocked={blockAction}
+            />
+          ))}
+        </div>
       </section>
     </div>
   );
