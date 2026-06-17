@@ -4,7 +4,7 @@ import { FiCompass, FiPlus, FiTrash2, FiChevronLeft, FiChevronRight } from 'reac
 import { BackButton, Button, Card, PageHeader } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { cn } from '@/utils/cn';
-import { AutoAddSelect, StarRating, Field } from '@/components/ps/fields.jsx';
+import { AutoAddSelect, PointScale, Field } from '@/components/ps/fields.jsx';
 import { useLog } from '@/components/ps/useLog.js';
 import { getOptionList, addToOptionList, EXPECTATION_AREAS } from '@/services/personalSpaceService';
 
@@ -151,12 +151,12 @@ export default function ExpectationsCrystalliser() {
 
                     {/* End-of-workshop reflection */}
                     <div className="mt-3 border-t border-ink-800 pt-3">
-                      <StarRating
+                      <PointScale
                         label="Experience Rating (end of workshop)"
-                        value={entry.data.rating || 0}
+                        value={entry.data.rating ?? 0}
                         onChange={(v) => setRating(entry, v)}
+                        min={0}
                         max={5}
-                        allowZero
                       />
                       {(entry.data.rating || 0) > 0 && (
                         <div className="mt-3">
