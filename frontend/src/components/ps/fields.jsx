@@ -153,6 +153,42 @@ export function StarRating({ label, value, onChange, max = 5, allowZero = false 
   );
 }
 
+// ── Numeric point scale (0…max as buttons) ──────────────────────────────────
+export function PointScale({ label, required, value, onChange, min = 0, max = 5, error }) {
+  const points = [];
+  for (let n = min; n <= max; n += 1) points.push(n);
+  return (
+    <div>
+      {label && (
+        <label className={labelCls}>
+          {label} {required && reqStar}
+        </label>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {points.map((n) => {
+          const active = value === n;
+          return (
+            <button
+              type="button"
+              key={n}
+              onClick={() => onChange(n)}
+              className={cn(
+                'h-10 w-10 rounded-xl border text-sm font-bold transition',
+                active
+                  ? 'border-transparent bg-brand-gradient text-white shadow-glow'
+                  : 'border-ink-700 bg-ink-800 text-fg-muted hover:border-brand-500/50 hover:text-fg-strong'
+              )}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+      {error && <p className="mt-1.5 text-xs text-brand-400">{error}</p>}
+    </div>
+  );
+}
+
 // ── HH:MM masked input ───────────────────────────────────────────────────────
 export function HHMMInput({ label, required, value, onChange, error }) {
   const handle = (raw) => {

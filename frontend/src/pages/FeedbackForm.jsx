@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FiMessageCircle, FiSave } from 'react-icons/fi';
 import { BackButton, Button, Card, PageHeader } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
-import { StatusButtons, StarRating, Field } from '@/components/ps/fields.jsx';
+import { StatusButtons, PointScale, Field } from '@/components/ps/fields.jsx';
 import EntryLog from '@/components/ps/EntryLog.jsx';
 import { useLog } from '@/components/ps/useLog.js';
 import { todayISO } from '@/services/personalSpaceService';
@@ -20,7 +20,7 @@ const INTERACTION_CLASSES = ['HH Call', 'Session'];
 export default function FeedbackForm() {
   const toast = useToast();
   const { entries, add, remove } = useLog('feedback-form', (d) => `${d.interaction} · ${d.rating}/5`);
-  const [form, setForm] = useState({ date: todayISO(), interaction: '', rating: 0 });
+  const [form, setForm] = useState({ date: todayISO(), interaction: '', rating: null });
   const [errors, setErrors] = useState({});
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -29,11 +29,11 @@ export default function FeedbackForm() {
     const errs = {};
     if (!form.date) errs.date = 'Required';
     if (!form.interaction) errs.interaction = 'Pick one';
-    if (!form.rating) errs.rating = 'Give a rating';
+    if (form.rating == null) errs.rating = 'Pick a score';
     setErrors(errs);
     if (Object.keys(errs).length) return;
     await add({ ...form });
-    setForm({ date: todayISO(), interaction: '', rating: 0 });
+    setForm({ date: todayISO(), interaction: '', rating: null });
     toast.success('Feedback submitted');
   }
 
@@ -70,9 +70,15 @@ export default function FeedbackForm() {
               error={errors.interaction}
             />
 
-            <Field label="Evaluation" required error={errors.rating}>
-              <StarRating value={form.rating} onChange={(v) => set('rating', v)} max={5} />
-            </Field>
+            <PointScale
+              label="Evaluation"
+              required
+              value={form.rating}
+              onChange={(v) => set('rating', v)}
+              min={0}
+              max={5}
+              error={errors.rating}
+            />
 
             {/* ── PLACEHOLDER: Ruchita's workshop feedback question set ──────────
                 Wire the full participant question array in here when available.
