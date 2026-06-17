@@ -80,15 +80,14 @@ export default function FeedbackForm() {
               error={errors.rating}
             />
 
-            {/* ── PLACEHOLDER: Ruchita's workshop feedback question set ──────────
+            {/* ── PLACEHOLDER: workshop feedback question set ────────────────────
                 Wire the full participant question array in here when available.
                 Each question can render as a rating/short-answer row and be
                 saved into the entry's `data.responses`. */}
             <div className="rounded-2xl border border-dashed border-ink-700 bg-ink-900/40 p-4">
               <p className="text-sm font-semibold text-fg-strong">Workshop Feedback Questions</p>
               <p className="mt-1 text-xs text-ink-400">
-                📋 Placeholder — the comprehensive question set from Ruchita’s workshop participant
-                template will be imported here. (Share the questions and I’ll wire them in.)
+                📋 Placeholder — the workshop question set will be imported here.
               </p>
             </div>
 
