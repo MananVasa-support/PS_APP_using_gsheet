@@ -38,6 +38,8 @@ const TimeFinderPage = lazy(() => import('@/pages/TimeFinderPage.jsx'));
 const ReasonEliminatorPage = lazy(() => import('@/pages/ReasonEliminatorPage.jsx'));
 const TimeAuditor = lazy(() => import('@/pages/TimeAuditor.jsx'));
 const SalesCultivator = lazy(() => import('@/pages/SalesCultivator.jsx'));
+const ExpectationsCrystalliser = lazy(() => import('@/pages/ExpectationsCrystalliser.jsx'));
+const FeedbackForm = lazy(() => import('@/pages/FeedbackForm.jsx'));
 const PersonalSpace = lazy(() => import('@/pages/PersonalSpace.jsx'));
 const PersonalSpaceForm = lazy(() => import('@/pages/personalSpace/PersonalSpaceForm.jsx'));
 const Reminder = lazy(() => import('@/pages/Reminder.jsx'));
@@ -118,6 +120,8 @@ export default function AppRoutes() {
             <Route path="/pre-ps/totality" element={<Totality />} />
             <Route path="/post-ps" element={<PostPS />} />
             <Route path="/sales-cultivator" element={<SalesCultivator />} />
+            <Route path="/expectations-crystalliser" element={<ExpectationsCrystalliser />} />
+            <Route path="/feedback" element={<FeedbackForm />} />
             <Route path="/personal-space" element={<PersonalSpace />} />
             <Route path="/personal-space/:moduleId" element={<PersonalSpaceForm />} />
             <Route path="/reminder" element={<Reminder />} />

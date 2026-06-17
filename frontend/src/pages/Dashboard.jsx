@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   FiActivity, FiCalendar, FiClock, FiSlash, FiArrowRight,
   FiTarget, FiTrendingUp, FiGrid, FiUsers, FiChevronRight, FiLock,
+  FiCompass, FiMessageCircle,
 } from 'react-icons/fi';
 import { Avatar, Button, Card, Spinner } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,14 +22,16 @@ import * as adminService from '@/services/adminService';
  */
 
 const MODULES = [
-  { key: 'totality',  title: 'Totality Collector',     icon: FiTarget,     to: '/pre-ps/totality' },
-  { key: 'sales',     title: 'Sales Cultivator',       icon: FiTrendingUp, to: '/sales-cultivator' },
-  { key: 'auditor',   title: 'Time Auditor',           icon: FiActivity,   to: '/time-auditor' },
-  { key: 'planner',   title: 'Power Planner',          icon: FiCalendar,   to: '/power-planner' },
-  { key: 'reasons',   title: 'Reasons Eliminator',     icon: FiSlash,      to: '/reason-eliminator' },
-  { key: 'finder',    title: 'Time Finder',            icon: FiClock,      to: '/time-finder' },
-  { key: 'meeting',   title: 'Meeting Success Maximizer', icon: FiUsers,   to: '/meeting-framework' },
-  { key: 'personal',  title: 'Personal Space',         icon: FiGrid,       to: '/personal-space' },
+  { key: 'expectations', title: 'Expectations Crystalliser ©', icon: FiCompass,    to: '/expectations-crystalliser' },
+  { key: 'totality',  title: 'Totality Collector ©',     icon: FiTarget,     to: '/pre-ps/totality' },
+  { key: 'sales',     title: 'Sales Cultivator ©',       icon: FiTrendingUp, to: '/sales-cultivator' },
+  { key: 'auditor',   title: 'Time Auditor ©',           icon: FiActivity,   to: '/time-auditor' },
+  { key: 'planner',   title: 'Power Planner ©',          icon: FiCalendar,   to: '/power-planner' },
+  { key: 'reasons',   title: 'Reasons Eliminator ©',     icon: FiSlash,      to: '/reason-eliminator' },
+  { key: 'finder',    title: 'Time Finder ©',            icon: FiClock,      to: '/time-finder' },
+  { key: 'meeting',   title: 'Meeting Success Maximizer ©', icon: FiUsers,   to: '/meeting-framework' },
+  { key: 'personal',  title: 'Personal Space ©',         icon: FiGrid,       to: '/personal-space' },
+  { key: 'feedback',  title: 'Feedback Form ©',          icon: FiMessageCircle, to: '/feedback' },
 ];
 
 function ModuleCard({ item, index, readOnly, onBlocked }) {

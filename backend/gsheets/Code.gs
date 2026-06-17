@@ -79,6 +79,16 @@ const DEFS = {
   // Singleton (id='options') holding the auto-add Subject / Doer option lists.
   totality_meta: { tab: 'totality_meta', keys: ['id'], idCol: 'id',
     headers: ['id', 'subjects', 'doers', 'updated_at'] },
+  // Personal Space + Expectations Crystalliser + Feedback Form — ONE generic
+  // log tab for every tool. `tool` = which tool the row belongs to; `summary`
+  // = a readable one-line preview; `data` = the full tool-specific JSON.
+  ps_entries: { tab: 'ps_entries', keys: ['id'], idCol: 'id',
+    headers: ['id', 'tool', 'summary', 'data', 'created_at', 'updated_at'],
+    derived: ['tool', 'summary'] },
+  // Generic auto-add option lists, one row per list (id = list name, e.g.
+  // 'expectations_areas'); `values` = JSON array of options.
+  ps_options: { tab: 'ps_options', keys: ['id'], idCol: 'id',
+    headers: ['id', 'values', 'updated_at'] },
 };
 const ALL_SHEETS = Object.keys(DEFS);
 

@@ -1,21 +1,19 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  FiArrowLeft, FiArrowRight,
-  FiFeather, FiSun, FiCheckSquare, FiRepeat, FiClock,
-  FiActivity, FiEdit3, FiMessageCircle,
+  FiArrowRight,
+  FiSun, FiCheckSquare, FiRepeat, FiClock,
+  FiActivity, FiEdit3,
 } from 'react-icons/fi';
-import { BackButton, Button, PageHeader } from '@/components/ui';
+import { BackButton, PageHeader } from '@/components/ui';
 
 export const PERSONAL_SPACE_MODULES = [
-  { id: 'takeaway-crystaliser',    title: 'Takeaway Crystaliser',    icon: FiFeather,        desc: 'Crystalise the key takeaways from your week.' },
-  { id: 'insights-illuminator',    title: 'Insights Illuminator',    icon: FiSun,            desc: 'Capture the insights that lit up for you.' },
-  { id: 'results-recorder',        title: 'Results Recorder',        icon: FiCheckSquare,    desc: 'Record measurable results & wins.' },
-  { id: 'habit-change-register',   title: 'Habit Change Register',   icon: FiRepeat,         desc: 'Track habits you are forming or breaking.' },
-  { id: 'time-saver',              title: 'Time Saver',              icon: FiClock,          desc: 'Log time you saved and how you saved it.' },
-  { id: 'productivity-calculator', title: 'Productivity Calculator', icon: FiActivity,       desc: 'Quickly calculate your productivity score.' },
-  { id: 'personal-notes-taker',    title: 'Personal Notes Taker',    icon: FiEdit3,          desc: 'Personal notes — free-form thinking space.' },
-  { id: 'feedback-form',           title: 'Feedback Form',           icon: FiMessageCircle,  desc: 'Share feedback for the team.' },
+  { id: 'insights-illuminator',    title: 'Insights Illuminator ©',    icon: FiSun,         desc: 'Capture an insight and turn it into an action.' },
+  { id: 'results-recorder',        title: 'Results Recorder ©',        icon: FiCheckSquare, desc: 'Record small, compounding wins — fast and often.' },
+  { id: 'habit-change-register',   title: 'Habit Change Register ©',   icon: FiRepeat,      desc: 'Track deliberate habit swaps over time.' },
+  { id: 'time-saver',              title: 'Time Saver ©',              icon: FiClock,       desc: 'Log time optimizations and how often they save time.' },
+  { id: 'productivity-calculator', title: 'Productivity Calculator ©', icon: FiActivity,    desc: 'Quickly calculate your productivity score.' },
+  { id: 'personal-notes-taker',    title: 'Personal Notes Taker ©',    icon: FiEdit3,       desc: 'Personal notes — free-form thinking space.' },
 ];
 
 export default function PersonalSpace() {

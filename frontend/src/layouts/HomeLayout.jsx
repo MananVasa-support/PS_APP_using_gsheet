@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar.jsx';
 import Footer from '@/components/layout/Footer.jsx';
+import WhatsAppFloat from '@/components/layout/WhatsAppFloat.jsx';
 import Logo from '@/components/ui/Logo.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
 
@@ -35,6 +36,7 @@ export default function HomeLayout() {
         </Suspense>
       </main>
       <Footer />
+      <WhatsAppFloat />
     </div>
   );
 }

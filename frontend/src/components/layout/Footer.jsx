@@ -19,7 +19,6 @@ import { cn } from '@/utils/cn';
  */
 export default function Footer({ variant = 'app', className }) {
   const [open, setOpen] = useState(false);
-  const year = new Date().getFullYear();
   const isAuth = variant === 'auth';
 
   return (
@@ -45,7 +44,16 @@ export default function Footer({ variant = 'app', className }) {
               <img src={logoUrl} alt="Productivity Shastra logo" className="h-full w-full object-contain" />
             </span>
             <p className={cn('text-xs text-ink-500', isAuth && 'text-[11px]')}>
-              © {year} <span className="font-medium text-ink-300">Altus Corp.</span> All Rights Reserved.
+              © All Rights Reserved. 2026-2035.{' '}
+              <span className="font-medium text-ink-300">CA Manan Vasa</span> |{' '}
+              <a
+                href="https://www.altuscorp.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-ink-300 transition-colors hover:text-brand-400"
+              >
+                www.altuscorp.in
+              </a>
             </p>
           </div>
 

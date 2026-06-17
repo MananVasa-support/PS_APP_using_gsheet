@@ -6,56 +6,28 @@ import { BackButton, Button, Card, Input, PageHeader, Badge } from '@/components
 import { useToast } from '@/context/ToastContext.jsx';
 import { PERSONAL_SPACE_MODULES } from '@/pages/PersonalSpace.jsx';
 import { MANDATORY_MSG, FIELD_REQUIRED_MSG, isEmptyValue } from '@/utils/validation';
+import {
+  InsightsIlluminator,
+  ResultsRecorder,
+  HabitChangeRegister,
+  TimeSaver,
+} from '@/pages/personalSpace/logTools.jsx';
+
+// Tools rebuilt as running multi-entry LOGS (Google Sheets backed). These
+// bypass the generic single-entry form below and render their own form + list.
+const LOG_TOOLS = {
+  'insights-illuminator': { intro: 'Capture an insight and turn it into an action.', Body: InsightsIlluminator },
+  'results-recorder': { intro: 'Record small, compounding wins — fast and often.', Body: ResultsRecorder },
+  'habit-change-register': { intro: 'Track deliberate habit swaps over time.', Body: HabitChangeRegister },
+  'time-saver': { intro: 'Log time optimizations and how often they save you time.', Body: TimeSaver },
+};
 
 /**
- * Form schemas per Personal Space module. Each entry is a list of field
- * descriptors. Saved drafts and submissions live in localStorage — this is a
- * frontend-only feature per the product spec, no backend.
+ * Form schemas for the remaining single-entry Personal Space modules
+ * (Productivity Calculator, Personal Notes Taker). The spec'd log tools above
+ * are handled separately; saved drafts/submissions here live in localStorage.
  */
 const FORM_SCHEMAS = {
-  'takeaway-crystaliser': {
-    intro: 'Crystalise the most valuable takeaways from your recent learning.',
-    fields: [
-      { name: 'topic', label: 'Topic / source', type: 'text', placeholder: 'e.g. Atomic Habits — Ch 4' },
-      { name: 'takeaway', label: 'Top takeaway', type: 'textarea', placeholder: 'In one sentence…' },
-      { name: 'apply', label: 'How will you apply it?', type: 'textarea', placeholder: 'Concrete next step' },
-    ],
-  },
-  'insights-illuminator': {
-    intro: 'Capture the insights that struck you today.',
-    fields: [
-      { name: 'context', label: 'Context', type: 'text', placeholder: 'Where did the insight come from?' },
-      { name: 'insight', label: 'The insight', type: 'textarea', placeholder: 'What clicked?' },
-      { name: 'impact', label: 'Why it matters', type: 'textarea', placeholder: 'Why is this important?' },
-    ],
-  },
-  'results-recorder': {
-    intro: 'Record measurable results — wins, KPIs, milestones.',
-    fields: [
-      { name: 'result', label: 'Result', type: 'text', placeholder: 'e.g. Closed 3 deals' },
-      { name: 'metric', label: 'Metric / number', type: 'text', placeholder: 'e.g. ₹2.4L revenue' },
-      { name: 'date', label: 'Date', type: 'date' },
-      { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Context & lessons' },
-    ],
-  },
-  'habit-change-register': {
-    intro: 'Log a habit you are forming or breaking.',
-    fields: [
-      { name: 'habit', label: 'Habit', type: 'text', placeholder: 'e.g. Wake at 6 AM' },
-      { name: 'direction', label: 'Forming or breaking?', type: 'text', placeholder: 'Forming / Breaking' },
-      { name: 'trigger', label: 'Trigger / cue', type: 'text', placeholder: 'When does it happen?' },
-      { name: 'streak', label: 'Current streak (days)', type: 'number', placeholder: '0' },
-      { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'How is it going?' },
-    ],
-  },
-  'time-saver': {
-    intro: 'Note time you saved and how — small wins compound.',
-    fields: [
-      { name: 'activity', label: 'Activity', type: 'text', placeholder: 'e.g. Email triage' },
-      { name: 'minutes', label: 'Minutes saved', type: 'number', placeholder: '0' },
-      { name: 'how', label: 'How did you save the time?', type: 'textarea', placeholder: 'Automation, template, delegation…' },
-    ],
-  },
   'productivity-calculator': {
     intro: 'Calculate a quick productivity score: focus ÷ total × 100.',
     fields: [
@@ -75,14 +47,6 @@ const FORM_SCHEMAS = {
     fields: [
       { name: 'title', label: 'Title', type: 'text', placeholder: 'Note title' },
       { name: 'body', label: 'Note', type: 'textarea', placeholder: 'Write anything…', rows: 10 },
-    ],
-  },
-  'feedback-form': {
-    intro: 'Share feedback — be honest, be kind.',
-    fields: [
-      { name: 'category', label: 'Category', type: 'text', placeholder: 'Product / Process / Team' },
-      { name: 'rating', label: 'Rating (1–10)', type: 'number', placeholder: '8' },
-      { name: 'feedback', label: 'Feedback', type: 'textarea', placeholder: 'Your detailed feedback', rows: 6 },
     ],
   },
 };
@@ -119,6 +83,32 @@ export default function PersonalSpaceForm() {
   });
   const [errors, setErrors] = useState({});
   const [globalError, setGlobalError] = useState('');
+
+  // Log tools (Insights / Results / Habit / Time Saver) render their own
+  // form + running list and persist to Sheets — handled outside the generic
+  // single-entry form below.
+  const logTool = moduleMeta && LOG_TOOLS[moduleId];
+  if (logTool) {
+    const LogIcon = moduleMeta.icon;
+    const { Body } = logTool;
+    return (
+      <div className="space-y-6">
+        <BackButton to="/personal-space" />
+        <PageHeader
+          title={
+            <span className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-gradient text-white shadow-glow">
+                <LogIcon className="h-5 w-5" />
+              </span>
+              {moduleMeta.title}
+            </span>
+          }
+          subtitle={logTool.intro}
+        />
+        <Body />
+      </div>
+    );
+  }
 
   // If route param is unknown — friendly recovery.
   if (!moduleMeta || !schema) {

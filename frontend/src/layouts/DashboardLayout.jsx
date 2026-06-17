@@ -4,6 +4,7 @@ import Sidebar from '@/components/layout/Sidebar.jsx';
 import TimeAuditorSidebar from '@/components/layout/TimeAuditorSidebar.jsx';
 import Navbar from '@/components/layout/Navbar.jsx';
 import Footer from '@/components/layout/Footer.jsx';
+import WhatsAppFloat from '@/components/layout/WhatsAppFloat.jsx';
 import Logo from '@/components/ui/Logo.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,6 +53,7 @@ export default function DashboardLayout() {
             <Footer />
           </div>
         </div>
+        <WhatsAppFloat />
       </div>
     );
   }
@@ -77,6 +79,7 @@ export default function DashboardLayout() {
         </main>
         <Footer />
       </div>
+      <WhatsAppFloat />
     </div>
   );
 }

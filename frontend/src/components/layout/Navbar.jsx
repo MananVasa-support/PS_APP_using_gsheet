@@ -23,14 +23,16 @@ import { flushPendingSyncs } from '@/services/ppService';
 // The dashboard search jumps only to the tool cards shown on the hub page —
 // keep this list in sync with MODULES in pages/Dashboard.jsx.
 const SEARCH_DESTINATIONS = [
-  { label: 'Totality Collector', to: '/pre-ps/totality' },
-  { label: 'Sales Cultivator', to: '/sales-cultivator' },
-  { label: 'Time Auditor', to: '/time-auditor' },
-  { label: 'Power Planner', to: '/power-planner' },
-  { label: 'Reasons Eliminator', to: '/reason-eliminator' },
-  { label: 'Time Finder', to: '/time-finder' },
-  { label: 'Meeting Success Maximizer', to: '/meeting-framework' },
-  { label: 'Personal Space', to: '/personal-space' },
+  { label: 'Expectations Crystalliser ©', to: '/expectations-crystalliser' },
+  { label: 'Totality Collector ©', to: '/pre-ps/totality' },
+  { label: 'Sales Cultivator ©', to: '/sales-cultivator' },
+  { label: 'Time Auditor ©', to: '/time-auditor' },
+  { label: 'Power Planner ©', to: '/power-planner' },
+  { label: 'Reasons Eliminator ©', to: '/reason-eliminator' },
+  { label: 'Time Finder ©', to: '/time-finder' },
+  { label: 'Meeting Success Maximizer ©', to: '/meeting-framework' },
+  { label: 'Personal Space ©', to: '/personal-space' },
+  { label: 'Feedback Form ©', to: '/feedback' },
 ];
 
 export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
@@ -97,7 +99,7 @@ export default function Navbar({ onOpenMobile, leading, showSearch = true }) {
 
       {/* Search — only on the dashboard hub, and it actually navigates. */}
       {showSearch && onDashboard ? (
-        <div ref={searchRef} className="relative hidden max-w-md flex-1 sm:block">
+        <div ref={searchRef} className="relative hidden min-w-0 max-w-2xl flex-1 sm:block">
           <FiSearch className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
           <input
             type="search"

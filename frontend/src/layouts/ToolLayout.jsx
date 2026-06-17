@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar.jsx';
 import Footer from '@/components/layout/Footer.jsx';
+import WhatsAppFloat from '@/components/layout/WhatsAppFloat.jsx';
 import Logo from '@/components/ui/Logo.jsx';
 
 /**
@@ -18,6 +19,7 @@ export default function ToolLayout() {
         <Outlet />
       </div>
       <Footer />
+      <WhatsAppFloat />
     </div>
   );
 }
