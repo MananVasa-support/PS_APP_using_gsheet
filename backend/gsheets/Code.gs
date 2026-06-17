@@ -9,7 +9,7 @@
  * Main Folder. Inside each user's spreadsheet, one TAB per tool data set:
  *   Main Folder
  *     ├─ _System                 (registry: userId → spreadsheetId, in _meta)
- *     └─ "Suresh_Yadav_a1b2c3d4" (one spreadsheet per user)
+ *     └─ "a1b2c3d4" (one spreadsheet per user)
  *          ├─ ta_entries         (Time Auditor assessments)
  *          ├─ ta_challenges      (Time Auditor Level-2 runs)
  *          ├─ tf_assessments     (Time Finder)
@@ -70,6 +70,15 @@ const DEFS = {
   re_grip_history: { tab: 're_grip_history', keys: ['id'], idCol: 'id',
     headers: ['id', 'run_date', 'month', 'entries_count', 'archived', 'entries', 'updated_at'],
     derived: ['entries_count'] },
+  // Totality (Pre PS) task capture. All fields are simple scalars stored as
+  // readable plain text (derived), so the sheet is human-legible; the frontend
+  // sends a full row each time, so a partial-merge is never needed.
+  totality_tasks: { tab: 'totality_tasks', keys: ['id'], idCol: 'id',
+    headers: ['id', 'subject', 'thing_to_get_done', 'frequency', 'priority', 'target_date', 'doer', 'notes', 'schedule', 'moved_to_week', 'status', 'created_at', 'updated_at'],
+    derived: ['subject', 'thing_to_get_done', 'frequency', 'priority', 'target_date', 'doer', 'notes', 'schedule', 'moved_to_week', 'status'] },
+  // Singleton (id='options') holding the auto-add Subject / Doer option lists.
+  totality_meta: { tab: 'totality_meta', keys: ['id'], idCol: 'id',
+    headers: ['id', 'subjects', 'doers', 'updated_at'] },
 };
 const ALL_SHEETS = Object.keys(DEFS);
 
