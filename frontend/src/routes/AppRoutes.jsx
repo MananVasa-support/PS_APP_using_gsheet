@@ -5,6 +5,7 @@ import AuthLayout from '@/layouts/AuthLayout.jsx';
 import HomeLayout from '@/layouts/HomeLayout.jsx';
 import DashboardLayout from '@/layouts/DashboardLayout.jsx';
 import ToolLayout from '@/layouts/ToolLayout.jsx';
+import ToolPageLayout from '@/layouts/ToolPageLayout.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import ErrorBoundary from '@/components/ErrorBoundary.jsx';
 import Spinner from '@/components/ui/Spinner.jsx';
@@ -117,16 +118,27 @@ export default function AppRoutes() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/pre-ps" element={<PrePS />} />
             <Route path="/pre-ps/expectation" element={<ExpectationFromPS />} />
-            <Route path="/pre-ps/totality" element={<Totality />} />
             <Route path="/post-ps" element={<PostPS />} />
             <Route path="/sales-cultivator" element={<SalesCultivator />} />
-            <Route path="/expectations-crystalliser" element={<ExpectationsCrystalliser />} />
-            <Route path="/feedback" element={<FeedbackForm />} />
             <Route path="/personal-space" element={<PersonalSpace />} />
             <Route path="/personal-space/:moduleId" element={<PersonalSpaceForm />} />
             <Route path="/reminder" element={<Reminder />} />
             {/* Account page — clean, no Time Auditor sidebar. */}
             <Route path="/settings" element={<Settings />} />
+          </Route>
+
+          {/* Standard tool sidebar shell — the single-page workshop tools
+              (Expectations Crystalliser, Totality Collector, Feedback Form). */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <ToolPageLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/expectations-crystalliser" element={<ExpectationsCrystalliser />} />
+            <Route path="/pre-ps/totality" element={<Totality />} />
+            <Route path="/feedback" element={<FeedbackForm />} />
           </Route>
 
           {/* Sidebar shell — main app pages only (no tool/module pages). */}
