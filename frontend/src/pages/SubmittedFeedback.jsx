@@ -1,4 +1,5 @@
-import { PageHeader } from '@/components/ui';
+import { useNavigate } from 'react-router-dom';
+import { BackButton, PageHeader } from '@/components/ui';
 import EntryLog from '@/components/ps/EntryLog.jsx';
 import { useLog } from '@/components/ps/useLog.js';
 
@@ -6,10 +7,12 @@ import { useLog } from '@/components/ps/useLog.js';
  * Submitted Feedback — every feedback entry the signed-in user has submitted.
  */
 export default function SubmittedFeedback() {
+  const navigate = useNavigate();
   const { entries, remove } = useLog('feedback-form', (d) => `${d.interaction} · ${d.rating}/5`);
 
   return (
     <div className="space-y-6">
+      <BackButton onClick={() => navigate('/feedback')} />
       <PageHeader title="Submitted Feedback" subtitle="All the feedback you've submitted." />
       <EntryLog
         title="Submitted Feedback"

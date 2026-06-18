@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card, PageHeader, Spinner } from '@/components/ui';
+import { BackButton, Card, PageHeader, Spinner } from '@/components/ui';
 import { listTasks } from '@/services/totalityService';
 
 /**
@@ -8,6 +9,7 @@ import { listTasks } from '@/services/totalityService';
  * priority and frequency, computed from the user's saved tasks.
  */
 export default function TotalityDashboard() {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState(null);
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export default function TotalityDashboard() {
 
   return (
     <div className="space-y-6">
+      <BackButton onClick={() => navigate('/pre-ps/totality')} />
       <PageHeader title="Dashboard" subtitle="Totality Collector — counts & summaries." />
 
       <motion.div

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { Card, PageHeader } from '@/components/ui';
+import { BackButton, Card, PageHeader } from '@/components/ui';
 import { cn } from '@/utils/cn';
 import { PointScale, Field } from '@/components/ps/fields.jsx';
 import { useLog } from '@/components/ps/useLog.js';
@@ -14,6 +15,7 @@ const VIEW_COUNTS = [1, 3, 5, 7, 10];
  * rating is set). "Show 1/3/5/7/10" paginates the list.
  */
 export default function MyExpectations() {
+  const navigate = useNavigate();
   const { entries, update, remove } = useLog('expectations-crystalliser', (d) => `${d.area}: ${d.accomplishment}`);
   const [perView, setPerView] = useState(3);
   const [page, setPage] = useState(0);
@@ -27,6 +29,7 @@ export default function MyExpectations() {
 
   return (
     <div className="space-y-6">
+      <BackButton onClick={() => navigate('/expectations-crystalliser')} />
       <PageHeader title="My Expectations" subtitle="All the outcomes you've locked in — rate & reflect at the end of the workshop." />
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
