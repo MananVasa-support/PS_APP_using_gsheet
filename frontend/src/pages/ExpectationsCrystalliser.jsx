@@ -48,7 +48,7 @@ export default function ExpectationsCrystalliser() {
 
   return (
     <div className="space-y-6">
-      <BackButton to="/dashboard" />
+      <BackButton onClick={() => navigate('/dashboard')} />
       <PageHeader
         title={
           <span className="flex items-center gap-3">

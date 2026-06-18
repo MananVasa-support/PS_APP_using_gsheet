@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiMessageCircle, FiSave } from 'react-icons/fi';
 import { BackButton, Button, Card, PageHeader } from '@/components/ui';
@@ -18,6 +19,7 @@ const INTERACTION_CLASSES = ['HH Call', 'Session'];
  */
 export default function FeedbackForm() {
   const toast = useToast();
+  const navigate = useNavigate();
   const { add } = useLog('feedback-form', (d) => `${d.interaction} · ${d.rating}/5`);
   const [form, setForm] = useState({ date: todayISO(), interaction: '', rating: null });
   const [errors, setErrors] = useState({});
@@ -38,7 +40,7 @@ export default function FeedbackForm() {
 
   return (
     <div className="space-y-6">
-      <BackButton to="/dashboard" />
+      <BackButton onClick={() => navigate('/dashboard')} />
       <PageHeader
         title={
           <span className="flex items-center gap-3">
