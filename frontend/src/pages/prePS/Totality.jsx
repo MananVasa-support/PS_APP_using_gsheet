@@ -239,7 +239,7 @@ export default function Totality() {
                 required
                 value={form.subject}
                 options={options.subjects}
-                placeholder="Pick or type a subject…"
+                placeholder="Pick or type a subject"
                 onChange={(v) => update('subject', v)}
               />
               {errors.subject && <p className="mt-1.5 text-xs text-brand-400">{errors.subject}</p>}
@@ -254,7 +254,7 @@ export default function Totality() {
                 id="thingToGetDone"
                 value={form.thingToGetDone}
                 onChange={(e) => update('thingToGetDone', e.target.value)}
-                placeholder="Describe the task in detail…"
+                placeholder="Describe the task in detail"
                 className={cn('input-base min-h-[120px] resize-y', errors.thingToGetDone && 'border-brand-500')}
               />
               {errors.thingToGetDone && <p className="mt-1.5 text-xs text-brand-400">{errors.thingToGetDone}</p>}
@@ -272,7 +272,7 @@ export default function Totality() {
                 className={cn('input-base', errors.frequency && 'border-brand-500')}
               >
                 <option value="" disabled>
-                  Select frequency…
+                  Select frequency
                 </option>
                 {FREQUENCY_OPTIONS.map((o) => (
                   <option key={o} value={o}>
@@ -333,7 +333,7 @@ export default function Totality() {
                   required
                   value={form.doer}
                   options={options.doers}
-                  placeholder="Pick or type a name…"
+                  placeholder="Pick or type a name"
                   transform={titleCaseName}
                   onChange={(v) => update('doer', v)}
                 />
@@ -365,7 +365,7 @@ export default function Totality() {
                 id="notes"
                 value={form.notes}
                 onChange={(e) => update('notes', e.target.value)}
-                placeholder="Optional notes…"
+                placeholder="Optional notes"
                 className="input-base min-h-[90px] resize-y"
               />
             </div>
@@ -382,7 +382,7 @@ export default function Totality() {
                   onChange={(e) => update('moveWeek', e.target.value)}
                   className={cn('input-base sm:flex-1', errors.moveWeek && 'border-brand-500')}
                 >
-                  <option value="">Choose a week…</option>
+                  <option value="">Choose a week</option>
                   {weeks.map((w) => (
                     <option key={w.key} value={w.key}>
                       {w.label}

@@ -69,7 +69,7 @@ export default function ExpectationsCrystalliser() {
               required
               value={area}
               options={areas}
-              placeholder="Pick or type an area…"
+              placeholder="Pick or type an area"
               onChange={setArea}
               error={errors.area}
             />

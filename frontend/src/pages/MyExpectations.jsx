@@ -94,7 +94,7 @@ export default function MyExpectations() {
                             <textarea
                               value={entry.data.notes || ''}
                               onChange={(e) => setNotes(entry, e.target.value)}
-                              placeholder="Reflect on how this outcome went…"
+                              placeholder="Reflect on how this outcome went"
                               className="input-base min-h-[80px] resize-y"
                             />
                           </Field>

@@ -94,7 +94,7 @@ export default function FeedbackForm() {
                   onChange={(e) => set('consultant', e.target.value)}
                   className={cn('input-base', errors.consultant && 'border-brand-500')}
                 >
-                  <option value="" disabled>Select a consultant…</option>
+                  <option value="" disabled>Select a consultant</option>
                   {CONSULTANTS.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
@@ -135,7 +135,7 @@ export default function FeedbackForm() {
                   type="text"
                   value={form.serviceOther}
                   onChange={(e) => set('serviceOther', e.target.value)}
-                  placeholder="Please specify…"
+                  placeholder="Please specify"
                   className={cn('input-base mt-2', errors.serviceOther && 'border-brand-500')}
                 />
               )}
@@ -170,7 +170,7 @@ export default function FeedbackForm() {
               <textarea
                 value={form.improvements}
                 onChange={(e) => set('improvements', e.target.value)}
-                placeholder="Your detailed feedback…"
+                placeholder="Your detailed feedback"
                 className={cn('input-base min-h-[120px] resize-y', errors.improvements && 'border-brand-500')}
               />
             </Field>
