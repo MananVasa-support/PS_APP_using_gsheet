@@ -225,7 +225,7 @@ export default function Totality() {
 
   return (
     <div className="space-y-6">
-      <BackButton onClick={() => navigate('/pre-ps')} />
+      <BackButton onClick={() => navigate('/dashboard')} />
 
       <PageHeader title="Totality" subtitle="Capture the thing to get done" />
 
@@ -404,7 +404,7 @@ export default function Totality() {
             </div>
 
             <div className="flex flex-col gap-3 border-t border-ink-800 pt-5 sm:flex-row sm:justify-end">
-              <BackButton onClick={() => navigate('/pre-ps')} />
+              <BackButton onClick={() => navigate('/dashboard')} />
               <Button type="submit" icon={FiSave} disabled={busy || !requiredFilled}>
                 Save
               </Button>
