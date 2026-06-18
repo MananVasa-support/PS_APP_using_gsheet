@@ -35,10 +35,9 @@ export default function ToolSidebar({ title, icon, items, collapseKey = 'tool_si
     }
   }, [collapsed, collapseKey]);
 
-  const isActive = (item) => {
-    const base = item.match || item.to;
-    return base ? pathname === base || pathname.startsWith(`${base}/`) : false;
-  };
+  // Exact match by default so a parent ("main") item doesn't stay highlighted
+  // on its sub-pages; pass `match` for prefix-based highlighting when needed.
+  const isActive = (item) => (item.match ? pathname.startsWith(item.match) : pathname === item.to);
 
   const handleClick = (item) => {
     guardNav(() => navigate(item.to));

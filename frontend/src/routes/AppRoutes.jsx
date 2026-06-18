@@ -34,13 +34,18 @@ const PrePS = lazy(() => import('@/pages/PrePS.jsx'));
 const PostPS = lazy(() => import('@/pages/PostPS.jsx'));
 const ExpectationFromPS = lazy(() => import('@/pages/prePS/ExpectationFromPS.jsx'));
 const Totality = lazy(() => import('@/pages/prePS/Totality.jsx'));
+const TotalityAllTasks = lazy(() => import('@/pages/prePS/TotalityAllTasks.jsx'));
+const TotalityPlanned = lazy(() => import('@/pages/prePS/TotalityPlanned.jsx'));
+const TotalityDashboard = lazy(() => import('@/pages/prePS/TotalityDashboard.jsx'));
 const PowerPlannerPage = lazy(() => import('@/pages/PowerPlannerPage.jsx'));
 const TimeFinderPage = lazy(() => import('@/pages/TimeFinderPage.jsx'));
 const ReasonEliminatorPage = lazy(() => import('@/pages/ReasonEliminatorPage.jsx'));
 const TimeAuditor = lazy(() => import('@/pages/TimeAuditor.jsx'));
 const SalesCultivator = lazy(() => import('@/pages/SalesCultivator.jsx'));
 const ExpectationsCrystalliser = lazy(() => import('@/pages/ExpectationsCrystalliser.jsx'));
+const MyExpectations = lazy(() => import('@/pages/MyExpectations.jsx'));
 const FeedbackForm = lazy(() => import('@/pages/FeedbackForm.jsx'));
+const SubmittedFeedback = lazy(() => import('@/pages/SubmittedFeedback.jsx'));
 const PersonalSpace = lazy(() => import('@/pages/PersonalSpace.jsx'));
 const PersonalSpaceForm = lazy(() => import('@/pages/personalSpace/PersonalSpaceForm.jsx'));
 const Reminder = lazy(() => import('@/pages/Reminder.jsx'));
@@ -137,8 +142,13 @@ export default function AppRoutes() {
             }
           >
             <Route path="/expectations-crystalliser" element={<ExpectationsCrystalliser />} />
+            <Route path="/expectations-crystalliser/my-expectations" element={<MyExpectations />} />
             <Route path="/pre-ps/totality" element={<Totality />} />
+            <Route path="/pre-ps/totality/all-tasks" element={<TotalityAllTasks />} />
+            <Route path="/pre-ps/totality/planned" element={<TotalityPlanned />} />
+            <Route path="/pre-ps/totality/dashboard" element={<TotalityDashboard />} />
             <Route path="/feedback" element={<FeedbackForm />} />
+            <Route path="/feedback/submitted" element={<SubmittedFeedback />} />
           </Route>
 
           {/* Sidebar shell — main app pages only (no tool/module pages). */}

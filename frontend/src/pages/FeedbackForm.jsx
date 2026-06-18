@@ -4,7 +4,6 @@ import { FiMessageCircle, FiSave } from 'react-icons/fi';
 import { BackButton, Button, Card, PageHeader } from '@/components/ui';
 import { useToast } from '@/context/ToastContext.jsx';
 import { StatusButtons, PointScale, Field } from '@/components/ps/fields.jsx';
-import EntryLog from '@/components/ps/EntryLog.jsx';
 import { useLog } from '@/components/ps/useLog.js';
 import { todayISO } from '@/services/personalSpaceService';
 
@@ -19,7 +18,7 @@ const INTERACTION_CLASSES = ['HH Call', 'Session'];
  */
 export default function FeedbackForm() {
   const toast = useToast();
-  const { entries, add, remove } = useLog('feedback-form', (d) => `${d.interaction} · ${d.rating}/5`);
+  const { add } = useLog('feedback-form', (d) => `${d.interaction} · ${d.rating}/5`);
   const [form, setForm] = useState({ date: todayISO(), interaction: '', rating: null });
   const [errors, setErrors] = useState({});
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -97,17 +96,6 @@ export default function FeedbackForm() {
           </form>
         </Card>
       </motion.div>
-
-      <EntryLog title="Submitted Feedback" entries={entries} onDelete={remove}
-        renderItem={(en) => (
-          <div>
-            <p className="text-sm font-semibold text-fg-strong">
-              <span className="text-brand-400">{en.data.interaction}</span> — {en.data.rating}/5
-            </p>
-            <p className="mt-1 text-[11px] text-ink-400">🗓 {en.data.date}</p>
-          </div>
-        )}
-      />
     </div>
   );
 }
