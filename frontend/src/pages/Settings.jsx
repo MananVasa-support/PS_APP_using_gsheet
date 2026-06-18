@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  FiUser, FiSave, FiKey, FiEdit2, FiMail, FiPhone, FiMapPin,
+  FiUser, FiSave, FiEdit2, FiMail, FiPhone, FiMapPin,
 } from 'react-icons/fi';
 import { Card, Input, Button, Avatar, PageHeader, BackButton } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,7 +8,6 @@ import { useToast } from '@/context/ToastContext.jsx';
 import { titleCaseName } from '@/utils/format';
 import { countryFromPhone } from '@/utils/phone';
 import { updateProfile } from '@/services/userService';
-import { requestEmailChange, verifyEmailChange } from '@/services/authService';
 
 export default function Settings() {
   const { user, setUser } = useAuth();
@@ -23,8 +22,6 @@ export default function Settings() {
   });
   const [pSaving, setPSaving] = useState(false);
   const [pError, setPError] = useState('');
-  const [emailChange, setEmailChange] = useState(null); // { newEmail } while awaiting the code
-  const [emailCode, setEmailCode] = useState('');
   const [pEditing, setPEditing] = useState(false); // view by default; Edit unlocks the inputs
 
   const setP = (e) => {
@@ -50,42 +47,14 @@ export default function Settings() {
     setPError('');
     setPSaving(true);
     try {
-      const nameChanged = (pform.name || '') !== (user?.name || '');
-      const phoneChanged = (pform.phone || '') !== (user?.phone || '');
-      if (nameChanged || phoneChanged) {
-        const updated = await updateProfile({ name: pform.name, phone: pform.phone });
-        setUser((u) => ({ ...u, ...updated }));
-      }
-      const newEmail = (pform.email || '').trim();
-      if (newEmail && newEmail !== (user?.email || '')) {
-        // Email change needs confirmation on the NEW address — do it right here.
-        await requestEmailChange(newEmail);
-        setEmailChange({ newEmail });
-        toast.info(`Enter the code we sent to ${newEmail}.`);
-      } else {
-        toast.success('Profile saved');
-        setPEditing(false);
-      }
+      // Name + phone only — email is read-only here (changing it needs an email
+      // server that isn't wired on this build).
+      const updated = await updateProfile({ name: pform.name, phone: pform.phone });
+      setUser((u) => ({ ...u, ...updated }));
+      toast.success('Profile saved');
+      setPEditing(false);
     } catch (err) {
       setPError(err?.message || 'Could not save your changes.');
-    } finally {
-      setPSaving(false);
-    }
-  }
-
-  async function confirmEmail(e) {
-    e.preventDefault();
-    setPError('');
-    setPSaving(true);
-    try {
-      await verifyEmailChange(emailChange.newEmail, emailCode);
-      setUser((u) => ({ ...u, email: emailChange.newEmail }));
-      setEmailChange(null);
-      setEmailCode('');
-      setPEditing(false);
-      toast.success('Email updated.');
-    } catch (err) {
-      setPError(err?.message || 'Invalid or expired code.');
     } finally {
       setPSaving(false);
     }
@@ -111,48 +80,12 @@ export default function Settings() {
           </div>
         )}
 
-        {emailChange ? (
-          /* In-tab email-change confirmation */
-          <form onSubmit={confirmEmail} className="mt-6 max-w-md space-y-4">
-            <p className="text-sm text-ink-400">
-              We sent a 6-digit code to{' '}
-              <span className="font-medium text-fg-strong">{emailChange.newEmail}</span>. Enter it to confirm your
-              new email.
-            </p>
-            <Input
-              label="Confirmation code"
-              icon={FiKey}
-              inputMode="numeric"
-              maxLength={8}
-              placeholder="6-digit code"
-              value={emailCode}
-              onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
-              autoComplete="one-time-code"
-            />
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setEmailChange(null);
-                  setEmailCode('');
-                  setPError('');
-                  setPform((f) => ({ ...f, email: user?.email || '' }));
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" icon={FiSave} loading={pSaving}>
-                Confirm email
-              </Button>
-            </div>
-          </form>
-        ) : pEditing ? (
+        {pEditing ? (
           /* Edit mode — unlocked only after clicking Edit */
           <>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Input label="Display name" name="name" value={pform.name} onChange={setP} />
-              <Input label="Email" type="email" name="email" value={pform.email} onChange={setP} autoComplete="off" />
+              <Input label="Email" value={user?.email || ''} readOnly hint="Email can't be changed here." />
               <Input label="Phone" name="phone" value={pform.phone} onChange={setP} placeholder="+91XXXXXXXXXX" inputMode="tel" maxLength={13} />
               <Input
                 label="Country"

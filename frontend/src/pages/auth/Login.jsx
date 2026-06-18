@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiArrowLeft, FiShield, FiBriefcase, FiUser } from 'react-icons/fi';
 import { Button, Input } from '@/components/ui';
@@ -128,9 +128,9 @@ export default function Login({ role = 'client' }) {
             />
             Remember me
           </label>
-          <Link to="/forgot-password" className="text-sm font-medium text-brand-400 hover:text-brand-300">
-            Forgot Password?
-          </Link>
+          {/* Forgot Password is hidden: password reset needs an email server,
+              which isn't wired on this build — so we don't surface a dead-end
+              link that would only error. Re-enable once reset email is live. */}
         </div>
 
         <Button type="submit" size="lg" loading={loading} className="w-full">

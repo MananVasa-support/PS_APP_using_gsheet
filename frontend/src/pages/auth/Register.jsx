@@ -10,7 +10,6 @@ import {
   resendSignupCode,
 } from '@/services/authService';
 import { useAuth } from '@/hooks/useAuth';
-import { titleCaseName } from '@/utils/format';
 import { MANDATORY_MSG } from '@/utils/validation';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -101,9 +100,9 @@ export default function Register() {
   const update = (e) => {
     const { name } = e.target;
     let value = e.target.value;
-    if (name === 'firstName' || name === 'lastName') {
-      value = titleCaseName(value); // "hardik" → "Hardik"; "naresh" → "Naresh"
-    } else if (name === 'cellNumber') {
+    // Names are kept EXACTLY as typed — no auto-capitalisation — so a
+    // deliberately lower/mixed-case name (e.g. "deShawn") is preserved.
+    if (name === 'cellNumber') {
       value = value.replace(/\D/g, '').slice(0, 10);
     }
     setForm((f) => ({ ...f, [name]: value }));
